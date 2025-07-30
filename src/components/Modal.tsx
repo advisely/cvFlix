@@ -1,20 +1,38 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactElement, ReactNode } from 'react'
 
-export const Modal = ({ children, buttonText }: { children: React.ReactNode, buttonText: string }) => {
+interface ModalProps {
+  children: ReactNode
+  button: ReactElement
+}
+
+export const Modal = ({ children, button }: ModalProps) => {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)}>{buttonText}</button>
+      <div onClick={() => setIsOpen(true)} className="cursor-pointer">
+        {button}
+      </div>
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-          <div className="bg-gray-800 p-8 rounded-lg">
-            {children}
-            <button onClick={() => setIsOpen(false)} className="mt-4 bg-red-600 text-white px-4 py-2 rounded">
-              Close
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4"
+          onClick={() => setIsOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-2xl bg-gray-800 rounded-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              {children}
+            </div>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-full text-xs"
+            >
+              X
             </button>
           </div>
         </div>

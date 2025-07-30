@@ -1,9 +1,29 @@
 
 
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 async function main() {
+  // Delete all existing data
+  await prisma.accomplishment.deleteMany({})
+  await prisma.project.deleteMany({})
+  await prisma.experience.deleteMany({})
+  await prisma.company.deleteMany({})
+  await prisma.skill.deleteMany({})
+  await prisma.education.deleteMany({})
+  await prisma.certification.deleteMany({})
+  await prisma.user.deleteMany({})
+
+  // Admin User
+  const hashedPassword = await bcrypt.hash('password', 10)
+  await prisma.user.create({
+    data: {
+      email: 'admin@example.com',
+      passwordHash: hashedPassword,
+    },
+  })
+
   // Companies
   const bnc = await prisma.company.create({ data: { name: 'Banque Nationale du Canada' } });
   const bombardier = await prisma.company.create({ data: { name: 'Bombardier' } });
