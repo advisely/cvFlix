@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AntdRegistry } from '@ant-design/nextjs-registry';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,10 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
+      <body suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AntdRegistry>{children}</AntdRegistry>
       </body>
     </html>
   );

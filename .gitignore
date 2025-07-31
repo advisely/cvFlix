@@ -44,3 +44,4 @@ next-env.d.ts
 
 # Local environment variables
 .env
+\n# Dependency lock files\npackage-lock.json\nyarn.lock\npnpm-lock.yaml
