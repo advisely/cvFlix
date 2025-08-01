@@ -18,11 +18,11 @@ export const Modal = ({ children, button }: ModalProps) => {
       </div>
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex justify-center items-center p-4"
           onClick={() => setIsOpen(false)}
         >
           <div 
-            className="relative w-full max-w-2xl bg-gray-800 rounded-lg shadow-lg"
+            className="relative w-full max-w-2xl bg-[#141414] rounded-lg shadow-lg border border-[#303030]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
@@ -30,7 +30,7 @@ export const Modal = ({ children, button }: ModalProps) => {
             </div>
             <button 
               onClick={() => setIsOpen(false)} 
-              className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-full text-xs"
+              className="absolute top-2 right-2 bg-[#e50914] hover:bg-[#f40612] text-white font-bold py-1 px-2 rounded-full text-xs"
             >
               X
             </button>

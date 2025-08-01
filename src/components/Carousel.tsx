@@ -9,7 +9,7 @@ import { EmblaCarouselType } from 'embla-carousel'
 
 const PrevButton = ({ enabled, onClick }: { enabled: boolean, onClick: () => void }) => (
   <button
-    className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full z-10 disabled:opacity-0 transition-opacity"
+    className={`absolute left-0 top-1/2 transform -translate-y-1/2 bg-[#141414] bg-opacity-70 text-white p-2 rounded-full ${!enabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-90'}`}
     onClick={onClick}
     disabled={!enabled}
   >
@@ -19,7 +19,7 @@ const PrevButton = ({ enabled, onClick }: { enabled: boolean, onClick: () => voi
 
 const NextButton = ({ enabled, onClick }: { enabled: boolean, onClick: () => void }) => (
   <button
-    className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full z-10 disabled:opacity-0 transition-opacity"
+    className={`absolute right-0 top-1/2 transform -translate-y-1/2 bg-[#141414] bg-opacity-70 text-white p-2 rounded-full ${!enabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-90'}`}
     onClick={onClick}
     disabled={!enabled}
   >

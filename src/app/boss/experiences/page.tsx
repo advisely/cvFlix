@@ -4,13 +4,14 @@
 import { Button, Table, Modal, Form, Input, DatePicker, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import { Company, Experience } from '@prisma/client';
+import { ExperienceWithCompany } from './types';
 import dayjs from 'dayjs';
 
 const ExperiencesPage = () => {
-  const [experiences, setExperiences] = useState<(Experience & { company: Company })[]>([]);
+  const [experiences, setExperiences] = useState<ExperienceWithCompany[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<(Experience & { company: Company }) | null>(null);
+  const [editingRecord, setEditingRecord] = useState<ExperienceWithCompany | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -100,7 +101,7 @@ const ExperiencesPage = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_: any, record: Experience & { company: Company }) => (
+      render: (_: unknown, record: ExperienceWithCompany) => (
         <span>
           <Button type="link" onClick={() => handleEdit(record)}>Edit</Button>
           <Button type="link" danger onClick={() => handleDelete(record.id)}>Delete</Button>

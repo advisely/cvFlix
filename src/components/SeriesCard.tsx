@@ -13,13 +13,13 @@ const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
   }
 
   const cardContent = (
-    <div className="bg-gray-800 rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-200 h-full flex flex-col">
-      <div className="w-full h-32 bg-gray-700 flex items-center justify-center">
-        <span className="text-gray-500">Logo</span>
+    <div className="bg-[#303030] rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-200 h-full flex flex-col border border-[#404040] shadow-lg">
+      <div className="w-full h-32 bg-[#141414] flex items-center justify-center">
+        <span className="text-[#808080] text-xl font-bold">{company.name.charAt(0)}</span>
       </div>
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-lg font-bold">{company.name}</h3>
-        <p className="text-sm text-gray-400 mt-1">{company.experiences.length} Roles</p>
+        <h3 className="text-lg font-bold text-white">{company.name}</h3>
+        <p className="text-sm text-[#e50914] mt-1">{company.experiences.length} Roles</p>
       </div>
     </div>
   );

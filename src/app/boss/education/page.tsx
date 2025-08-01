@@ -95,7 +95,7 @@ const EducationPage = () => {
     {
       title: 'Action',
       key: 'action',
-      render: (_: any, record: Education) => (
+      render: (_: unknown, record: Education) => (
         <span>
           <Button type="link" onClick={() => handleEdit(record)}>Edit</Button>
           <Button type="link" danger onClick={() => handleDelete(record.id)}>Delete</Button>

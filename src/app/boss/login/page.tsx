@@ -3,9 +3,10 @@
 
 import { Button, Form, Input } from 'antd';
 import { signIn } from 'next-auth/react';
+import { LoginFormData } from './types';
 
 const LoginPage = () => {
-  const onFinish = (values: any) => {
+  const onFinish = (values: LoginFormData) => {
     signIn('credentials', { email: values.email, password: values.password, callbackUrl: '/boss' });
   };
 
