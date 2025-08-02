@@ -1,10 +1,10 @@
 
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { GET } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const BossPage = async () => {
-  const session = await getServerSession(GET);
+  const session = await getServerSession(authOptions);
 
   if (!session) {
     redirect("/boss/login");

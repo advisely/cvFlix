@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/cssinjs": "^1.24.0",
     "@ant-design/nextjs-registry": "^1.1.0",
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@prisma/client": "^6.13.0",
     "@types/next-auth": "^3.13.0",
     "antd": "^5.26.7",
@@ -22,7 +23,8 @@
     "next-auth": "^4.24.11",
     "prisma": "^6.13.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -35,6 +37,7 @@
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/uuid": "^10.0.0"
   }
 }

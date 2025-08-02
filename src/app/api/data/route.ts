@@ -5,7 +5,11 @@ export async function GET() {
   try {
     const companies = await prisma.company.findMany({
       include: {
-        experiences: true,
+        experiences: {
+          include: {
+            media: true,
+          },
+        },
       },
     })
 

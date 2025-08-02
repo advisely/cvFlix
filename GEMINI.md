@@ -29,6 +29,8 @@ This document outlines the comprehensive project plan for building cvFlix, a Net
 
 **Project Vision:** To create a visually compelling, modern, and interactive web application that presents a professional resume in the style of the Netflix user interface. The platform will be content-manageable through a secure admin panel, ensuring the portfolio remains up-to-date without requiring code changes.
 
+**Project Structure:** The application follows a standard Next.js 13+ app directory structure with components organized under `src/app` for both the public-facing site and the admin panel (`/src/app/boss`).
+
 ---
 
 ## 1. Solution & Software Architecture
@@ -45,8 +47,8 @@ As the **Solution Architect**, my focus is on selecting the right technologies a
     *   **Reasoning:** As specified, Ant Design will be used for the `/boss` admin panel. It offers a rich set of high-quality, pre-built components, perfect for building a data-intensive and functional admin interface quickly.
 *   **Backend:** **Next.js API Routes** with **Prisma ORM**.
     *   **Reasoning:** Leveraging Next.js API routes keeps the entire application within a single, cohesive monorepo. Prisma provides a type-safe database client that simplifies interactions with the database and accelerates backend development.
-*   **Database:** **PostgreSQL**.
-    *   **Reasoning:** A powerful, open-source, and reliable relational database that can handle the structured data of a resume effectively and scale if needed in the future.
+*   **Database:** **SQLite**.
+    *   **Reasoning:** A lightweight, file-based database that's perfect for this project's needs, providing reliable relational data storage without the overhead of a full database server.
 *   **Authentication:** **NextAuth.js**.
     *   **Reasoning:** A complete open-source authentication solution for Next.js applications. It will be used to secure the `/boss` admin panel with a simple username and password (Credentials Provider).
 
@@ -94,7 +96,7 @@ As the **Software Engineer**, I will execute the development in logical phases t
 
 *   **Phase 1: Project Scaffolding & Backend Setup (1 week)**
     1.  Initialize a new Next.js project with TypeScript.
-    2.  Set up the PostgreSQL database and connect it using Prisma.
+    2.  Set up the SQLite database and connect it using Prisma.
     3.  Define the database schema in `schema.prisma` and run the initial migration.
     4.  Build the API endpoints (`/api/...`) for all CRUD operations on the data models.
     5.  Integrate NextAuth.js and create the login/logout functionality for the `/boss` route.
@@ -130,7 +132,7 @@ As the **DevOps Engineer**, my goal is to establish a seamless, automated pipeli
 *   **Source Control:** **Git**, with the repository hosted on **GitHub**.
 *   **Hosting:**
     *   **Application (Next.js):** **Vercel**. It's built by the creators of Next.js and offers a world-class, zero-configuration deployment experience.
-    *   **Database (PostgreSQL):** **Supabase** or **Neon**. Both offer excellent, easy-to-use, and scalable managed PostgreSQL hosting with generous free tiers.
+    *   **Database (SQLite):** **Local SQLite database**. 
 *   **CI/CD Pipeline (GitHub Actions & Vercel):**
     1.  **On Pull Request:** A GitHub Action will trigger to run linting (`ESLint`), type-checking (`tsc`), and all automated tests (unit, integration).
     2.  **On Merge to `main`:** Vercel will automatically pull the latest code, build the project, and deploy it to production.
@@ -140,7 +142,22 @@ As the **DevOps Engineer**, my goal is to establish a seamless, automated pipeli
 
 ---
 
-## 4. Security (SecOps) Plan
+## 4. Development & Deployment
+
+### Local Development
+
+*   **Environment:** The application will be developed locally using Node.js and npm.
+*   **Database:** During development, a local SQLite database will be used.
+*   **Port:** The application runs on port 4001 (http://localhost:4001).
+
+### Deployment
+
+*   **Platform:** The application will be deployed to **Vercel**.
+*   **Database:** For production, a SQLite database will be used (file-based database).
+
+---
+
+## 5. Security (SecOps) Plan
 
 As the **Security Specialist**, I will ensure the application is secure, protecting both the admin's data and the integrity of the application.
 
@@ -154,7 +171,7 @@ As the **Security Specialist**, I will ensure the application is secure, protect
 
 ---
 
-## 5. Quality Assurance (QA) Plan
+## 6. Quality Assurance (QA) Plan
 
 As the **QA Tester**, my responsibility is to ensure the application is bug-free, functional, and meets all user requirements.
 

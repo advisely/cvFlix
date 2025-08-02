@@ -1,24 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cvFlix - Netflix-inspired Resume Portfolio
+
+This is a [Next.js](https://nextjs.org) project that presents a professional resume in the style of the Netflix user interface. The platform features a content-manageable admin panel for easy updates without requiring code changes.
+
+## Key Features
+
+- Netflix-inspired UI with dark theme
+- Admin panel with full CRUD functionality for all resume sections
+- Responsive design that works on all device sizes
+- SQLite database with Prisma ORM
+- Secure authentication with NextAuth.js
+- Server-side rendering for fast page loads
+
+## Project Structure
+
+- `src/app/` - Main application pages and API routes
+- `src/app/boss/` - Admin panel pages
+- `src/components/` - Reusable UI components
+- `src/lib/` - Utility functions and database client
+- `prisma/` - Database schema and seed scripts
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Set up the database:
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+npm run seed
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:4001](http://localhost:4001) with your browser to see the public site.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open [http://localhost:4001/boss](http://localhost:4001/boss) to access the admin panel.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Default admin credentials: admin@example.com / password
 
 ## Learn More
 

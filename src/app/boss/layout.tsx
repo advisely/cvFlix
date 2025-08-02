@@ -1,8 +1,7 @@
-
 'use client'
 
 import { useState } from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Button } from 'antd';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,28 +33,41 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
-        <div className="h-8 m-4 bg-gray-700/50 rounded" />
+        <div className="demo-logo-vertical" style={{ height: '32px', margin: '16px', color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
+          cvFlix
+        </div>
         <Menu
           theme="dark"
           selectedKeys={[pathname]}
           mode="inline"
-          items={[
-            ...menuItems.map(item => ({
-              key: item.key,
-              icon: item.icon,
-              label: <Link href={item.key}>{item.label}</Link>,
-            })),
-            {
-              key: 'logout',
-              icon: <LogoutOutlined />,
-              label: 'Logout',
-              onClick: () => signOut({ callbackUrl: '/' }),
-            },
-          ]}
+          items={menuItems.map(item => ({
+            key: item.key,
+            icon: item.icon,
+            label: <Link href={item.key}>{item.label}</Link>,
+          }))}
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: '#fff' }} />
+        <Header style={{ padding: '0 16px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div></div>
+          <div>
+            <Button 
+              type="default" 
+              onClick={() => window.open('/', '_blank')}
+              style={{ marginRight: '12px' }}
+            >
+              Preview
+            </Button>
+            <Button 
+              type="primary" 
+              danger
+              onClick={() => signOut({ callbackUrl: '/' })}
+              icon={<LogoutOutlined />}
+            >
+              Logout
+            </Button>
+          </div>
+        </Header>
         <Content style={{ margin: '16px' }}>
           <div style={{ padding: 24, minHeight: 'calc(100vh - 112px)', background: '#fff', borderRadius: '8px' }}>
             {children}
