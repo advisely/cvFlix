@@ -13,9 +13,53 @@ export async function GET() {
       },
     })
 
-    const educations = await prisma.education.findMany()
-    const certifications = await prisma.certification.findMany()
-    const skills = await prisma.skill.findMany()
+    const educations = await prisma.education.findMany({
+      include: {
+        media: true,
+      },
+    })
+    const certifications = await prisma.certification.findMany({
+      include: {
+        media: true,
+      },
+    })
+    const skills = await prisma.skill.findMany({
+      include: {
+        media: true,
+      },
+    })
+
+    const highlights = await prisma.highlight.findMany({
+      include: {
+        media: true,
+      },
+      orderBy: {
+        startDate: 'desc',
+      },
+    })
+
+    // Get navbar configuration
+    let navbarConfig = await prisma.navbarConfig.findFirst()
+    if (!navbarConfig) {
+      navbarConfig = await prisma.navbarConfig.create({
+        data: {
+          logoText: "cvFlix",
+          logoImageUrl: null,
+          useImageLogo: false,
+          workExperienceLabel: "Work Experience",
+          careerSeriesLabel: "Career Series",
+          educationLabel: "Education",
+          certificationsLabel: "Certifications",
+          skillsLabel: "Skills",
+          backgroundColor: "#141414",
+          backgroundType: "color",
+          backgroundImageUrl: null,
+          gradientFrom: "#141414",
+          gradientTo: "#1a1a1a",
+          fontFamily: "Inter"
+        }
+      })
+    }
 
     const singleExperiences = companies.filter((company) => company.experiences.length === 1)
     const seriesExperiences = companies.filter((company) => company.experiences.length > 1)
@@ -26,6 +70,8 @@ export async function GET() {
       educations,
       certifications,
       skills,
+      highlights,
+      navbarConfig,
     })
   } catch (error) {
     console.error('Failed to fetch data:', error)

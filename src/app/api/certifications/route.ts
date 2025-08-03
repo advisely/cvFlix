@@ -5,7 +5,11 @@ import { NextResponse } from 'next/server'
 
 
 export async function GET() {
-  const certifications = await prisma.certification.findMany()
+  const certifications = await prisma.certification.findMany({
+    orderBy: {
+      issueDate: 'desc'
+    }
+  })
   return NextResponse.json(certifications)
 }
 

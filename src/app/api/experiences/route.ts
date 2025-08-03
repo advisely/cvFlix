@@ -3,11 +3,14 @@ import { type NextRequest } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 
 export async function GET() {
-  const experiences = await prisma.experience.findMany({ 
-    include: { 
+  const experiences = await prisma.experience.findMany({
+    include: {
       company: true,
       media: true
-    } 
+    },
+    orderBy: {
+      startDate: 'desc'
+    }
   })
   return NextResponse.json(experiences)
 }
@@ -17,7 +20,7 @@ export async function POST(request: NextRequest) {
   const createdExperience = await prisma.experience.create({ data: body })
   const newExperienceWithCompany = await prisma.experience.findUnique({
     where: { id: createdExperience.id },
-    include: { 
+    include: {
       company: true,
       media: true
     },
@@ -33,7 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   })
   const updatedExperienceWithCompany = await prisma.experience.findUnique({
     where: { id: updatedExperience.id },
-    include: { 
+    include: {
       company: true,
       media: true
     },

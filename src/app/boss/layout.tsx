@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import {
   DashboardOutlined,
   SkinOutlined,
+  StarOutlined,
   LaptopOutlined,
   ReadOutlined,
   ToolOutlined,
@@ -20,6 +21,7 @@ const { Header, Sider, Content } = Layout;
 const menuItems = [
   { key: '/boss', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/boss/appearance', icon: <SkinOutlined />, label: 'Appearance' },
+  { key: '/boss/highlights', icon: <StarOutlined />, label: 'Highlights' },
   { key: '/boss/experiences', icon: <LaptopOutlined />, label: 'Experiences' },
   { key: '/boss/education', icon: <ReadOutlined />, label: 'Education' },
   { key: '/boss/skills', icon: <ToolOutlined />, label: 'Skills' },
@@ -51,15 +53,15 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
         <Header style={{ padding: '0 16px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div></div>
           <div>
-            <Button 
-              type="default" 
+            <Button
+              type="default"
               onClick={() => window.open('/', '_blank')}
               style={{ marginRight: '12px' }}
             >
               Preview
             </Button>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               danger
               onClick={() => signOut({ callbackUrl: '/' })}
               icon={<LogoutOutlined />}

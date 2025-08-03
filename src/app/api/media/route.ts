@@ -10,7 +10,8 @@ export async function GET() {
         experience: true,
         education: true,
         skill: true,
-        certification: true
+        certification: true,
+        highlight: true
       }
     })
     return NextResponse.json(media)

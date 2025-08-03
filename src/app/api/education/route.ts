@@ -6,14 +6,18 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    const education = await prisma.education.findMany()
+    const education = await prisma.education.findMany({
+      orderBy: {
+        startDate: 'desc'
+      }
+    })
     const media = await prisma.media.findMany()
-    
+
     const educationWithMedia = education.map(edu => ({
       ...edu,
       media: media.filter(m => m.educationId === edu.id)
     }))
-    
+
     return NextResponse.json(educationWithMedia)
   } catch (error) {
     console.error('Education API error:', error)

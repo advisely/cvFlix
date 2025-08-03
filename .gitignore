@@ -40,8 +40,18 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Prisma
 /src/generated/prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# Uploads - user generated content
+public/uploads/
 
 # Local environment variables
 .env
-\n# Dependency lock files\npackage-lock.json\nyarn.lock\npnpm-lock.yaml
+
+# Dependency lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

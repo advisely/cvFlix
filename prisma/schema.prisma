@@ -74,6 +74,35 @@ model Certification {
   media     Media[]
 }
 
+model Highlight {
+  id          String    @id @default(cuid())
+  title       String
+  company     String
+  startDate   DateTime
+  media       Media[]
+  createdAt   DateTime  @default(now())
+}
+
+model NavbarConfig {
+  id                String   @id @default(cuid())
+  logoText          String   @default("cvFlix")
+  logoImageUrl      String?
+  useImageLogo      Boolean  @default(false)
+  workExperienceLabel String @default("Work Experience")
+  careerSeriesLabel   String @default("Career Series")
+  educationLabel      String @default("Education")
+  certificationsLabel String @default("Certifications")
+  skillsLabel         String @default("Skills")
+  backgroundColor   String   @default("#141414")
+  backgroundType    String   @default("color") // "color", "gradient", "image"
+  backgroundImageUrl String?
+  gradientFrom      String   @default("#141414")
+  gradientTo        String   @default("#1a1a1a")
+  fontFamily        String   @default("Inter")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model Media {
   id              String         @id @default(cuid())
   url             String
@@ -82,9 +111,11 @@ model Media {
   educationId     String?
   skillId         String?
   certificationId String?
+  highlightId     String?
   createdAt       DateTime       @default(now())
   experience      Experience?    @relation(fields: [experienceId], references: [id])
   education       Education?     @relation(fields: [educationId], references: [id])
   skill           Skill?         @relation(fields: [skillId], references: [id])
   certification   Certification? @relation(fields: [certificationId], references: [id])
+  highlight       Highlight?     @relation(fields: [highlightId], references: [id])
 }
