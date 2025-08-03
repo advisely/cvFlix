@@ -10,6 +10,7 @@ import CertificationCard from '@/components/CertificationCard'
 import SkillCard from '@/components/SkillCard'
 import HighlightCard from '@/components/HighlightCard'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
+import Footer from '@/components/Footer'
 import type { Company, Experience, Education, Certification, Skill, Media } from '@prisma/client'
 
 interface Highlight {
@@ -285,6 +286,9 @@ export default function Home() {
           </Carousel>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </main>
   );
 }

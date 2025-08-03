@@ -25,6 +25,18 @@ interface NavbarConfig {
   fontFamily: string;
 }
 
+interface FooterConfig {
+  id: string;
+  logoText: string;
+  logoImageUrl: string | null;
+  useImageLogo: boolean;
+  copyrightText: string;
+  linkedinUrl: string | null;
+  showLinkedin: boolean;
+  backgroundColor: string;
+  textColor: string;
+}
+
 interface MediaItem {
   id: string;
   url: string;
@@ -38,23 +50,30 @@ const AppearancePage = () => {
   const [loading, setLoading] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [footerForm] = Form.useForm();
+  const [footerLoading, setFooterLoading] = useState(false);
   const [navbarConfig, setNavbarConfig] = useState<NavbarConfig | null>(null);
+  const [footerConfig, setFooterConfig] = useState<FooterConfig | null>(null);
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
   const [isBackgroundGalleryVisible, setIsBackgroundGalleryVisible] = useState(false);
+  const [isFooterGalleryVisible, setIsFooterGalleryVisible] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [navbarResponse, mediaResponse] = await Promise.all([
+        const [navbarResponse, footerResponse, mediaResponse] = await Promise.all([
           fetch('/api/navbar-config'),
+          fetch('/api/footer-config'),
           fetch('/api/media')
         ]);
 
         const config = await navbarResponse.json();
+        const footerConfigData = await footerResponse.json();
         const mediaData = await mediaResponse.json();
 
         setNavbarConfig(config);
+        setFooterConfig(footerConfigData);
 
         // Filter only images for logo selection
         const imageMedia = mediaData.filter((item: { type: string }) => item.type === 'image').map((item: { id: string; url: string; type: string }) => ({
@@ -85,6 +104,17 @@ const AppearancePage = () => {
           gradientFrom: config.gradientFrom,
           gradientTo: config.gradientTo,
           fontFamily: config.fontFamily
+        });
+
+        footerForm.setFieldsValue({
+          logoText: footerConfigData.logoText || "cvFlix",
+          useImageLogo: footerConfigData.useImageLogo || false,
+          logoImageUrl: footerConfigData.logoImageUrl || null,
+          copyrightText: footerConfigData.copyrightText || "© 2025 cvFlix. All rights reserved.",
+          linkedinUrl: footerConfigData.linkedinUrl || "",
+          showLinkedin: footerConfigData.showLinkedin !== undefined ? footerConfigData.showLinkedin : true,
+          backgroundColor: footerConfigData.backgroundColor || "#0a0a0a",
+          textColor: footerConfigData.textColor || "#ffffff"
         });
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -247,6 +277,70 @@ const AppearancePage = () => {
     backgroundForm.setFieldsValue({ backgroundImageUrl: selectedMedia.url });
     setIsBackgroundGalleryVisible(false);
     message.success('Background image selected from gallery!');
+  };
+
+  const handleFooterSave = async () => {
+    try {
+      setFooterLoading(true);
+      const values = await footerForm.validateFields();
+
+      const response = await fetch('/api/footer-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      if (response.ok) {
+        const updatedConfig = await response.json();
+        setFooterConfig(updatedConfig);
+        message.success('Footer configuration updated successfully!');
+      } else {
+        throw new Error('Failed to update footer configuration');
+      }
+    } catch (error) {
+      console.error('Failed to save footer config:', error);
+      message.error('Failed to save footer configuration');
+    } finally {
+      setFooterLoading(false);
+    }
+  };
+
+  const handleFooterImageUpload = async (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('You can only upload image files for the footer logo!');
+      return false;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('highlightId', 'footer-logo');
+
+      const response = await fetch('/api/upload/highlights', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      footerForm.setFieldsValue({ logoImageUrl: result.url });
+      message.success('Footer logo uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      message.error('Failed to upload footer logo');
+    }
+
+    return false;
+  };
+
+  const handleFooterGallerySelect = (selectedMedia: MediaItem) => {
+    footerForm.setFieldsValue({ logoImageUrl: selectedMedia.url });
+    setIsFooterGalleryVisible(false);
+    message.success('Footer logo selected from gallery!');
   };
 
   return (
@@ -558,6 +652,155 @@ const AppearancePage = () => {
         </Form>
       </Card>
 
+      {/* Footer Configuration Card */}
+      <Card
+        title="Footer Configuration"
+        style={{ marginTop: 24 }}
+        extra={
+          <Button
+            type="primary"
+            onClick={handleFooterSave}
+            loading={footerLoading}
+          >
+            Save Footer
+          </Button>
+        }
+      >
+        <p style={{ marginBottom: 16, color: '#666' }}>
+          Customize your footer with logo, copyright text, and social links.
+        </p>
+
+        <Form
+          form={footerForm}
+          layout="vertical"
+          onFinish={handleFooterSave}
+        >
+          <Form.Item
+            name="logoText"
+            label="Footer Logo Text"
+            rules={[{ required: true, message: 'Please enter footer logo text' }]}
+          >
+            <Input placeholder="e.g., cvFlix, MyPortfolio, John Doe" />
+          </Form.Item>
+
+          <Form.Item
+            name="useImageLogo"
+            label="Use Image Logo in Footer"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.useImageLogo !== currentValues.useImageLogo
+            }
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('useImageLogo') ? (
+                <Form.Item name="logoImageUrl" label="Footer Logo Image">
+                  <div>
+                    <Upload
+                      beforeUpload={handleFooterImageUpload}
+                      showUploadList={false}
+                      accept="image/*"
+                    >
+                      <Button icon={<UploadOutlined />}>Upload Footer Logo</Button>
+                    </Upload>
+                    <Button
+                      icon={<PictureOutlined />}
+                      onClick={() => setIsFooterGalleryVisible(true)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      Gallery
+                    </Button>
+
+                    {/* Preview current footer logo */}
+                    {footerForm.getFieldValue('logoImageUrl') && (
+                      <div style={{ marginTop: 16 }}>
+                        <p style={{ marginBottom: 8, fontWeight: 'bold' }}>Current Footer Logo:</p>
+                        <img
+                          src={footerForm.getFieldValue('logoImageUrl')}
+                          alt="Footer logo preview"
+                          style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }}
+                        />
+                        <Button
+                          type="text"
+                          danger
+                          icon={<CloseOutlined />}
+                          size="small"
+                          onClick={() => footerForm.setFieldsValue({ logoImageUrl: null })}
+                          style={{ marginLeft: 8 }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+
+          <Form.Item
+            name="copyrightText"
+            label="Copyright Text"
+            rules={[{ required: true, message: 'Please enter copyright text' }]}
+          >
+            <Input placeholder="e.g., © 2025 cvFlix. All rights reserved." />
+          </Form.Item>
+
+          <Form.Item
+            name="showLinkedin"
+            label="Show LinkedIn Icon"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.showLinkedin !== currentValues.showLinkedin
+            }
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('showLinkedin') ? (
+                <Form.Item
+                  name="linkedinUrl"
+                  label="LinkedIn Profile URL"
+                  rules={[
+                    { required: true, message: 'Please enter your LinkedIn URL' },
+                    { type: 'url', message: 'Please enter a valid URL' }
+                  ]}
+                >
+                  <Input placeholder="https://linkedin.com/in/your-profile" />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+
+          <Form.Item
+            name="backgroundColor"
+            label="Footer Background Color"
+            rules={[{ required: true, message: 'Please select a background color' }]}
+            initialValue="#0a0a0a"
+          >
+            <Input type="color" style={{ width: 100, height: 40 }} />
+          </Form.Item>
+
+          <Form.Item
+            name="textColor"
+            label="Footer Text Color"
+            rules={[{ required: true, message: 'Please select a text color' }]}
+            initialValue="#ffffff"
+          >
+            <Input type="color" style={{ width: 100, height: 40 }} />
+          </Form.Item>
+        </Form>
+      </Card>
+
       {/* Gallery Modal */}
       <Modal
         title="Select Logo from Gallery"
@@ -609,6 +852,35 @@ const AppearancePage = () => {
                 />
                 <div style={{ marginTop: '8px', textAlign: 'center' }}>
                   Background Option
+                </div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </Modal>
+
+      {/* Footer Gallery Modal */}
+      <Modal
+        title="Select Footer Logo from Gallery"
+        open={isFooterGalleryVisible}
+        onCancel={() => setIsFooterGalleryVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <Row gutter={[16, 16]}>
+          {allMedia.map((item) => (
+            <Col span={8} key={item.id}>
+              <div
+                onClick={() => handleFooterGallerySelect(item)}
+                style={{ cursor: 'pointer', border: '1px solid #d9d9d9', borderRadius: '4px', padding: '8px' }}
+              >
+                <Image
+                  src={item.url}
+                  alt="Gallery item"
+                  style={{ width: '100%', height: '100px', objectFit: 'cover' }}
+                />
+                <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                  Footer Logo Option
                 </div>
               </div>
             </Col>

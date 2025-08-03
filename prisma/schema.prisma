@@ -103,6 +103,20 @@ model NavbarConfig {
   updatedAt          DateTime @updatedAt
 }
 
+model FooterConfig {
+  id              String   @id @default(cuid())
+  logoText        String   @default("cvFlix")
+  logoImageUrl    String?
+  useImageLogo    Boolean  @default(false)
+  copyrightText   String   @default("© 2025 cvFlix. All rights reserved.")
+  linkedinUrl     String?
+  showLinkedin    Boolean  @default(true)
+  backgroundColor String   @default("#0a0a0a")
+  textColor       String   @default("#ffffff")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model Media {
   id              String         @id @default(cuid())
   url             String

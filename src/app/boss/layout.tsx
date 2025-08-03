@@ -5,6 +5,7 @@ import { Layout, Menu, Button } from 'antd';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import AdminFooter from '@/components/AdminFooter';
 import {
   DashboardOutlined,
   SkinOutlined,
@@ -71,10 +72,11 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </Header>
         <Content style={{ margin: '16px' }}>
-          <div style={{ padding: 24, minHeight: 'calc(100vh - 112px)', background: '#fff', borderRadius: '8px' }}>
+          <div style={{ padding: 24, minHeight: 'calc(100vh - 176px)', background: '#fff', borderRadius: '8px' }}>
             {children}
           </div>
         </Content>
+        <AdminFooter />
       </Layout>
     </Layout>
   );

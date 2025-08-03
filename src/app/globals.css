@@ -33,3 +33,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix for deprecated -ms-high-contrast warnings */
+@media (forced-colors: active) {
+  * {
+    forced-color-adjust: auto;
+  }
+}
+
+/* Suppress -ms-high-contrast deprecation warnings */
+@supports (-ms-high-contrast: active) {
+  * {
+    -ms-high-contrast-adjust: auto;
+  }
+}
