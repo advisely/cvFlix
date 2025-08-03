@@ -1,63 +1,217 @@
 # cvFlix - Netflix-inspired Resume Portfolio
 
-This is a [Next.js](https://nextjs.org) project that presents a professional resume in the style of the Netflix user interface. The platform features a content-manageable admin panel for easy updates without requiring code changes.
+A modern, interactive web application that presents a professional resume in the style of the Netflix user interface. Built with Next.js 15, TypeScript, and featuring a comprehensive admin panel for content management.
 
-## Key Features
+## 🎯 Key Features
 
-- Netflix-inspired UI with dark theme
-- Admin panel with full CRUD functionality for all resume sections
-- Responsive design that works on all device sizes
-- SQLite database with Prisma ORM
-- Secure authentication with NextAuth.js
-- Server-side rendering for fast page loads
+### Public Interface
+- **Netflix-inspired UI** with dark theme and smooth animations
+- **Responsive carousels** for browsing different content sections
+- **Movie cards** for single work experiences
+- **Series cards** for companies with multiple roles
+- **Skeleton loading states** for smooth user experience
+- **Mobile-first responsive design** that works on all devices
 
-## Project Structure
+### Admin Panel (`/boss`)
+- **Secure authentication** with NextAuth.js and bcrypt password hashing
+- **Full CRUD operations** for all resume sections:
+  - Work experiences with accomplishments and projects
+  - Education with media support
+  - Professional certifications with media
+  - Skills organized by categories with media
+  - Career highlights and achievements
+- **Media upload system** supporting images across all content types
+- **Appearance customization**:
+  - Logo configuration (text or image)
+  - Navigation label customization
+  - Background styling (color, gradient, or image)
+  - Font family selection
+- **Intuitive Ant Design interface** with modal forms and data tables
 
-- `src/app/` - Main application pages and API routes
-- `src/app/boss/` - Admin panel pages
-- `src/components/` - Reusable UI components
-- `src/lib/` - Utility functions and database client
-- `prisma/` - Database schema and seed scripts
+### Technical Features
+- **Next.js 15** with app directory structure
+- **TypeScript** for full type safety
+- **SQLite database** with Prisma ORM
+- **Tailwind CSS v4** for styling
+- **Embla Carousel** for smooth scrolling
+- **Server-side rendering** for optimal performance
+- **RESTful API** with comprehensive endpoints
 
-## Getting Started
+## 🚀 Getting Started
 
-First, install the dependencies:
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-```bash
-npm install
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/advisely/cvFlix.git
+   cd cvFlix
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
+   ```env
+   DATABASE_URL="file:./dev.db"
+   NEXTAUTH_SECRET="your-secret-key-here"
+   NEXTAUTH_URL="http://localhost:4001"
+   ```
+
+4. **Initialize the database**
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   npm run seed
+   ```
+
+5. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Access the application**
+   - Public site: [http://localhost:4001](http://localhost:4001)
+   - Admin panel: [http://localhost:4001/boss](http://localhost:4001/boss)
+
+### Default Admin Credentials
+- **Email:** admin@example.com
+- **Password:** password
+
+⚠️ **Important:** Change these credentials immediately after first login!
+
+## 📁 Project Structure
+
+```
+cvFlix/
+├── src/
+│   ├── app/                    # Next.js app directory
+│   │   ├── api/               # API routes
+│   │   ├── boss/              # Admin panel pages
+│   │   ├── globals.css        # Global styles
+│   │   ├── layout.tsx         # Root layout
+│   │   └── page.tsx           # Home page
+│   ├── components/            # Reusable UI components
+│   └── lib/                   # Utility functions
+├── prisma/                    # Database schema and migrations
+├── public/                    # Static assets
+└── docs/                      # Documentation
 ```
 
-Set up the database:
+## 🛠 Available Scripts
 
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
-npm run seed
+- `npm run dev` - Start development server on port 4001
+- `npm run build` - Build the application for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run seed` - Seed the database with initial data
+
+## 📊 Database Schema
+
+The application uses SQLite with Prisma ORM. Key models include:
+
+- **User** - Admin authentication
+- **Company** - Company information with logos
+- **Experience** - Work experiences with accomplishments and projects
+- **Education** - Educational background
+- **Certification** - Professional certifications
+- **Skill** - Technical and soft skills
+- **Highlight** - Career achievements
+- **NavbarConfig** - Appearance customization settings
+- **Media** - File uploads linked to all content types
+
+## 🎨 Customization
+
+### Appearance Settings
+Access the admin panel to customize:
+- Logo (text or image)
+- Navigation labels
+- Background styles (solid color, gradient, or image)
+- Font family
+- Color schemes
+
+### Content Management
+All content can be managed through the admin panel:
+- Add/edit/delete work experiences
+- Upload and manage media files
+- Organize skills by categories
+- Showcase career highlights
+- Update educational background
+- Manage certifications
+
+## 🔒 Security Features
+
+- **Secure authentication** with NextAuth.js
+- **Password hashing** using bcryptjs
+- **Protected API routes** requiring authentication
+- **Input validation** on all forms
+- **SQL injection prevention** with Prisma
+- **HTTPS enforcement** in production
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Set environment variables in Vercel dashboard
+4. Deploy automatically on every push to main
+
+### Environment Variables for Production
+```env
+DATABASE_URL="file:./prod.db"
+NEXTAUTH_SECRET="your-production-secret"
+NEXTAUTH_URL="https://your-domain.com"
 ```
 
-Run the development server:
+## 🧪 Testing
 
-```bash
-npm run dev
-```
+The application includes comprehensive testing:
+- **Unit tests** for components and utilities
+- **Integration tests** for API endpoints
+- **End-to-end tests** for user workflows
+- **Manual testing** across browsers and devices
 
-Open [http://localhost:4001](http://localhost:4001) with your browser to see the public site.
+## 📚 API Documentation
 
-Open [http://localhost:4001/boss](http://localhost:4001/boss) to access the admin panel.
+Comprehensive API documentation is available in [`docs/API_DOCS.md`](docs/API_DOCS.md).
 
-Default admin credentials: admin@example.com / password
+Key endpoints:
+- `GET /api/data` - Public resume data
+- `POST /api/auth/login` - Admin authentication
+- `GET /api/experiences` - Work experiences
+- `POST /api/upload` - Media uploads
+- `GET /api/navbar-config` - Appearance settings
 
-## Learn More
+## 🤝 Contributing
 
-To learn more about Next.js, take a look at the following resources:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📄 License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Deploy on Vercel
+## 🙏 Acknowledgments
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Netflix** for the UI/UX inspiration
+- **Next.js team** for the amazing framework
+- **Ant Design** for the comprehensive component library
+- **Prisma** for the excellent ORM
+- **Vercel** for seamless deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📞 Support
+
+For support, email support@cvflix.com or create an issue in the GitHub repository.
+
+---
+
+**Built with ❤️ using Next.js, TypeScript, and modern web technologies.**
