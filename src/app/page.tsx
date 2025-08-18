@@ -236,6 +236,7 @@ export default function Home() {
             <div 
               className="relative w-full h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden rounded-lg group cursor-pointer"
               onClick={() => {
+                if (isModalOpen) return;
                 setSelectedHighlight(highlights[0]);
                 setIsModalOpen(true);
               }}
@@ -372,7 +373,8 @@ export default function Home() {
       {/* Highlight Detail Modal - PROFESSIONAL SOLUTION */}
       <Modal
         open={isModalOpen}
-        onCancel={() => {
+        onCancel={(e) => {
+          e.stopPropagation();
           setIsModalOpen(false);
           setSelectedHighlight(null);
         }}
@@ -381,14 +383,9 @@ export default function Home() {
         style={{ maxWidth: '1000px', top: 0 }}
         centered
         maskClosable={true}
-        destroyOnHidden
+        destroyOnClose
         keyboard
         closable={true}
-        closeIcon={
-          <div className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-lg">
-            ✕
-          </div>
-        }
         styles={{
           body: { 
             padding: 0,
@@ -410,11 +407,14 @@ export default function Home() {
           }
         }}
         className="highlight-modal"
-        transitionName="slide-up"
-        maskTransitionName="fade"
+        // transitionName="slide-up"
+        // maskTransitionName="fade"
       >
         {selectedHighlight && (
-          <div className="relative w-full h-full flex items-center justify-center bg-black">
+          <div 
+            className="relative w-full h-full flex items-center justify-center bg-black"
+            onClick={(e) => e.stopPropagation()}
+          >
             {(() => {
               const cardMedia = selectedHighlight.cardMedia?.[0];
               
@@ -455,7 +455,8 @@ export default function Home() {
                     <div className="absolute top-4 right-4 flex gap-2">
                       {/* Pause Button */}
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const video = document.getElementById('modal-video') as HTMLVideoElement;
                           if (video) {
                             if (video.paused) {
@@ -472,7 +473,8 @@ export default function Home() {
                       
                       {/* Sound Button - RESTORED */}
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const video = document.getElementById('modal-video') as HTMLVideoElement;
                           if (video) {
                             video.muted = !video.muted;
