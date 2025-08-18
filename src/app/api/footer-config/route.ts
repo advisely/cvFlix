@@ -9,10 +9,10 @@ export async function GET() {
     if (!footerConfig) {
       footerConfig = await prisma.footerConfig.create({
         data: {
-          logoText: "cvFlix",
+          logoText: "resumeflex",
           logoImageUrl: null,
           useImageLogo: false,
-          copyrightText: "© 2025 cvFlix. All rights reserved.",
+          copyrightText: "© 2025 resumeflex. All rights reserved.",
           linkedinUrl: null,
           showLinkedin: true,
           backgroundColor: "#0a0a0a",
@@ -66,10 +66,10 @@ export async function PUT(request: NextRequest) {
       // Create new config
       footerConfig = await prisma.footerConfig.create({
         data: {
-          logoText: logoText || "cvFlix",
+          logoText: logoText || "resumeflex",
           logoImageUrl: logoImageUrl || null,
           useImageLogo: useImageLogo || false,
-          copyrightText: copyrightText || "© 2025 cvFlix. All rights reserved.",
+          copyrightText: copyrightText || "© 2025 resumeflex. All rights reserved.",
           linkedinUrl: linkedinUrl || null,
           showLinkedin: showLinkedin !== undefined ? showLinkedin : true,
           backgroundColor: backgroundColor || "#0a0a0a",

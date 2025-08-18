@@ -7,17 +7,25 @@ interface Highlight {
   id: string;
   title: string;
   company: string;
+  description?: string | null;
   startDate: string;
   createdAt: string;
 }
 
 interface HighlightCardProps {
-  highlight: Highlight & { media: Media[] };
+  highlight: Highlight & { 
+    media: Media[];
+    homepageMedia?: Media[];
+    cardMedia?: Media[];
+  };
+  onClick?: () => void;
 }
 
-const HighlightCard = ({ highlight }: HighlightCardProps) => {
+const HighlightCard = ({ highlight, onClick }: HighlightCardProps) => {
   const [imageError, setImageError] = useState(false);
-  const primaryMedia = highlight.media?.[0];
+  
+  // Prioritize homepageMedia, then fall back to legacy media
+  const primaryMedia = highlight.homepageMedia?.[0] || highlight.media?.[0];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -28,7 +36,10 @@ const HighlightCard = ({ highlight }: HighlightCardProps) => {
   };
 
   return (
-    <div className="relative w-full h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden rounded-lg group cursor-pointer">
+    <div 
+      className="relative w-full h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden rounded-lg group cursor-pointer"
+      onClick={onClick}
+    >
       {/* Background Media */}
       {primaryMedia && !imageError ? (
         primaryMedia.type === 'video' ? (

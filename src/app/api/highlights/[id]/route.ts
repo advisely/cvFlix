@@ -4,24 +4,38 @@ import { prisma } from '@/lib/prisma';
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json();
-    const { title, company, startDate } = body;
+    const { title, company, description, startDate } = body;
     const { id } = await params;
+
+    // Validate required fields
+    if (!title || !company || !startDate) {
+      return NextResponse.json(
+        { error: 'Title, company, and start date are required' },
+        { status: 400 }
+      );
+    }
 
     const highlight = await prisma.highlight.update({
       where: { id },
       data: {
         title,
         company,
+        description: description || null,
         startDate: new Date(startDate),
       },
       include: {
         media: true,
+        homepageMedia: true,
+        cardMedia: true,
       },
     });
 
     return NextResponse.json(highlight);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating highlight:', error);
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Highlight not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Failed to update highlight' }, { status: 500 });
   }
 }
@@ -30,9 +44,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params;
 
-    // First delete associated media
+    // Delete associated media from all relationships
     await prisma.media.deleteMany({
-      where: { highlightId: id },
+      where: {
+        OR: [
+          { highlightId: id },
+          { highlightHomepageId: id },
+          { highlightCardId: id }
+        ]
+      },
     });
 
     // Then delete the highlight
@@ -41,8 +61,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting highlight:', error);
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Highlight not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Failed to delete highlight' }, { status: 500 });
   }
 }

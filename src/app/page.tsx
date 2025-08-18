@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
+import { Modal } from 'antd';
 import MovieCard from '@/components/MovieCard'
 import SeriesCard from '@/components/SeriesCard'
 import { Carousel } from '@/components/Carousel'
@@ -9,6 +10,8 @@ import EducationCard from '@/components/EducationCard'
 import CertificationCard from '@/components/CertificationCard'
 import SkillCard from '@/components/SkillCard'
 import HighlightCard from '@/components/HighlightCard'
+import HighlightCardGrid from '@/components/HighlightCardGrid'
+import FloatingHighlightCard from '@/components/FloatingHighlightCard'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
 import Footer from '@/components/Footer'
 import type { Company, Experience, Education, Certification, Skill, Media } from '@prisma/client'
@@ -17,9 +20,12 @@ interface Highlight {
   id: string;
   title: string;
   company: string;
+  description?: string | null;
   startDate: string;
   createdAt: string;
   media: Media[];
+  homepageMedia?: Media[];
+  cardMedia?: Media[];
 }
 
 interface NavbarConfig {
@@ -52,6 +58,8 @@ export default function Home() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,7 +79,7 @@ export default function Home() {
           highlights: [],
           navbarConfig: {
             id: '',
-            logoText: 'cvFlix',
+            logoText: 'resumeflex',
             logoImageUrl: null,
             useImageLogo: false,
             workExperienceLabel: 'Work Experience',
@@ -114,7 +122,7 @@ export default function Home() {
     return (
       <main className="bg-[#141414] text-white min-h-screen">
         <div className="p-4 md:p-8">
-          <h1 className="text-3xl md:text-5xl font-bold mb-8 text-[#e50914]">cvFlix</h1>
+          <h1 className="text-3xl md:text-5xl font-bold mb-8 text-[#e50914]">resumeflex</h1>
           <p className="text-[#808080]">Failed to load data. Please try again later.</p>
         </div>
       </main>
@@ -227,8 +235,29 @@ export default function Home() {
         {/* Highlights Section - Cinematic placeholder */}
         {highlights && highlights.length > 0 && (
           <div className="mb-12">
-            <HighlightCard highlight={highlights[0]} />
+            <HighlightCard
+              highlight={highlights[0]}
+              onClick={() => {
+                setSelectedHighlight(highlights[0]);
+                setIsModalOpen(true);
+              }}
+            />
           </div>
+        )}
+
+        {/* Featured Highlights Grid - Using new FloatingHighlightCard */}
+        {highlights && highlights.length > 1 && (
+          <HighlightCardGrid
+            highlights={highlights.slice(1)} // Show all except the first one used in hero
+            title="Featured Highlights"
+            variant="default"
+            showActions={true}
+            gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
+            onCardClick={(highlight) => {
+              setSelectedHighlight(highlight);
+              setIsModalOpen(true);
+            }}
+          />
         )}
 
         <div id="work-experience" className="mb-8">
@@ -289,6 +318,44 @@ export default function Home() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Highlight Detail Modal */}
+      <Modal
+        open={isModalOpen}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedHighlight(null);
+        }}
+        footer={null}
+        width="95%"
+        style={{ maxWidth: 800 }}
+        centered
+        maskClosable
+        destroyOnHidden
+        keyboard
+        closable
+        styles={{
+          body: { padding: 0 },
+          mask: {
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(4px)'
+          }
+        }}
+        className="highlight-modal"
+        transitionName="slide-up"
+        maskTransitionName="fade"
+      >
+        {selectedHighlight && (
+          <div className="bg-transparent">
+            <FloatingHighlightCard
+              highlight={selectedHighlight}
+              variant="detailed"
+              showActions={false}
+              onClick={() => {}}
+            />
+          </div>
+        )}
+      </Modal>
     </main>
   );
 }

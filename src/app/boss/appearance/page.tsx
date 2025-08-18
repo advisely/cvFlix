@@ -346,7 +346,7 @@ const AppearancePage = () => {
   return (
     <div>
       <Title level={2}>Appearance</Title>
-      <p>Customize the look and feel of your cvFlix page.</p>
+      <p>Customize the look and feel of your resumeflex page.</p>
 
       {/* Logo Configuration Card */}
       <Card
@@ -376,7 +376,7 @@ const AppearancePage = () => {
             label="Logo Text"
             rules={[{ required: true, message: 'Please enter logo text' }]}
           >
-            <Input placeholder="e.g., cvFlix, MyPortfolio, John Doe" />
+            <Input placeholder="e.g., resumeflex, MyPortfolio, John Doe" />
           </Form.Item>
 
           <Form.Item
@@ -748,7 +748,7 @@ const AppearancePage = () => {
             label="Copyright Text"
             rules={[{ required: true, message: 'Please enter copyright text' }]}
           >
-            <Input placeholder="e.g., © 2025 cvFlix. All rights reserved." />
+            <Input placeholder="e.g., © 2025 resumeflex. All rights reserved." />
           </Form.Item>
 
           <Form.Item

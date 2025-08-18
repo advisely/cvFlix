@@ -56,8 +56,8 @@ export default function Footer() {
       <footer className="bg-black border-t border-gray-800 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-white font-bold text-lg">cvFlix</div>
-            <div className="text-gray-400 text-sm">© 2025 cvFlix. All rights reserved.</div>
+            <div className="text-white font-bold text-lg">resumeflex</div>
+            <div className="text-gray-400 text-sm">© 2025 resumeflex. All rights reserved.</div>
             <div className="flex items-center space-x-4">
               <a
                 href="#"

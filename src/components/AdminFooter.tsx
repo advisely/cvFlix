@@ -56,8 +56,8 @@ export default function AdminFooter() {
     return (
       <Footer style={{ textAlign: 'center', backgroundColor: '#f0f2f5', borderTop: '1px solid #d9d9d9' }}>
         <div className="flex justify-between items-center">
-          <span className="font-semibold text-gray-700">cvFlix</span>
-          <span className="text-gray-500 text-sm">© 2025 cvFlix. All rights reserved.</span>
+          <span className="font-semibold text-gray-700">resumeflex</span>
+          <span className="text-gray-500 text-sm">© 2025 resumeflex. All rights reserved.</span>
           <div className="flex items-center space-x-2">
             <a
               href="#"

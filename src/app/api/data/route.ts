@@ -31,6 +31,8 @@ export async function GET() {
 
     const highlights = await prisma.highlight.findMany({
       include: {
+        homepageMedia: true,
+        cardMedia: true,
         media: true,
       },
       orderBy: {
@@ -43,7 +45,7 @@ export async function GET() {
     if (!navbarConfig) {
       navbarConfig = await prisma.navbarConfig.create({
         data: {
-          logoText: "cvFlix",
+          logoText: "resumeflex",
           logoImageUrl: null,
           useImageLogo: false,
           workExperienceLabel: "Work Experience",

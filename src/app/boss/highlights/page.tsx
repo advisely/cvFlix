@@ -1,20 +1,27 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider } from 'antd';
 import { useEffect, useState } from 'react';
 import { HighlightWithMedia, MediaItem, MediaApiResponse } from './types';
 import dayjs from 'dayjs';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, TableOutlined, AppstoreOutlined, HomeOutlined, CreditCardOutlined } from '@ant-design/icons';
+import HighlightCardGrid from '@/components/HighlightCardGrid';
 
 const HighlightsPage = () => {
   const [highlights, setHighlights] = useState<HighlightWithMedia[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<HighlightWithMedia | null>(null);
   const [form] = Form.useForm();
-  const [media, setMedia] = useState<MediaItem[]>([]);
+
+  // Separate state for homepage and card media
+  const [homepageMedia, setHomepageMedia] = useState<MediaItem[]>([]);
+  const [cardMedia, setCardMedia] = useState<MediaItem[]>([]);
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
+
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
+  const [galleryType, setGalleryType] = useState<'homepage' | 'card'>('homepage');
   const [galleryHighlightId, setGalleryHighlightId] = useState<string | null>(null);
+  const [isCardView, setIsCardView] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,18 +32,23 @@ const HighlightsPage = () => {
       const highlightsData = await highlightsResponse.json();
       const mediaData = await mediaResponse.json();
 
-      // Filter media for highlights only and map to ensure proper typing
-      const highlightMediaData = mediaData
-        .filter((item: MediaApiResponse) => item.highlightId)
-        .map((item: MediaApiResponse) => ({
-          id: item.id,
-          url: item.url,
-          type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-          highlightId: item.highlightId || ''
-        }));
+      // Map all media data to ensure proper typing
+      const allMediaData = mediaData.map((item: MediaApiResponse) => ({
+        id: item.id,
+        url: item.url,
+        type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+        experienceId: item.experienceId || null,
+        educationId: item.educationId || null,
+        skillId: item.skillId || null,
+        certificationId: item.certificationId || null,
+        highlightId: item.highlightId || null,
+        highlightHomepageId: item.highlightHomepageId || null,
+        highlightCardId: item.highlightCardId || null,
+        createdAt: item.createdAt
+      }));
 
       setHighlights(highlightsData);
-      setAllMedia(highlightMediaData);
+      setAllMedia(allMediaData);
     };
 
     fetchData();
@@ -44,7 +56,8 @@ const HighlightsPage = () => {
 
   const handleAdd = () => {
     setEditingRecord(null);
-    setMedia([]);
+    setHomepageMedia([]);
+    setCardMedia([]);
     form.resetFields();
     setIsModalVisible(true);
   };
@@ -67,9 +80,9 @@ const HighlightsPage = () => {
       if (response.ok) {
         const result = await response.json();
 
-        // Save media for this highlight
-        if (media.length > 0) {
-          await Promise.all(media.map(async (item) => {
+        // Save homepage media
+        if (homepageMedia.length > 0) {
+          await Promise.all(homepageMedia.map(async (item) => {
             if (!item.id) { // New media
               await fetch('/api/media', {
                 method: 'POST',
@@ -77,7 +90,24 @@ const HighlightsPage = () => {
                 body: JSON.stringify({
                   url: item.url,
                   type: item.type,
-                  highlightId: result.id
+                  highlightHomepageId: result.id
+                })
+              });
+            }
+          }));
+        }
+
+        // Save card media
+        if (cardMedia.length > 0) {
+          await Promise.all(cardMedia.map(async (item) => {
+            if (!item.id) { // New media
+              await fetch('/api/media', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  url: item.url,
+                  type: item.type,
+                  highlightCardId: result.id
                 })
               });
             }
@@ -92,23 +122,26 @@ const HighlightsPage = () => {
         const highlightsData = await highlightsResponse.json();
         const mediaData = await mediaResponse.json();
 
-        // Filter and map media data to ensure proper typing
-        const highlightMediaData = mediaData
-          .filter((item: MediaApiResponse) => item.highlightId)
-          .map((item: MediaApiResponse) => ({
-            id: item.id,
-            url: item.url,
-            type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-            highlightId: item.highlightId || ''
-          }));
+        // Map all media data to ensure proper typing
+        const allMediaData = mediaData.map((item: MediaApiResponse) => ({
+          id: item.id,
+          url: item.url,
+          type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+          highlightId: item.highlightId,
+          highlightHomepageId: item.highlightHomepageId,
+          highlightCardId: item.highlightCardId,
+          createdAt: item.createdAt
+        }));
 
         setHighlights(highlightsData);
-        setAllMedia(highlightMediaData);
+        setAllMedia(allMediaData);
 
         setIsModalVisible(false);
+        message.success('Highlight saved successfully!');
       }
     } catch (error) {
       console.error('Failed to save highlight:', error);
+      message.error('Failed to save highlight');
     }
   };
 
@@ -119,18 +152,42 @@ const HighlightsPage = () => {
   const handleEdit = (record: HighlightWithMedia) => {
     setEditingRecord(record);
 
-    // Map the media to ensure proper typing
-    const mappedMedia = (record.media || []).map((item: MediaApiResponse) => ({
+    // Map homepage media
+    const mappedHomepageMedia = (record.homepageMedia || []).map((item: MediaApiResponse) => ({
       id: item.id,
       url: item.url,
       type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      highlightId: item.highlightId || record.id
+      experienceId: item.experienceId || null,
+      educationId: item.educationId || null,
+      skillId: item.skillId || null,
+      certificationId: item.certificationId || null,
+      highlightId: item.highlightId || null,
+      highlightHomepageId: item.highlightHomepageId || record.id,
+      highlightCardId: item.highlightCardId || null,
+      createdAt: item.createdAt
     }));
-    setMedia(mappedMedia);
+    setHomepageMedia(mappedHomepageMedia);
+
+    // Map card media
+    const mappedCardMedia = (record.cardMedia || []).map((item: MediaApiResponse) => ({
+      id: item.id,
+      url: item.url,
+      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+      experienceId: item.experienceId || null,
+      educationId: item.educationId || null,
+      skillId: item.skillId || null,
+      certificationId: item.certificationId || null,
+      highlightId: item.highlightId || null,
+      highlightHomepageId: item.highlightHomepageId || null,
+      highlightCardId: item.highlightCardId || record.id,
+      createdAt: item.createdAt
+    }));
+    setCardMedia(mappedCardMedia);
 
     form.setFieldsValue({
       title: record.title,
       company: record.company,
+      description: record.description,
       startDate: dayjs(record.startDate),
     });
     setIsModalVisible(true);
@@ -141,13 +198,15 @@ const HighlightsPage = () => {
       const response = await fetch(`/api/highlights/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setHighlights(highlights.filter(highlight => highlight.id !== id));
+        message.success('Highlight deleted successfully!');
       }
     } catch (error) {
       console.error('Failed to delete highlight:', error);
+      message.error('Failed to delete highlight');
     }
   };
 
-  const handleMediaUpload = async (file: File, highlightId: string) => {
+  const handleMediaUpload = async (file: File, highlightId: string, mediaType: 'homepage' | 'card') => {
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
 
@@ -179,7 +238,14 @@ const HighlightsPage = () => {
         id: '', // Will be set by backend
         url: result.url,
         type: isImage ? 'image' : 'video',
-        highlightId: highlightId === 'new' ? '' : highlightId
+        createdAt: new Date(),
+        experienceId: null,
+        educationId: null,
+        skillId: null,
+        certificationId: null,
+        highlightId: null,
+        highlightHomepageId: mediaType === 'homepage' ? (highlightId === 'new' ? '' : highlightId) : null,
+        highlightCardId: mediaType === 'card' ? (highlightId === 'new' ? '' : highlightId) : null
       };
 
       // If editing existing highlight, save media immediately
@@ -191,7 +257,10 @@ const HighlightsPage = () => {
             body: JSON.stringify({
               url: result.url,
               type: isImage ? 'image' : 'video',
-              highlightId: highlightId
+              ...(mediaType === 'homepage'
+                ? { highlightHomepageId: highlightId }
+                : { highlightCardId: highlightId }
+              )
             })
           });
 
@@ -207,14 +276,19 @@ const HighlightsPage = () => {
             const allMediaData = await allMediaResponse.json();
             const highlightsData = await highlightsResponse.json();
 
-            const mappedAllMedia = allMediaData
-              .filter((item: MediaApiResponse) => item.highlightId)
-              .map((item: MediaApiResponse) => ({
-                id: item.id,
-                url: item.url,
-                type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-                highlightId: item.highlightId || ''
-              }));
+            const mappedAllMedia = allMediaData.map((item: MediaApiResponse) => ({
+              id: item.id,
+              url: item.url,
+              type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+              experienceId: item.experienceId || null,
+              educationId: item.educationId || null,
+              skillId: item.skillId || null,
+              certificationId: item.certificationId || null,
+              highlightId: item.highlightId || null,
+              highlightHomepageId: item.highlightHomepageId || null,
+              highlightCardId: item.highlightCardId || null,
+              createdAt: item.createdAt
+            }));
             setAllMedia(mappedAllMedia);
             setHighlights(highlightsData);
           }
@@ -223,7 +297,13 @@ const HighlightsPage = () => {
         }
       }
 
-      setMedia([...media, newMedia]);
+      // Add to appropriate media state
+      if (mediaType === 'homepage') {
+        setHomepageMedia([...homepageMedia, newMedia]);
+      } else {
+        setCardMedia([...cardMedia, newMedia]);
+      }
+
       message.success('File uploaded successfully!');
 
     } catch (error) {
@@ -234,15 +314,9 @@ const HighlightsPage = () => {
     return false; // Prevent default upload behavior
   };
 
-  const handleGalleryOpen = (highlightId: string) => {
+  const handleGalleryOpen = (highlightId: string, mediaType: 'homepage' | 'card') => {
     setGalleryHighlightId(highlightId);
-    const highlightMedia = allMedia.filter(item => item.highlightId === highlightId).map(item => ({
-      id: item.id,
-      url: item.url,
-      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      highlightId: item.highlightId || ''
-    }));
-    setMedia(highlightMedia);
+    setGalleryType(mediaType);
     setIsGalleryVisible(true);
   };
 
@@ -250,31 +324,167 @@ const HighlightsPage = () => {
     return url.startsWith('blob:');
   };
 
-  const handleReupload = (item: MediaItem) => {
+  const handleReupload = (item: MediaItem, mediaType: 'homepage' | 'card') => {
     message.info('Please upload a new file to replace the broken image');
-    // This will trigger the upload dialog for this highlight
-    if (item.highlightId) {
-      handleGalleryOpen(item.highlightId);
+    const highlightId = item.highlightHomepageId || item.highlightCardId;
+    if (highlightId) {
+      handleGalleryOpen(highlightId, mediaType);
     }
   };
 
   const handleGallerySelect = (selectedMedia: MediaItem) => {
-    // Check if this media is already selected for this highlight
-    const isAlreadySelected = media.some(m => m.url === selectedMedia.url);
+    const mediaToAdd: MediaItem = {
+      ...selectedMedia,
+      ...(galleryType === 'homepage'
+        ? { highlightHomepageId: galleryHighlightId || '' }
+        : { highlightCardId: galleryHighlightId || '' }
+      )
+    };
+
+    // Check if this media is already selected for this type
+    const currentMedia = galleryType === 'homepage' ? homepageMedia : cardMedia;
+    const isAlreadySelected = currentMedia.some(m => m.url === selectedMedia.url);
+
     if (!isAlreadySelected) {
-      setMedia([...media, selectedMedia]);
+      if (galleryType === 'homepage') {
+        setHomepageMedia([...homepageMedia, mediaToAdd]);
+      } else {
+        setCardMedia([...cardMedia, mediaToAdd]);
+      }
     }
     setIsGalleryVisible(false);
   };
 
-  const handleMediaRemove = (mediaUrl: string) => {
-    setMedia(media.filter(m => m.url !== mediaUrl));
+  const handleMediaRemove = async (mediaUrl: string, mediaType: 'homepage' | 'card') => {
+    try {
+      // Find the media item to get its ID
+      const allMedia = mediaType === 'homepage' ? homepageMedia : cardMedia;
+      const mediaItem = allMedia.find(m => m.url === mediaUrl);
+
+      if (mediaItem?.id) {
+        // Delete from database
+        const response = await fetch(`/api/media/${mediaItem.id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete media from server');
+        }
+      }
+
+      // Remove from local state
+      if (mediaType === 'homepage') {
+        setHomepageMedia(homepageMedia.filter(m => m.url !== mediaUrl));
+      } else {
+        setCardMedia(cardMedia.filter(m => m.url !== mediaUrl));
+      }
+
+      message.success('Media removed successfully!');
+    } catch (error) {
+      console.error('Error removing media:', error);
+      message.error('Failed to remove media');
+    }
   };
+
+  const renderMediaGrid = (media: MediaItem[], mediaType: 'homepage' | 'card') => (
+    <Row gutter={[16, 16]}>
+      {media.map((item, index) => (
+        <Col key={`${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            {item.type === 'image' ? (
+              isBrokenBlobUrl(item.url) ? (
+                <div style={{
+                  width: '100%',
+                  height: 100,
+                  backgroundColor: '#ffe6e6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                  flexDirection: 'column',
+                  gap: 4
+                }}>
+                  <PictureOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
+                  <span style={{ fontSize: 12, color: '#ff4d4f' }}>Broken Image</span>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleReupload(item, mediaType)}
+                  >
+                    Re-upload
+                  </Button>
+                </div>
+              ) : (
+                <img
+                  src={item.url}
+                  alt={`${mediaType} media`}
+                  style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
+                />
+              )
+            ) : (
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: 100,
+                backgroundColor: '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+                overflow: 'hidden'
+              }}>
+                <video
+                  src={item.url}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  muted
+                />
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  pointerEvents: 'none'
+                }}>
+                  <PlayCircleOutlined style={{ fontSize: 24, color: 'white' }} />
+                </div>
+              </div>
+            )}
+            <Button
+              type="text"
+              danger
+              icon={<CloseOutlined />}
+              size="small"
+              style={{ position: 'absolute', top: 4, right: 4 }}
+              onClick={() => handleMediaRemove(item.url, mediaType)}
+            />
+          </div>
+        </Col>
+      ))}
+    </Row>
+  );
 
   const columns = [
     { title: 'Title', dataIndex: 'title', key: 'title' },
+    { title: "Description", dataIndex: "description", key: "description", render: (text: string) => text || "No description" },
     { title: 'Company', dataIndex: 'company', key: 'company' },
     { title: 'Start Date', dataIndex: 'startDate', key: 'startDate', render: (date: string) => dayjs(date).format('YYYY-MM-DD') },
+    {
+      title: 'Media',
+      key: 'media',
+      render: (_: unknown, record: HighlightWithMedia) => (
+        <div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            Homepage: {record.homepageMedia?.length || 0} | Card: {record.cardMedia?.length || 0}
+          </div>
+        </div>
+      ),
+    },
     {
       title: 'Action',
       key: 'action',
@@ -285,22 +495,149 @@ const HighlightsPage = () => {
         </span>
       ),
     },
-  ];
-
-  return (
+  ];return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button onClick={handleAdd} type="primary">
           Add Highlight
         </Button>
+
+        <div style={{
+          background: '#f5f5f5',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          border: '1px solid #d9d9d9',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+        }}>
+          <Space align="center">
+            <TableOutlined
+              style={{
+                color: !isCardView ? '#1890ff' : '#8c8c8c',
+                fontSize: '16px',
+                transition: 'color 0.3s ease'
+              }}
+            />
+            <Switch
+              checked={isCardView}
+              onChange={setIsCardView}
+              size="default"
+              style={{
+                background: isCardView ? '#1890ff' : '#d9d9d9'
+              }}
+            />
+            <AppstoreOutlined
+              style={{
+                color: isCardView ? '#1890ff' : '#8c8c8c',
+                fontSize: '16px',
+                transition: 'color 0.3s ease'
+              }}
+            />
+            <span style={{
+              marginLeft: 8,
+              color: '#333',
+              fontWeight: 500,
+              fontSize: '14px',
+              transition: 'color 0.3s ease'
+            }}>
+              {isCardView ? 'Card View' : 'Table View'}
+            </span>
+          </Space>
+        </div>
       </div>
-      <Table columns={columns} dataSource={highlights} rowKey="id" />
+
+      <div
+        className="view-container"
+        style={{
+          position: 'relative',
+          minHeight: '400px'
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            opacity: isCardView ? 1 : 0,
+            visibility: isCardView ? 'visible' : 'hidden',
+            transform: isCardView ? 'translateY(0px)' : 'translateY(20px)',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: isCardView ? 2 : 1
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #141414 0%, #1a1a1a 100%)',
+              padding: '32px',
+              borderRadius: '12px',
+              minHeight: '400px',
+              border: '1px solid #404040',
+              boxShadow: '0 12px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(229, 9, 20, 0.1)',
+              backdropFilter: 'blur(8px)'
+            }}
+          >
+            <HighlightCardGrid
+              highlights={highlights.map(highlight => ({
+                ...highlight,
+                media: [...(highlight.homepageMedia || []), ...(highlight.cardMedia || [])]
+              }))}
+              title=""
+              variant="detailed"
+              showActions={true}
+              gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
+              onCardClick={(highlight) => {
+                const originalHighlight = highlights.find(h => h.id === highlight.id);
+                if (originalHighlight) handleEdit(originalHighlight);
+              }}
+              onCardEdit={(highlight) => {
+                const originalHighlight = highlights.find(h => h.id === highlight.id);
+                if (originalHighlight) handleEdit(originalHighlight);
+              }}
+              onCardDelete={(highlight) => handleDelete(highlight.id)}
+            />
+          </div>
+        </div>
+
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            opacity: !isCardView ? 1 : 0,
+            visibility: !isCardView ? 'visible' : 'hidden',
+            transform: !isCardView ? 'translateY(0px)' : 'translateY(20px)',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: !isCardView ? 2 : 1
+          }}
+        >
+          <Table
+            columns={columns}
+            dataSource={highlights}
+            rowKey="id"
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.1)'
+            }}
+            pagination={{
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} highlights`
+            }}
+          />
+        </div>
+      </div>
+
       <Modal
         title={editingRecord ? 'Edit Highlight' : 'Add Highlight'}
         open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
-        width={800}
+        width={1000}
+        style={{ top: 20 }}
+        styles={{ body: { maxHeight: '80vh', overflowY: 'auto' } }}
       >
         <Form form={form} layout="vertical">
           <Form.Item name="title" label="Position Title" rules={[{ required: true }]}>
@@ -309,93 +646,111 @@ const HighlightsPage = () => {
           <Form.Item name="company" label="Company Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} placeholder="Optional description for this highlight" />
+          </Form.Item>
           <Form.Item name="startDate" label="Start Date" rules={[{ required: true }]}>
             <DatePicker />
           </Form.Item>
 
-          {/* Media Upload Section */}
-          <Form.Item label="Media">
-            <div>
-              <Upload
-                beforeUpload={(file) => {
-                  handleMediaUpload(file, editingRecord?.id || 'new');
-                  return false;
-                }}
-                showUploadList={false}
-                accept="image/*,video/*"
-              >
-                <Button icon={<UploadOutlined />}>Upload Image/Video</Button>
-              </Upload>
-              <Button
-                icon={<PictureOutlined />}
-                onClick={() => handleGalleryOpen(editingRecord?.id || 'new')}
-                style={{ marginLeft: 8 }}
-              >
-                Gallery
-              </Button>
+          <Divider />
 
-              {/* Preview of uploaded media */}
-              <div style={{ marginTop: 16 }}>
-                <Row gutter={[16, 16]}>
-                  {media.map(item => (
-                    <Col key={item.id} xs={12} sm={8} md={6} lg={4}>
-                      <div style={{ position: 'relative', marginBottom: 8 }}>
-                        {item.type === 'image' ? (
-                          isBrokenBlobUrl(item.url) ? (
-                            <div style={{
-                              width: '100%',
-                              height: 100,
-                              backgroundColor: '#ffe6e6',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: 4,
-                              flexDirection: 'column',
-                              gap: 4
-                            }}>
-                              <PictureOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
-                              <span style={{ fontSize: 12, color: '#ff4d4f' }}>Broken Image</span>
-                              <Button
-                                type="primary"
-                                size="small"
-                                onClick={() => handleReupload(item)}
-                              >
-                                Re-upload
-                              </Button>
-                            </div>
-                          ) : (
-                            <img
-                              src={item.url}
-                              alt="Highlight media"
-                              style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
-                            />
-                          )
-                        ) : (
-                          <div style={{ width: '100%', height: 100, backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-                            <PlayCircleOutlined style={{ fontSize: 24, color: '#666' }} />
-                          </div>
-                        )}
-                        <Button
-                          type="text"
-                          danger
-                          icon={<CloseOutlined />}
-                          size="small"
-                          style={{ position: 'absolute', top: 4, right: 4 }}
-                          onClick={() => handleMediaRemove(item.url)}
-                        />
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
+          {/* Homepage Media Section */}
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <HomeOutlined style={{ color: '#1890ff' }} />
+                <span>Homepage Media</span>
+                <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
+                  (For hero display on homepage)
+                </span>
               </div>
+            }
+            style={{ marginBottom: 24 }}
+            size="small"
+          >
+            <div>
+              <Space style={{ marginBottom: 16 }}>
+                <Upload
+                  beforeUpload={(file) => {
+                    handleMediaUpload(file, editingRecord?.id || 'new', 'homepage');
+                    return false;
+                  }}
+                  showUploadList={false}
+                  accept="image/*,video/*"
+                >
+                  <Button icon={<UploadOutlined />} type="primary">
+                    Upload Homepage Media
+                  </Button>
+                </Upload>
+                <Button
+                  icon={<PictureOutlined />}
+                  onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
+                >
+                  Gallery
+                </Button>
+              </Space>
+
+              {/* Preview of homepage media */}
+              {homepageMedia.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h4 style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>Homepage Media Preview:</h4>
+                  {renderMediaGrid(homepageMedia, 'homepage')}
+                </div>
+              )}
             </div>
-          </Form.Item>
+          </Card>
+
+          {/* Card Media Section */}
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CreditCardOutlined style={{ color: '#52c41a' }} />
+                <span>Card Media</span>
+                <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
+                  (For detailed popup card)
+                </span>
+              </div>
+            }
+            size="small"
+          >
+            <div>
+              <Space style={{ marginBottom: 16 }}>
+                <Upload
+                  beforeUpload={(file) => {
+                    handleMediaUpload(file, editingRecord?.id || 'new', 'card');
+                    return false;
+                  }}
+                  showUploadList={false}
+                  accept="image/*,video/*"
+                >
+                  <Button icon={<UploadOutlined />} style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}>
+                    Upload Card Media
+                  </Button>
+                </Upload>
+                <Button
+                  icon={<PictureOutlined />}
+                  onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
+                >
+                  Gallery
+                </Button>
+              </Space>
+
+              {/* Preview of card media */}
+              {cardMedia.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h4 style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>Card Media Preview:</h4>
+                  {renderMediaGrid(cardMedia, 'card')}
+                </div>
+              )}
+            </div>
+          </Card>
         </Form>
       </Modal>
 
       {/* Gallery Modal */}
       <Modal
-        title="Select from Gallery"
+        title={`Select ${galleryType === 'homepage' ? 'Homepage' : 'Card'} Media from Gallery`}
         open={isGalleryVisible}
         onCancel={() => setIsGalleryVisible(false)}
         footer={null}
@@ -406,13 +761,28 @@ const HighlightsPage = () => {
             <Col span={8} key={item.id}>
               <div
                 onClick={() => handleGallerySelect(item)}
-                style={{ cursor: 'pointer', border: '1px solid #d9d9d9', borderRadius: '4px', padding: '8px' }}
+                style={{
+                  cursor: 'pointer',
+                  border: '2px solid #d9d9d9',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = galleryType === 'homepage' ? '#1890ff' : '#52c41a';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#d9d9d9';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 {item.type === 'image' ? (
                   <Image
                     src={item.url}
                     alt="Gallery item"
                     style={{ width: '100%', height: '100px', objectFit: 'cover' }}
+                    preview={false}
                   />
                 ) : (
                   <div style={{
@@ -426,7 +796,12 @@ const HighlightsPage = () => {
                     <PlayCircleOutlined style={{ fontSize: '24px' }} />
                   </div>
                 )}
-                <div style={{ marginTop: '8px', textAlign: 'center' }}>
+                <div style={{
+                  marginTop: '8px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: '#666'
+                }}>
                   {item.type === 'image' ? 'Image' : 'Video'}
                 </div>
               </div>

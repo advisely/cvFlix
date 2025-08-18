@@ -6,14 +6,17 @@ import { Button, Modal, List, message, Spin } from 'antd';
 const CleanupBlobUrls = () => {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [blobUrls, setBlobUrls] = useState<any[]>([]);
+  const [blobUrls, setBlobUrls] = useState<Array<{
+    experienceId: string;
+    url: string;
+  }>>([]);
 
   const findBlobUrls = async () => {
     try {
       const response = await fetch('/api/cleanup-blob-urls');
       const data = await response.json();
       setBlobUrls(data.items || []);
-    } catch (error) {
+    } catch {
       message.error('Failed to find blob URLs');
     }
   };
@@ -28,7 +31,7 @@ const CleanupBlobUrls = () => {
       message.success(`Cleaned up ${data.deletedCount} broken blob URLs`);
       setBlobUrls([]);
       setVisible(false);
-    } catch (error) {
+    } catch {
       message.error('Failed to cleanup blob URLs');
     } finally {
       setLoading(false);
@@ -42,8 +45,8 @@ const CleanupBlobUrls = () => {
 
   return (
     <>
-      <Button 
-        type="dashed" 
+      <Button
+        type="dashed"
         danger
         onClick={handleOpen}
         style={{ marginLeft: 8 }}
@@ -59,10 +62,10 @@ const CleanupBlobUrls = () => {
           <Button key="cancel" onClick={() => setVisible(false)}>
             Cancel
           </Button>,
-          <Button 
-            key="cleanup" 
-            type="primary" 
-            danger 
+          <Button
+            key="cleanup"
+            type="primary"
+            danger
             onClick={cleanupBlobUrls}
             loading={loading}
             disabled={blobUrls.length === 0}
@@ -86,8 +89,8 @@ const CleanupBlobUrls = () => {
             )}
           />
           <p style={{ color: '#ff4d4f', marginTop: 16 }}>
-            <strong>Note:</strong> This will permanently remove these broken image records from the database. 
-            You'll need to re-upload actual images for these experiences.
+            <strong>Note:</strong> This will permanently remove these broken image records from the database.
+            You&apos;ll need to re-upload actual images for these experiences.
           </p>
         </Spin>
       </Modal>

@@ -2,19 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const highlightId = formData.get('highlightId') as string;
+    const mediaType = formData.get('mediaType') as string || 'legacy'; // 'homepage', 'card', or 'legacy'
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // Create directory for this highlight
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'highlights', highlightId);
+    if (!highlightId) {
+      return NextResponse.json({ error: 'Highlight ID is required' }, { status: 400 });
+    }
+
+    // Validate mediaType
+    if (!['legacy', 'homepage', 'card'].includes(mediaType)) {
+      return NextResponse.json({
+        error: 'MediaType must be one of: legacy, homepage, card'
+      }, { status: 400 });
+    }
+
+    // Create directory for this highlight with media type subdirectory
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'highlights', highlightId, mediaType);
     await mkdir(uploadDir, { recursive: true });
 
     // Generate unique filename
@@ -27,10 +40,46 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/highlights/${highlightId}/${fileName}`;
+    // Determine file type
+    const isVideo = file.type.startsWith('video/');
+    const fileType = isVideo ? 'video' : 'image';
 
-    return NextResponse.json({ url: publicUrl });
+    // Create public URL
+    const publicUrl = `/uploads/highlights/${highlightId}/${mediaType}/${fileName}`;
+
+    // Save media record to database with appropriate relationship
+    const mediaData: {
+      url: string;
+      type: string;
+      highlightId?: string;
+      highlightHomepageId?: string;
+      highlightCardId?: string;
+    } = {
+      url: publicUrl,
+      type: fileType,
+    };
+
+    switch (mediaType) {
+      case 'homepage':
+        mediaData.highlightHomepageId = highlightId;
+        break;
+      case 'card':
+        mediaData.highlightCardId = highlightId;
+        break;
+      default:
+        mediaData.highlightId = highlightId;
+    }
+
+    const media = await prisma.media.create({
+      data: mediaData,
+    });
+
+    return NextResponse.json({
+      url: publicUrl,
+      media: media,
+      type: fileType,
+      mediaType: mediaType
+    });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });

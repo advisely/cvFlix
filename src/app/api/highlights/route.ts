@@ -6,6 +6,8 @@ export async function GET() {
     const highlights = await prisma.highlight.findMany({
       include: {
         media: true,
+        homepageMedia: true,
+        cardMedia: true,
       },
       orderBy: {
         startDate: 'desc',
@@ -21,16 +23,27 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, company, startDate } = body;
+    const { title, company, description, startDate } = body;
+
+    // Validate required fields
+    if (!title || !company || !startDate) {
+      return NextResponse.json(
+        { error: 'Title, company, and start date are required' }, 
+        { status: 400 }
+      );
+    }
 
     const highlight = await prisma.highlight.create({
       data: {
         title,
         company,
+        description: description || null,
         startDate: new Date(startDate),
       },
       include: {
         media: true,
+        homepageMedia: true,
+        cardMedia: true,
       },
     });
 

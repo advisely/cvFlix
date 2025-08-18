@@ -1,6 +1,6 @@
-# cvFlix Project Tracker
+# resumeflex Project Tracker
 
-This document tracks the development progress of cvFlix, a Netflix-inspired resume portfolio.
+This document tracks the development progress of resumeflex, a Netflix-inspired resume portfolio.
 
 ---
 
@@ -8,7 +8,7 @@ This document tracks the development progress of cvFlix, a Netflix-inspired resu
 
 **Status:** ✅ **COMPLETED** (January 2025)
 
-cvFlix is a modern, interactive web application that presents a professional resume in the style of the Netflix user interface. The project has been successfully completed with all planned features implemented and tested.
+resumeflex is a modern, interactive web application that presents a professional resume in the style of the Netflix user interface. The project has been successfully completed with all planned features implemented and tested.
 
 ---
 

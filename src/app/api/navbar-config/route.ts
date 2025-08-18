@@ -9,7 +9,7 @@ export async function GET() {
     if (!navbarConfig) {
       navbarConfig = await prisma.navbarConfig.create({
         data: {
-          logoText: "cvFlix",
+          logoText: "resumeflex",
           logoImageUrl: null,
           useImageLogo: false,
           workExperienceLabel: "Work Experience",
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest) {
       // Create new config
       navbarConfig = await prisma.navbarConfig.create({
         data: {
-          logoText: logoText || "cvFlix",
+          logoText: logoText || "resumeflex",
           logoImageUrl: logoImageUrl || null,
           useImageLogo: useImageLogo || false,
           workExperienceLabel,

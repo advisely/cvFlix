@@ -1,0 +1,135 @@
+'use client'
+
+import { Row, Col, Typography, Empty, Spin } from 'antd';
+import FloatingHighlightCard from './FloatingHighlightCard';
+import type { Media } from '@prisma/client';
+
+const { Title } = Typography;
+
+interface Highlight {
+  id: string;
+  title: string;
+  company: string;
+  description?: string | null;
+  startDate: string;
+  createdAt: string;
+}
+
+interface HighlightCardGridProps {
+  highlights: (Highlight & { media: Media[] })[];
+  title?: string;
+  variant?: 'default' | 'compact' | 'detailed';
+  showActions?: boolean;
+  loading?: boolean;
+  onCardClick?: (highlight: Highlight & { media: Media[] }) => void;
+  onCardEdit?: (highlight: Highlight & { media: Media[] }) => void;
+  onCardDelete?: (highlight: Highlight & { media: Media[] }) => void;
+  gridProps?: {
+    xs?: number;
+    sm?: number;
+    md?: number;
+    lg?: number;
+    xl?: number;
+    xxl?: number;
+  };
+}
+
+const HighlightCardGrid = ({ 
+  highlights, 
+  title = "Highlights",
+  variant = 'default',
+  showActions = false,
+  loading = false,
+  onCardClick,
+  onCardEdit,
+  onCardDelete,
+  gridProps = { xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }
+}: HighlightCardGridProps) => {
+
+  if (loading) {
+    return (
+      <div className="mb-12">
+        {title && (
+          <Title level={2} className="!text-white mb-6">
+            {title}
+          </Title>
+        )}
+        <div className="text-center py-12">
+          <Spin size="large" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!highlights || highlights.length === 0) {
+    return (
+      <div className="mb-12">
+        {title && (
+          <Title level={2} className="!text-white mb-6">
+            {title}
+          </Title>
+        )}
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <span className="text-white/60">
+              No highlights available
+            </span>
+          }
+          className="py-12"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-12">
+      {title && (
+        <Title 
+          level={2} 
+          className="!text-white mb-6 !font-bold"
+          style={{ color: '#ffffff' }}
+        >
+          {title}
+        </Title>
+      )}
+      
+      <Row gutter={[24, 24]} className="px-2">
+        {highlights.map((highlight, index) => (
+          <Col key={highlight.id} {...gridProps}>
+            <div 
+              className="h-full"
+              style={{
+                animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
+              }}
+            >
+              <FloatingHighlightCard
+                highlight={highlight}
+                variant={variant}
+                showActions={showActions}
+                onClick={() => onCardClick?.(highlight)}
+                onEdit={() => onCardEdit?.(highlight)}
+                onDelete={() => onCardDelete?.(highlight)}
+              />
+            </div>
+          </Col>
+        ))}
+      </Row>
+      
+      <style jsx>{`
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default HighlightCardGrid;

@@ -1,6 +1,6 @@
-# cvFlix API Documentation
+# resumeflex API Documentation
 
-This document describes the comprehensive API endpoints available in the cvFlix application.
+This document describes the comprehensive API endpoints available in the resumeflex application.
 
 ## 🔐 Authentication
 

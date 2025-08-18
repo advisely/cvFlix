@@ -1,4 +1,4 @@
-# cvFlix - Netflix-inspired Resume Portfolio
+# resumeflex - Netflix-inspired Resume Portfolio
 
 A modern, interactive web application that presents a professional resume in the style of the Netflix user interface. Built with Next.js 15, TypeScript, and featuring a comprehensive admin panel for content management.
 
@@ -47,8 +47,8 @@ A modern, interactive web application that presents a professional resume in the
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/advisely/cvFlix.git
-   cd cvFlix
+   git clone https://github.com/advisely/resumeflex.git
+   cd resumeflex
    ```
 
 2. **Install dependencies**
@@ -89,7 +89,7 @@ A modern, interactive web application that presents a professional resume in the
 ## 📁 Project Structure
 
 ```
-cvFlix/
+resumeflex/
 ├── src/
 │   ├── app/                    # Next.js app directory
 │   │   ├── api/               # API routes
@@ -210,7 +210,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@cvflix.com or create an issue in the GitHub repository.
+For support, email support@resumeflex.com or create an issue in the GitHub repository.
 
 ---
 
