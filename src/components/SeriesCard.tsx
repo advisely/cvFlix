@@ -1,7 +1,7 @@
 
 import { Company, Experience, Media } from '@prisma/client'
 import { useState } from 'react'
-import { Modal } from './Modal'
+import { Modal } from 'antd'
 
 interface SeriesCardProps {
   company: Company & { experiences: (Experience & { media?: Media[] })[] }
@@ -9,6 +9,7 @@ interface SeriesCardProps {
 
 const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
   const [imageError, setImageError] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Present'
@@ -41,9 +42,24 @@ const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
   );
 
   return (
-    <Modal button={cardContent}>
-      <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full">
-        <h2 className="text-3xl font-bold mb-6 text-white">{company.name}</h2>
+    <>
+      <div onClick={() => setIsModalOpen(true)} className="cursor-pointer">
+        {cardContent}
+      </div>
+      
+      <Modal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={600}
+        centered
+        title={<span className="text-white">{company.name}</span>}
+        styles={{
+          content: { backgroundColor: '#303030' },
+          header: { backgroundColor: '#303030', borderBottom: '1px solid #404040' },
+          body: { backgroundColor: '#303030' }
+        }}
+      >
         <div className="space-y-6">
           {company.experiences.map((experience) => (
             <div key={experience.id} className="border-b border-gray-700 pb-4 last:border-b-0">
@@ -54,8 +70,8 @@ const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
             </div>
           ))}
         </div>
-      </div>
-    </Modal>
+      </Modal>
+    </>
   )
 }
 

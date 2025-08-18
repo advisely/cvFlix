@@ -2,14 +2,12 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { Modal } from 'antd';
 import MovieCard from '@/components/MovieCard'
 import SeriesCard from '@/components/SeriesCard'
 import { Carousel } from '@/components/Carousel'
 import EducationCard from '@/components/EducationCard'
 import CertificationCard from '@/components/CertificationCard'
 import SkillCard from '@/components/SkillCard'
-import HighlightCard from '@/components/HighlightCard'
 import HighlightCardGrid from '@/components/HighlightCardGrid'
 import FloatingHighlightCard from '@/components/FloatingHighlightCard'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
@@ -58,8 +56,6 @@ export default function Home() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -235,12 +231,9 @@ export default function Home() {
         {/* Highlights Section - Cinematic placeholder */}
         {highlights && highlights.length > 0 && (
           <div className="mb-12">
-            <HighlightCard
+            <FloatingHighlightCard
               highlight={highlights[0]}
-              onClick={() => {
-                setSelectedHighlight(highlights[0]);
-                setIsModalOpen(true);
-              }}
+              variant="detailed"
             />
           </div>
         )}
@@ -254,8 +247,7 @@ export default function Home() {
             showActions={true}
             gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
             onCardClick={(highlight) => {
-              setSelectedHighlight(highlight);
-              setIsModalOpen(true);
+              console.log('Highlight clicked:', highlight.title);
             }}
           />
         )}
@@ -319,43 +311,6 @@ export default function Home() {
       {/* Footer */}
       <Footer />
 
-      {/* Highlight Detail Modal */}
-      <Modal
-        open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false);
-          setSelectedHighlight(null);
-        }}
-        footer={null}
-        width="95%"
-        style={{ maxWidth: 800 }}
-        centered
-        maskClosable
-        destroyOnHidden
-        keyboard
-        closable
-        styles={{
-          body: { padding: 0 },
-          mask: {
-            backgroundColor: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(4px)'
-          }
-        }}
-        className="highlight-modal"
-        transitionName="slide-up"
-        maskTransitionName="fade"
-      >
-        {selectedHighlight && (
-          <div className="bg-transparent">
-            <FloatingHighlightCard
-              highlight={selectedHighlight}
-              variant="detailed"
-              showActions={false}
-              onClick={() => {}}
-            />
-          </div>
-        )}
-      </Modal>
     </main>
   );
 }

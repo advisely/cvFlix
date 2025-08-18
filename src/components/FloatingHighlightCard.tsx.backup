@@ -1,11 +1,9 @@
 'use client'
-import Image from 'next/image';
 
 import { useState } from 'react';
-import { Card, Typography, Button, Popconfirm } from 'antd';
+import { Card, Typography, Tag, Button, Popconfirm } from 'antd';
 import { PlayCircleOutlined, CalendarOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Media } from '@prisma/client';
-import MediaModal from './MediaModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -41,10 +39,11 @@ const FloatingHighlightCard = ({
 }: FloatingHighlightCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [isMediaModalVisible, setIsMediaModalVisible] = useState(false);
   
   // Prioritize cardMedia, then fall back to legacy media
   const primaryMedia = highlight.cardMedia?.[0] || highlight.media?.[0];
+  const relevantMedia = highlight.cardMedia?.length ? highlight.cardMedia : highlight.media;
+  const totalMediaCount = relevantMedia?.length || 0;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -69,13 +68,7 @@ const FloatingHighlightCard = ({
 
     if (primaryMedia.type === 'video' && !videoError) {
       return (
-        <div 
-          className="relative w-full h-64 overflow-hidden cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsMediaModalVisible(true);
-          }}
-        >
+        <div className="relative w-full h-64 overflow-hidden">
           <video
             className="w-full h-full object-cover"
             autoPlay
@@ -96,22 +89,19 @@ const FloatingHighlightCard = ({
 
     if (primaryMedia.type === 'image' && !imageError) {
       return (
-        <div 
-          className="relative w-full h-64 overflow-hidden cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsMediaModalVisible(true);
-          }}
-        >
-          <Image
+        <div className="relative w-full h-64 overflow-hidden">
+          <img
             src={primaryMedia.url}
             alt={highlight.title}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
             onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          {totalMediaCount > 1 && (
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1">
+              <Text className="text-white text-xs">+{totalMediaCount - 1}</Text>
+            </div>
+          )}
         </div>
       );
     }
@@ -120,8 +110,9 @@ const FloatingHighlightCard = ({
   };
 
   const cardClasses = `
-    group cursor-pointer transition-all duration-300 ease-out
-    shadow-lg hover:shadow-xl hover:shadow-[#e50914]/20
+    group cursor-pointer transition-all duration-500 ease-out
+    transform hover:scale-[1.03] hover:-translate-y-3
+    shadow-lg hover:shadow-2xl hover:shadow-[#e50914]/30
     border border-[#404040] hover:border-[#e50914]/50
     bg-[#303030] hover:bg-[#353535]
     rounded-xl overflow-hidden
@@ -186,6 +177,13 @@ const FloatingHighlightCard = ({
             </Text>
           </div>
           
+          {totalMediaCount > 0 && (
+            <Tag 
+              className="!bg-[#e50914]/10 !border-[#e50914]/30 !text-[#e50914] text-xs px-2 py-0.5"
+            >
+              {totalMediaCount} media
+            </Tag>
+          )}
         </div>
 
         {/* Actions */}
@@ -231,15 +229,11 @@ const FloatingHighlightCard = ({
         )}
       </div>
 
-      {/* Media Modal */}
-      {primaryMedia && (
-        <MediaModal
-          isVisible={isMediaModalVisible}
-          onClose={() => setIsMediaModalVisible(false)}
-          media={primaryMedia}
-          highlightTitle={highlight.title}
-        />
-      )}
+      {/* Floating hover effect */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute inset-0 rounded-xl shadow-2xl shadow-[#e50914]/10" />
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-[#e50914]/5 to-transparent" />
+      </div>
     </Card>
   );
 };
