@@ -383,7 +383,7 @@ export default function Home() {
         style={{ maxWidth: '1000px', top: 0 }}
         centered
         maskClosable={true}
-        destroyOnClose
+        destroyOnHidden
         keyboard
         closable={true}
         styles={{
