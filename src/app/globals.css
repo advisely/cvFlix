@@ -148,3 +148,119 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Performance-optimized floating card animations */
+.floating-card-optimized {
+  transition: transform 0.16s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform-origin: center;
+}
+
+.floating-card-optimized:hover {
+  transform: translateY(-8px) translateZ(0) scale(1.02);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(229, 9, 20, 0.3);
+}
+
+/* 60fps animation keyframes */
+@keyframes cardSlideInOptimized {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95) translateZ(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
+  }
+}
+
+@keyframes cardFloatOptimized {
+  0% {
+    transform: translateY(0) translateZ(0) scale(1);
+  }
+  100% {
+    transform: translateY(-8px) translateZ(0) scale(1.02);
+  }
+}
+
+/* Hardware-accelerated lazy loading skeleton */
+@keyframes pulseOptimized {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.01) translateZ(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
+}
+
+.skeleton-optimized {
+  animation: pulseOptimized 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+/* Performance hints for all media elements */
+video, img {
+  will-change: auto;
+  backface-visibility: hidden;
+}
+
+/* Optimized intersection observer targets */
+[data-card-id] {
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* GPU acceleration for grid layouts */
+.ant-row {
+  will-change: auto;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.ant-col {
+  will-change: auto;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Smooth modal transitions */
+.ant-modal {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.ant-modal-mask {
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+
+/* Touch optimization */
+@media (hover: none) and (pointer: coarse) {
+  .floating-card-optimized {
+    transition: transform 0.1s ease-out;
+  }
+  
+  .floating-card-optimized:active {
+    transform: scale(0.98) translateZ(0);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .floating-card-optimized,
+  [data-card-id],
+  .ant-modal {
+    transition: none !important;
+    animation: none !important;
+  }
+}

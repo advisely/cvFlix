@@ -584,7 +584,7 @@ const HighlightsPage = () => {
               title=""
               variant="detailed"
               showActions={true}
-              gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
+              gridProps={{ xs: 24, sm: 12, md: 12, lg: 8, xl: 6, xxl: 4 }}
               onCardClick={(highlight) => {
                 const originalHighlight = highlights.find(h => h.id === highlight.id);
                 if (originalHighlight) handleEdit(originalHighlight);

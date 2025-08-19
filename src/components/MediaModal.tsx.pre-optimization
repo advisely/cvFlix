@@ -1,0 +1,158 @@
+'use client'
+
+import { useState, useRef, useEffect } from 'react';
+import { Modal, Button } from 'antd';
+import { PauseCircleOutlined, PlayCircleOutlined, SoundOutlined, CloseOutlined } from '@ant-design/icons';
+import Image from 'next/image';
+import type { Media } from '@prisma/client';
+
+interface MediaModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  media: Media;
+  highlightTitle: string;
+}
+
+const MediaModal = ({ isVisible, onClose, media, highlightTitle }: MediaModalProps) => {
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (isVisible && videoRef.current && media.type === 'video') {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  }, [isVisible, media.type]);
+
+  const handlePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleMuteToggle = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const renderMedia = () => {
+    if (media.type === 'video') {
+      return (
+        <div className="relative w-full h-full flex items-center justify-center bg-black">
+          <video
+            ref={videoRef}
+            className="max-w-full max-h-full object-contain"
+            autoPlay
+            muted={isMuted}
+            loop
+            playsInline
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+          >
+            <source src={media.url} type="video/mp4" />
+          </video>
+          
+          {/* Video Controls */}
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
+            <Button
+              type="text"
+              icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+              onClick={handlePlayPause}
+              className="!text-white !bg-black/50 !border-0 hover:!bg-black/70 !w-8 !h-8 sm:!w-10 sm:!h-10 !rounded-full flex items-center justify-center touch-manipulation"
+              size="large"
+            />
+            <Button
+              type="text"
+              icon={<SoundOutlined />}
+              onClick={handleMuteToggle}
+              className={`!text-white !border-0 !w-8 !h-8 sm:!w-10 sm:!h-10 !rounded-full flex items-center justify-center touch-manipulation ${
+                isMuted ? '!bg-red-500/70 hover:!bg-red-600/70' : '!bg-black/50 hover:!bg-black/70'
+              }`}
+              size="large"
+            />
+            <Button
+              type="text"
+              icon={<CloseOutlined />}
+              onClick={onClose}
+              className="!text-white !bg-black/50 !border-0 hover:!bg-black/70 !w-8 !h-8 sm:!w-10 sm:!h-10 !rounded-full flex items-center justify-center touch-manipulation"
+              size="large"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    if (media.type === 'image') {
+      return (
+        <div className="relative w-full h-full flex items-center justify-center bg-black">
+          <Image
+            src={media.url}
+            alt={highlightTitle}
+            width={800}
+            height={600}
+            className="max-w-full max-h-full object-contain"
+          />
+          
+          {/* Image Controls */}
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
+            <Button
+              type="text"
+              icon={<CloseOutlined />}
+              onClick={onClose}
+              className="!text-white !bg-black/50 !border-0 hover:!bg-black/70 !w-8 !h-8 sm:!w-10 sm:!h-10 !rounded-full flex items-center justify-center touch-manipulation"
+              size="large"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <Modal
+      open={isVisible}
+      onCancel={onClose}
+      footer={null}
+      closable={false}
+      centered
+      width="95vw"
+      style={{ 
+        maxWidth: '1000px',
+        top: 0,
+      }}
+      styles={{
+        body: { 
+          padding: 0,
+          height: '70vh',
+          maxHeight: '800px',
+          minHeight: '400px',
+          backgroundColor: '#000',
+          borderRadius: '12px',
+          overflow: 'hidden'
+        },
+        content: {
+          backgroundColor: '#000',
+          borderRadius: '12px',
+          overflow: 'hidden'
+        },
+        mask: { 
+          backgroundColor: 'rgba(0, 0, 0, 0.85)' 
+        }
+      }}
+    >
+      {renderMedia()}
+    </Modal>
+  );
+};
+
+export default MediaModal;

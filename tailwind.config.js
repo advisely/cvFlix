@@ -40,6 +40,16 @@ module.exports = {
       boxShadow: {
         'netflix': '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(229, 9, 20, 0.1)',
         'netflix-hover': '0 16px 64px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(229, 9, 20, 0.3)',
+        'mobile': '0 4px 16px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(229, 9, 20, 0.1)',
+        'mobile-hover': '0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(229, 9, 20, 0.2)',
+      },
+      screens: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
       },
     },
   },

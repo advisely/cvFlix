@@ -68,6 +68,14 @@ Transform the cvFlix highlights management system from basic text/image editing 
 - Table-based management interface
 - Modal-based editing system
 
+### Current Project Status: 🟡 IN PROGRESS
+
+#### Recent Progress Update (From GEMINI.md)
+- ✅ **Foundation Complete**: Database schema and API endpoints updated with description field support
+- ✅ **Floating Card Component**: `FloatingHighlightCard.tsx` component created and under development
+- 🟡 **Frontend Debugging**: Addressing UI functionality issues (non-responsive close button on highlight modal)
+- 🟡 **Integration Phase**: Ensuring seamless operation with existing highlights functionality
+
 ### Identified Enhancement Areas 🎯
 - **UI/UX Enhancement**: Floating card interface with shadow/elevation
 - **Extended Fields**: Description of mandate/role responsibilities
