@@ -1,9 +1,8 @@
-
 'use client'
 
 import { useEffect, useState } from 'react';
 import { Modal } from 'antd';
-import MovieCard from '@/components/MovieCard'
+import ExperienceCard from '@/components/ExperienceCard'
 import SeriesCard from '@/components/SeriesCard'
 import { Carousel } from '@/components/Carousel'
 import EducationCard from '@/components/EducationCard'
@@ -12,7 +11,8 @@ import SkillCard from '@/components/SkillCard'
 import HighlightCardGrid from '@/components/HighlightCardGrid'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
 import Footer from '@/components/Footer'
-import type { Company, Experience, Education, Certification, Skill, Media } from '@prisma/client'
+import FloatingExperienceCard from '@/components/FloatingExperienceCard';
+import type { Company, Education, Certification, Skill, Media } from '@prisma/client'
 
 interface Highlight {
   id: string;
@@ -24,6 +24,19 @@ interface Highlight {
   media: Media[];
   homepageMedia?: Media[];
   cardMedia?: Media[];
+}
+
+interface Experience {
+    id: string;
+    title: string;
+    company: Company;
+    description?: string | null;
+    startDate: string;
+    endDate?: string | null;
+    createdAt: string;
+    media: Media[];
+    homepageMedia?: Media[];
+    cardMedia?: Media[];
 }
 
 interface NavbarConfig {
@@ -57,7 +70,9 @@ export default function Home() {
 
   const [loading, setLoading] = useState(true);
   const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [isHighlightModalOpen, setIsHighlightModalOpen] = useState(false);
+  const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +82,6 @@ export default function Home() {
         setData(result);
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        // Fallback to empty data to show empty sections
         setData({
           singleExperiences: [],
           seriesExperiences: [],
@@ -136,7 +150,6 @@ export default function Home() {
     }
   };
 
-  // Generate dynamic background style
   const getBackgroundStyle = () => {
     switch (navbarConfig.backgroundType) {
       case 'gradient':
@@ -164,10 +177,8 @@ export default function Home() {
       }}
     >
       <div className="p-4 md:p-8">
-        {/* Header with Logo and Navigation - Transparent */}
         <header className="mb-8 p-4 bg-transparent">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Logo */}
             <div className="flex-shrink-0">
               {navbarConfig.useImageLogo && navbarConfig.logoImageUrl ? (
                 <img
@@ -182,7 +193,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Navigation */}
             <nav className="flex-grow">
               <ul className="flex flex-wrap gap-4 md:gap-6 justify-center md:justify-end">
                 <li>
@@ -230,18 +240,16 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Highlights Section - Homepage Hero Card */}
         {highlights && highlights.length > 0 && (
           <div className="mb-12">
             <div 
               className="relative w-full h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden rounded-lg group cursor-pointer"
               onClick={() => {
-                if (isModalOpen) return;
+                if (isHighlightModalOpen) return;
                 setSelectedHighlight(highlights[0]);
-                setIsModalOpen(true);
+                setIsHighlightModalOpen(true);
               }}
             >
-              {/* Background Image (Homepage Media) */}
               {(() => {
                 const homepageImage = highlights[0].homepageMedia?.[0];
                 if (homepageImage && homepageImage.type === 'image') {
@@ -253,7 +261,6 @@ export default function Home() {
                     />
                   );
                 }
-                // Fallback to generic background if no homepage image
                 return (
                   <div className="absolute inset-0 bg-gradient-to-br from-[#333] to-[#111] flex items-center justify-center">
                     <div className="text-center text-white/60">
@@ -264,10 +271,8 @@ export default function Home() {
                 );
               })()}
 
-              {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              {/* Content Overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                 <div className="text-white">
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight">
@@ -291,16 +296,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Hover Effect */}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
           </div>
         )}
 
-        {/* Featured Highlights Grid - Using new FloatingHighlightCard */}
         {highlights && highlights.length > 1 && (
           <HighlightCardGrid
-            highlights={highlights.slice(1)} // Show all except the first one used in hero
+            highlights={highlights.slice(1)}
             title="Featured Highlights"
             variant="default"
             showActions={true}
@@ -316,7 +319,13 @@ export default function Home() {
           <Carousel>
             {singleExperiences.map((company: Company & { experiences: Experience[] }) => (
               <div key={company.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                <MovieCard experience={{ ...company.experiences[0], company }} />
+                <ExperienceCard 
+                    experience={{ ...company.experiences[0], company }} 
+                    onClick={() => {
+                        setSelectedExperience({ ...company.experiences[0], company });
+                        setIsExperienceModalOpen(true);
+                    }}
+                />
               </div>
             ))}
           </Carousel>
@@ -367,15 +376,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer */}
       <Footer />
 
-      {/* Highlight Detail Modal - PROFESSIONAL SOLUTION */}
       <Modal
-        open={isModalOpen}
+        open={isHighlightModalOpen}
         onCancel={(e) => {
           e.stopPropagation();
-          setIsModalOpen(false);
+          setIsHighlightModalOpen(false);
           setSelectedHighlight(null);
         }}
         footer={null}
@@ -407,8 +414,6 @@ export default function Home() {
           }
         }}
         className="highlight-modal"
-        // transitionName="slide-up"
-        // maskTransitionName="fade"
       >
         {selectedHighlight && (
           <div 
@@ -451,9 +456,7 @@ export default function Home() {
                       <source src={cardMedia.url} type="video/mp4" />
                     </video>
                     
-                    {/* Video Controls - Clean Implementation */}
                     <div className="absolute top-4 right-4 flex gap-2">
-                      {/* Pause Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -471,14 +474,12 @@ export default function Home() {
                         ⏸️
                       </button>
                       
-                      {/* Sound Button - RESTORED */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           const video = document.getElementById('modal-video') as HTMLVideoElement;
                           if (video) {
                             video.muted = !video.muted;
-                            // Update button appearance based on mute state
                             const btn = document.getElementById('modal-mute-btn');
                             if (btn) {
                               btn.style.backgroundColor = video.muted ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 0, 0, 0.5)';
@@ -492,7 +493,6 @@ export default function Home() {
                       </button>
                     </div>
 
-                    {/* Text Overlay for Video */}
                     <div className="absolute bottom-4 left-4 right-4 text-white bg-black/50 backdrop-blur-sm rounded-lg p-4">
                       <h3 className="text-lg font-bold mb-1">{selectedHighlight.title}</h3>
                       <p className="text-sm text-white/90 mb-1">{selectedHighlight.company}</p>
@@ -520,7 +520,6 @@ export default function Home() {
                       className="max-w-full max-h-full object-contain"
                     />
 
-                    {/* Text Overlay for Image */}
                     <div className="absolute bottom-4 left-4 right-4 text-white bg-black/50 backdrop-blur-sm rounded-lg p-4">
                       <h3 className="text-lg font-bold mb-1">{selectedHighlight.title}</h3>
                       <p className="text-sm text-white/90 mb-1">{selectedHighlight.company}</p>
@@ -544,6 +543,43 @@ export default function Home() {
           </div>
         )}
       </Modal>
+
+      <Modal
+        open={isExperienceModalOpen}
+        onCancel={() => setIsExperienceModalOpen(false)}
+        footer={null}
+        width="90vw"
+        style={{ maxWidth: '1000px', top: 0 }}
+        centered
+        maskClosable={true}
+        destroyOnHidden
+        keyboard
+        closable={true}
+        styles={{
+          body: { 
+            padding: 0,
+            height: '75vh',
+            maxHeight: '800px',
+            minHeight: '500px',
+            backgroundColor: '#000',
+            borderRadius: '12px',
+            overflow: 'hidden'
+          },
+          content: {
+            backgroundColor: '#000',
+            borderRadius: '12px',
+            overflow: 'hidden'
+          },
+          mask: {
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(4px)'
+          }
+        }}
+        className="experience-modal"
+      >
+        {selectedExperience && <FloatingExperienceCard experience={selectedExperience} />}
+      </Modal>
+
     </main>
   );
 }

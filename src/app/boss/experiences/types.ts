@@ -1,6 +1,11 @@
 import { Experience, Company, Media } from '@prisma/client';
 
-export type ExperienceWithCompany = Experience & { company: Company; media?: Media[] };
+export type ExperienceWithCompany = Experience & {
+  company: Company;
+  media?: Media[];
+  homepageMedia?: Media[];
+  cardMedia?: Media[];
+};
 
 export interface ExperienceFormData {
   title: string;

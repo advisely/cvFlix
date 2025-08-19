@@ -2,7 +2,7 @@
 
 import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Image, Row, Col } from 'antd';
 import { useEffect, useState } from 'react';
-import { Company, Experience } from '@prisma/client';
+import { Company } from '@prisma/client';
 import { ExperienceWithCompany, MediaItem, MediaApiResponse } from './types';
 import dayjs from 'dayjs';
 import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
@@ -14,10 +14,12 @@ const ExperiencesPage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ExperienceWithCompany | null>(null);
   const [form] = Form.useForm();
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [homepageMedia, setHomepageMedia] = useState<MediaItem[]>([]);
+  const [cardMedia, setCardMedia] = useState<MediaItem[]>([]);
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
-  const [galleryExperienceId, setGalleryExperienceId] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'homepage' | 'card'>('homepage');
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,7 +32,6 @@ const ExperiencesPage = () => {
       const compData = await compResponse.json();
       const mediaData = await mediaResponse.json();
 
-      // Map media data to ensure proper typing
       const mappedMediaData = mediaData.map((item: MediaApiResponse) => ({
         id: item.id,
         url: item.url,
@@ -48,8 +49,33 @@ const ExperiencesPage = () => {
 
   const handleAdd = () => {
     setEditingRecord(null);
-    setMedia([]);
+    setHomepageMedia([]);
+    setCardMedia([]);
     form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  const handleEdit = (record: ExperienceWithCompany) => {
+    setEditingRecord(record);
+
+    const getMediaFor = (relation?: { id: string; url: string; type: string }[]) =>
+      (relation || []).map((item) => ({
+        id: item.id,
+        url: item.url,
+        type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+        experienceId: record.id
+      }));
+
+    setHomepageMedia(getMediaFor(record.homepageMedia));
+    setCardMedia(getMediaFor(record.cardMedia));
+
+    form.setFieldsValue({
+      title: record.title,
+      companyId: record.companyId,
+      description: record.description,
+      startDate: dayjs(record.startDate),
+      endDate: record.endDate ? dayjs(record.endDate) : null,
+    });
     setIsModalVisible(true);
   };
 
@@ -59,37 +85,21 @@ const ExperiencesPage = () => {
       const url = editingRecord ? `/api/experiences/${editingRecord.id}` : '/api/experiences';
       const method = editingRecord ? 'PUT' : 'POST';
 
+      const experienceData = {
+        ...values,
+        startDate: values.startDate.toISOString(),
+        endDate: values.endDate ? values.endDate.toISOString() : null,
+        homepageMedia: homepageMedia.map(m => ({ id: m.id, url: m.url, type: m.type })),
+        cardMedia: cardMedia.map(m => ({ id: m.id, url: m.url, type: m.type }))
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          startDate: values.startDate.toISOString(),
-          endDate: values.endDate ? values.endDate.toISOString() : null,
-        }),
+        body: JSON.stringify(experienceData),
       });
 
       if (response.ok) {
-        const result = await response.json();
-
-        // Save media for this experience
-        if (media.length > 0) {
-          await Promise.all(media.map(async (item) => {
-            if (!item.id) { // New media
-              await fetch('/api/media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  url: item.url,
-                  type: item.type,
-                  experienceId: result.id
-                })
-              });
-            }
-          }));
-        }
-
-        // Refresh data
         const [expResponse, mediaResponse] = await Promise.all([
           fetch('/api/experiences'),
           fetch('/api/media')
@@ -97,7 +107,6 @@ const ExperiencesPage = () => {
         const expData = await expResponse.json();
         const mediaData = await mediaResponse.json();
 
-        // Map media data to ensure proper typing
         const mappedMediaData = mediaData.map((item: MediaApiResponse) => ({
           id: item.id,
           url: item.url,
@@ -109,36 +118,18 @@ const ExperiencesPage = () => {
         setAllMedia(mappedMediaData);
 
         setIsModalVisible(false);
+      } else {
+        const errorData = await response.json();
+        message.error(`Failed to save experience: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Failed to save experience:', error);
+      message.error('An unexpected error occurred.');
     }
   };
 
   const handleCancel = () => {
     setIsModalVisible(false);
-  };
-
-  const handleEdit = (record: ExperienceWithCompany) => {
-    setEditingRecord(record);
-
-    // Map the media to ensure proper typing
-    const mappedMedia = (record.media || []).map((item: MediaApiResponse) => ({
-      id: item.id,
-      url: item.url,
-      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      experienceId: item.experienceId || record.id
-    }));
-    setMedia(mappedMedia);
-
-    form.setFieldsValue({
-      title: record.title,
-      companyId: record.companyId,
-      description: record.description,
-      startDate: dayjs(record.startDate),
-      endDate: record.endDate ? dayjs(record.endDate) : null,
-    });
-    setIsModalVisible(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -152,7 +143,7 @@ const ExperiencesPage = () => {
     }
   };
 
-  const handleMediaUpload = async (file: File, experienceId: string) => {
+  const handleMediaUpload = async (file: File, experienceId: string, type: 'homepage' | 'card') => {
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
 
@@ -162,12 +153,10 @@ const ExperiencesPage = () => {
     }
 
     try {
-      // Create form data for upload
       const formData = new FormData();
       formData.append('file', file);
       formData.append('experienceId', experienceId === 'new' ? 'temp' : experienceId);
 
-      // Upload to server
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -181,52 +170,15 @@ const ExperiencesPage = () => {
       const result = await response.json();
 
       const newMedia: MediaItem = {
-        id: '', // Will be set by backend
+        id: '',
         url: result.url,
         type: isImage ? 'image' : 'video',
         experienceId: experienceId === 'new' ? '' : experienceId
       };
 
-      // If editing existing experience, save media immediately
-      if (experienceId !== 'new') {
-        try {
-          const mediaResponse = await fetch('/api/media', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              url: result.url,
-              type: isImage ? 'image' : 'video',
-              experienceId: experienceId
-            })
-          });
+      if (type === 'homepage') setHomepageMedia([...homepageMedia, newMedia]);
+      if (type === 'card') setCardMedia([...cardMedia, newMedia]);
 
-          if (mediaResponse.ok) {
-            const savedMedia = await mediaResponse.json();
-            newMedia.id = savedMedia.id;
-
-            // Refresh all media and experiences
-            const [allMediaResponse, expResponse] = await Promise.all([
-              fetch('/api/media'),
-              fetch('/api/experiences')
-            ]);
-            const allMediaData = await allMediaResponse.json();
-            const expData = await expResponse.json();
-
-            const mappedAllMedia = allMediaData.map((item: MediaApiResponse) => ({
-              id: item.id,
-              url: item.url,
-              type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-              experienceId: item.experienceId || ''
-            }));
-            setAllMedia(mappedAllMedia);
-            setExperiences(expData);
-          }
-        } catch (mediaError) {
-          console.error('Failed to save media to database:', mediaError);
-        }
-      }
-
-      setMedia([...media, newMedia]);
       message.success('File uploaded successfully!');
 
     } catch (error) {
@@ -234,44 +186,23 @@ const ExperiencesPage = () => {
       message.error('Failed to upload file');
     }
 
-    return false; // Prevent default upload behavior
+    return false;
   };
 
-  const handleGalleryOpen = (experienceId: string) => {
-    setGalleryExperienceId(experienceId);
-    const experienceMedia = allMedia.filter(item => item.experienceId === experienceId).map(item => ({
-      id: item.id,
-      url: item.url,
-      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      experienceId: item.experienceId || ''
-    }));
-    setMedia(experienceMedia);
+  const handleGalleryOpen = (_experienceId: string, type: 'homepage' | 'card') => {
+    setMediaType(type);
     setIsGalleryVisible(true);
   };
 
-  const isBrokenBlobUrl = (url: string) => {
-    return url.startsWith('blob:');
-  };
-
-  const handleReupload = (item: MediaItem) => {
-    message.info('Please upload a new file to replace the broken image');
-    // This will trigger the upload dialog for this experience
-    if (item.experienceId) {
-      handleGalleryOpen(item.experienceId);
-    }
-  };
-
   const handleGallerySelect = (selectedMedia: MediaItem) => {
-    // Check if this media is already selected for this experience
-    const isAlreadySelected = media.some(m => m.url === selectedMedia.url);
-    if (!isAlreadySelected) {
-      setMedia([...media, selectedMedia]);
-    }
+    if (mediaType === 'homepage') setHomepageMedia([...homepageMedia, selectedMedia]);
+    if (mediaType === 'card') setCardMedia([...cardMedia, selectedMedia]);
     setIsGalleryVisible(false);
   };
 
-  const handleMediaRemove = (mediaUrl: string) => {
-    setMedia(media.filter(m => m.url !== mediaUrl));
+  const handleMediaRemove = (mediaUrl: string, type: 'homepage' | 'card') => {
+    if (type === 'homepage') setHomepageMedia(homepageMedia.filter(m => m.url !== mediaUrl));
+    if (type === 'card') setCardMedia(cardMedia.filter(m => m.url !== mediaUrl));
   };
 
   const columns = [
@@ -290,6 +221,68 @@ const ExperiencesPage = () => {
       ),
     },
   ];
+
+  const MediaUploadSection = ({
+    title,
+    media,
+    onUpload,
+    onRemove,
+    onGalleryOpen
+  }: {
+    title: string;
+    media: MediaItem[];
+    onUpload: (file: File) => void;
+    onRemove: (url: string) => void;
+    onGalleryOpen: () => void;
+  }) => (
+    <Form.Item label={title}>
+      <div>
+        <Upload
+          beforeUpload={(file) => onUpload(file)}
+          showUploadList={false}
+          accept="image/*,video/*"
+        >
+          <Button icon={<UploadOutlined />}>Upload</Button>
+        </Upload>
+        <Button
+          icon={<PictureOutlined />}
+          onClick={onGalleryOpen}
+          style={{ marginLeft: 8 }}
+        >
+          Gallery
+        </Button>
+        <div style={{ marginTop: 16 }}>
+          <Row gutter={[16, 16]}>
+            {media.map((item: MediaItem) => (
+              <Col key={item.id || item.url} xs={12} sm={8} md={6} lg={4}>
+                <div style={{ position: 'relative', marginBottom: 8 }}>
+                  {item.type === 'image' ? (
+                    <img
+                      src={item.url}
+                      alt="Media"
+                      style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', height: 100, backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+                      <PlayCircleOutlined style={{ fontSize: 24, color: '#666' }} />
+                    </div>
+                  )}
+                  <Button
+                    type="text"
+                    danger
+                    icon={<CloseOutlined />}
+                    size="small"
+                    style={{ position: 'absolute', top: 4, right: 4 }}
+                    onClick={() => onRemove(item.url)}
+                  />
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      </div>
+    </Form.Item>
+  );
 
   return (
     <div>
@@ -328,87 +321,25 @@ const ExperiencesPage = () => {
             <DatePicker />
           </Form.Item>
 
-          {/* Media Upload Section */}
-          <Form.Item label="Media">
-            <div>
-              <Upload
-                beforeUpload={(file) => {
-                  handleMediaUpload(file, editingRecord?.id || 'new');
-                  return false;
-                }}
-                showUploadList={false}
-                accept="image/*,video/*"
-              >
-                <Button icon={<UploadOutlined />}>Upload Image/Video</Button>
-              </Upload>
-              <Button
-                icon={<PictureOutlined />}
-                onClick={() => handleGalleryOpen(editingRecord?.id || 'new')}
-                style={{ marginLeft: 8 }}
-              >
-                Gallery
-              </Button>
+          <MediaUploadSection
+            title="Homepage Media"
+            media={homepageMedia}
+            onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'homepage')}
+            onRemove={(url: string) => handleMediaRemove(url, 'homepage')}
+            onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
+          />
 
-              {/* Preview of uploaded media */}
-              <div style={{ marginTop: 16 }}>
-                <Row gutter={[16, 16]}>
-                  {media.map(item => (
-                    <Col key={item.id} xs={12} sm={8} md={6} lg={4}>
-                      <div style={{ position: 'relative', marginBottom: 8 }}>
-                        {item.type === 'image' ? (
-                          isBrokenBlobUrl(item.url) ? (
-                            <div style={{
-                              width: '100%',
-                              height: 100,
-                              backgroundColor: '#ffe6e6',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: 4,
-                              flexDirection: 'column',
-                              gap: 4
-                            }}>
-                              <PictureOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
-                              <span style={{ fontSize: 12, color: '#ff4d4f' }}>Broken Image</span>
-                              <Button
-                                type="primary"
-                                size="small"
-                                onClick={() => handleReupload(item)}
-                              >
-                                Re-upload
-                              </Button>
-                            </div>
-                          ) : (
-                            <img
-                              src={item.url}
-                              alt="Experience media"
-                              style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
-                            />
-                          )
-                        ) : (
-                          <div style={{ width: '100%', height: 100, backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-                            <PlayCircleOutlined style={{ fontSize: 24, color: '#666' }} />
-                          </div>
-                        )}
-                        <Button
-                          type="text"
-                          danger
-                          icon={<CloseOutlined />}
-                          size="small"
-                          style={{ position: 'absolute', top: 4, right: 4 }}
-                          onClick={() => handleMediaRemove(item.url)}
-                        />
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </div>
-          </Form.Item>
+          <MediaUploadSection
+            title="Card Media"
+            media={cardMedia}
+            onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'card')}
+            onRemove={(url: string) => handleMediaRemove(url, 'card')}
+            onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
+          />
+
         </Form>
       </Modal>
 
-      {/* Gallery Modal */}
       <Modal
         title="Select from Gallery"
         open={isGalleryVisible}

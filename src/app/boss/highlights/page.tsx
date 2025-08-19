@@ -333,6 +333,16 @@ const HighlightsPage = () => {
   };
 
   const handleGallerySelect = (selectedMedia: MediaItem) => {
+    // Check if this media is already selected for this type
+    const currentMedia = galleryType === 'homepage' ? homepageMedia : cardMedia;
+    const isAlreadySelected = currentMedia.some(m => m.id === selectedMedia.id || m.url === selectedMedia.url);
+
+    if (isAlreadySelected) {
+      message.warning('This media is already selected for this section');
+      setIsGalleryVisible(false);
+      return;
+    }
+
     const mediaToAdd: MediaItem = {
       ...selectedMedia,
       ...(galleryType === 'homepage'
@@ -341,18 +351,14 @@ const HighlightsPage = () => {
       )
     };
 
-    // Check if this media is already selected for this type
-    const currentMedia = galleryType === 'homepage' ? homepageMedia : cardMedia;
-    const isAlreadySelected = currentMedia.some(m => m.url === selectedMedia.url);
-
-    if (!isAlreadySelected) {
-      if (galleryType === 'homepage') {
-        setHomepageMedia([...homepageMedia, mediaToAdd]);
-      } else {
-        setCardMedia([...cardMedia, mediaToAdd]);
-      }
+    if (galleryType === 'homepage') {
+      setHomepageMedia([...homepageMedia, mediaToAdd]);
+    } else {
+      setCardMedia([...cardMedia, mediaToAdd]);
     }
+
     setIsGalleryVisible(false);
+    message.success(`Media added to ${galleryType} section`);
   };
 
   const handleMediaRemove = async (mediaUrl: string, mediaType: 'homepage' | 'card') => {
@@ -389,7 +395,7 @@ const HighlightsPage = () => {
   const renderMediaGrid = (media: MediaItem[], mediaType: 'homepage' | 'card') => (
     <Row gutter={[16, 16]}>
       {media.map((item, index) => (
-        <Col key={`${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
+        <Col key={`${mediaType}-${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
           <div style={{ position: 'relative', marginBottom: 8 }}>
             {item.type === 'image' ? (
               isBrokenBlobUrl(item.url) ? (
@@ -579,7 +585,11 @@ const HighlightsPage = () => {
             <HighlightCardGrid
               highlights={highlights.map(highlight => ({
                 ...highlight,
-                media: [...(highlight.homepageMedia || []), ...(highlight.cardMedia || [])]
+                media: [...(highlight.homepageMedia || []), ...(highlight.cardMedia || [])].map(item => ({
+                  ...item,
+                  experienceHomepageId: null,
+                  experienceCardId: null
+                }))
               }))}
               title=""
               variant="detailed"
@@ -750,64 +760,152 @@ const HighlightsPage = () => {
 
       {/* Gallery Modal */}
       <Modal
-        title={`Select ${galleryType === 'homepage' ? 'Homepage' : 'Card'} Media from Gallery`}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PictureOutlined style={{ color: galleryType === 'homepage' ? '#1890ff' : '#52c41a' }} />
+            <span>Select {galleryType === 'homepage' ? 'Homepage' : 'Card'} Media from Gallery</span>
+          </div>
+        }
         open={isGalleryVisible}
         onCancel={() => setIsGalleryVisible(false)}
         footer={null}
-        width={800}
+        width={900}
+        style={{ top: 20 }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto', padding: '20px' } }}
       >
-        <Row gutter={[16, 16]}>
-          {allMedia.map((item) => (
-            <Col span={8} key={item.id}>
-              <div
-                onClick={() => handleGallerySelect(item)}
-                style={{
-                  cursor: 'pointer',
-                  border: '2px solid #d9d9d9',
-                  borderRadius: '8px',
-                  padding: '8px',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = galleryType === 'homepage' ? '#1890ff' : '#52c41a';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#d9d9d9';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                {item.type === 'image' ? (
-                  <Image
-                    src={item.url}
-                    alt="Gallery item"
-                    style={{ width: '100%', height: '100px', objectFit: 'cover' }}
-                    preview={false}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100px',
-                    backgroundColor: '#f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <PlayCircleOutlined style={{ fontSize: '24px' }} />
+        {allMedia.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <PictureOutlined style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }} />
+            <p style={{ color: '#999', fontSize: 16 }}>No media files available</p>
+            <p style={{ color: '#666', fontSize: 14 }}>Upload some images or videos first</p>
+          </div>
+        ) : (
+          <Row gutter={[16, 16]}>
+            {allMedia.map((item) => (
+              <Col xs={12} sm={8} md={6} key={item.id}>
+                <div
+                  style={{
+                    position: 'relative',
+                    border: '2px solid #f0f0f0',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
+                    backgroundColor: '#fff',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = galleryType === 'homepage' ? '#1890ff' : '#52c41a';
+                    e.currentTarget.style.boxShadow = `0 4px 16px rgba(${galleryType === 'homepage' ? '24, 144, 255' : '82, 196, 26'}, 0.2)`;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#f0f0f0';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Media Preview */}
+                  <div style={{ position: 'relative', height: '120px', overflow: 'hidden' }}>
+                    {item.type === 'image' ? (
+                      <img
+                        src={item.url}
+                        alt="Gallery item"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease'
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5Ccm9rZW4gSW1hZ2U8L3RleHQ+PC9zdmc+';
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative'
+                      }}>
+                        <video
+                          src={item.url}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                          muted
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'rgba(0,0,0,0.4)',
+                          pointerEvents: 'none'
+                        }}>
+                          <PlayCircleOutlined style={{ fontSize: 32, color: 'white' }} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Media Type Badge */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {item.type}
+                    </div>
                   </div>
-                )}
-                <div style={{
-                  marginTop: '8px',
-                  textAlign: 'center',
-                  fontSize: '12px',
-                  color: '#666'
-                }}>
-                  {item.type === 'image' ? 'Image' : 'Video'}
+
+                  {/* Media Info & Select Button */}
+                  <div style={{ padding: '12px' }}>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                      textAlign: 'center'
+                    }}>
+                      {item.url.split('/').pop()?.substring(0, 20) || 'Media file'}
+                      {(item.url.split('/').pop()?.length || 0) > 20 && '...'}
+                    </div>
+
+                    <Button
+                      type="primary"
+                      size="small"
+                      block
+                      onClick={() => handleGallerySelect(item)}
+                      style={{
+                        backgroundColor: galleryType === 'homepage' ? '#1890ff' : '#52c41a',
+                        borderColor: galleryType === 'homepage' ? '#1890ff' : '#52c41a',
+                        fontWeight: 500,
+                        height: '32px',
+                        borderRadius: '6px'
+                      }}
+                      icon={galleryType === 'homepage' ? <HomeOutlined /> : <CreditCardOutlined />}
+                    >
+                      Select for {galleryType === 'homepage' ? 'Homepage' : 'Card'}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Col>
-          ))}
-        </Row>
+              </Col>
+            ))}
+          </Row>
+        )}
       </Modal>
     </div>
   );

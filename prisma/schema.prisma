@@ -29,7 +29,9 @@ model Experience {
   companyId       String
   accomplishments Accomplishment[]
   company         Company          @relation(fields: [companyId], references: [id])
-  media           Media[]
+  media           Media[]          @relation("ExperienceMedia")
+  homepageMedia   Media[]          @relation("ExperienceHomepageMedia")
+  cardMedia       Media[]          @relation("ExperienceCardMedia")
   projects        Project[]
 }
 
@@ -125,6 +127,8 @@ model Media {
   url                       String
   type                      String
   experienceId              String?
+  experienceHomepageId      String?
+  experienceCardId          String?
   educationId               String?
   skillId                   String?
   certificationId           String?
@@ -132,7 +136,9 @@ model Media {
   highlightHomepageId       String?
   highlightCardId           String?
   createdAt                 DateTime       @default(now())
-  experience                Experience?    @relation(fields: [experienceId], references: [id])
+  experience                Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])
+  experienceHomepage        Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
+  experienceCard            Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
   education                 Education?     @relation(fields: [educationId], references: [id])
   skill                     Skill?         @relation(fields: [skillId], references: [id])
   certification             Certification? @relation(fields: [certificationId], references: [id])

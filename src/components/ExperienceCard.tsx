@@ -1,12 +1,13 @@
 import { Company, Experience, Media } from '@prisma/client'
 import { useState } from 'react'
 
-interface MovieCardProps {
-  experience: Experience & { company: Company; media?: Media[] }
+interface ExperienceCardProps {
+  experience: Experience & { company: Company; media?: Media[], homepageMedia?: Media[] }
+  onClick: () => void;
 }
 
-const MovieCard: React.FC<MovieCardProps> = ({ experience }) => {
-  const { title, description, startDate, endDate, company, media = [] } = experience
+const ExperienceCard: React.FC<ExperienceCardProps> = ({ experience, onClick }) => {
+  const { title, company, startDate, homepageMedia = [] } = experience
   const [imageError, setImageError] = useState(false)
 
   const formatDate = (date: Date | null) => {
@@ -14,12 +15,14 @@ const MovieCard: React.FC<MovieCardProps> = ({ experience }) => {
     return new Date(date).getFullYear().toString()
   }
 
-  const firstImage = media?.find((m: Media) => m.type === 'image')
+  const firstImage = homepageMedia?.find((m: Media) => m.type === 'image')
   const shouldShowImage = firstImage && !imageError
 
   return (
-    <div className="bg-[#303030] rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-200 h-full flex flex-col border border-[#404040] shadow-lg">
-      {/* Experience Image - Increased height */}
+    <div 
+      className="bg-[#303030] rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-200 h-full flex flex-col border border-[#404040] shadow-lg cursor-pointer"
+      onClick={onClick}
+    >
       <div className="w-full h-48 bg-[#141414] flex items-center justify-center relative">
         {shouldShowImage ? (
           <img
@@ -43,4 +46,4 @@ const MovieCard: React.FC<MovieCardProps> = ({ experience }) => {
   )
 }
 
-export default MovieCard
+export default ExperienceCard

@@ -42,9 +42,20 @@ const MediaPage = () => {
       const response = await fetch('/api/media');
       const data = await response.json();
 
+      // Remove duplicates based on URL and ID
+      const uniqueMedia = data.reduce((acc: MediaFile[], item: MediaFile) => {
+        const existingItem = acc.find(existing =>
+          existing.id === item.id || existing.url === item.url
+        );
+        if (!existingItem) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+
       // Process media data to add file info
       const processedMedia = await Promise.all(
-        data.map(async (item: MediaFile) => {
+        uniqueMedia.map(async (item: MediaFile) => {
           const fileName = item.url.split('/').pop() || 'Unknown';
           const isUsed = !!(
             item.experienceId ||
@@ -56,11 +67,22 @@ const MediaPage = () => {
             item.highlightCardId
           );
 
+          // Get usage details
+          const usageDetails = [];
+          if (item.experienceId) usageDetails.push('Experience');
+          if (item.educationId) usageDetails.push('Education');
+          if (item.skillId) usageDetails.push('Skill');
+          if (item.certificationId) usageDetails.push('Certification');
+          if (item.highlightId) usageDetails.push('Highlight');
+          if (item.highlightHomepageId) usageDetails.push('Homepage');
+          if (item.highlightCardId) usageDetails.push('Card');
+
           // Try to get file size and dimensions (this would need server-side implementation)
           return {
             ...item,
             fileName,
             isUsed,
+            usageDetails,
             fileSize: Math.floor(Math.random() * 2000) + 100, // Placeholder - would be real file size
             dimensions: item.type === 'image' ? {
               width: Math.floor(Math.random() * 1000) + 500,
@@ -221,6 +243,8 @@ const MediaPage = () => {
                           <Text type="secondary" style={{ marginTop: 8 }}>Video File</Text>
                         </div>
                       )}
+
+                      {/* Media Type Badge */}
                       <div style={{
                         position: 'absolute',
                         top: 8,
@@ -232,6 +256,24 @@ const MediaPage = () => {
                         fontSize: 12
                       }}>
                         {item.type === 'image' ? <FileImageOutlined /> : <VideoCameraOutlined />}
+                      </div>
+
+                      {/* Usage Status Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        backgroundColor: item.isUsed ? 'rgba(82, 196, 26, 0.9)' : 'rgba(255, 77, 79, 0.9)',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                      }}>
+                        {item.isUsed ? '✓ USED' : '⚠ UNUSED'}
                       </div>
                     </div>
                   }
