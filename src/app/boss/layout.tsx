@@ -15,6 +15,7 @@ import {
   ToolOutlined,
   SafetyCertificateOutlined,
   FileImageOutlined,
+  RobotOutlined,
   LogoutOutlined
 } from '@ant-design/icons';
 
@@ -29,6 +30,7 @@ const menuItems = [
   { key: '/boss/skills', icon: <ToolOutlined />, label: 'Skills' },
   { key: '/boss/certifications', icon: <SafetyCertificateOutlined />, label: 'Certifications' },
   { key: '/boss/media', icon: <FileImageOutlined />, label: 'Media' },
+  { key: '/boss/aio', icon: <RobotOutlined />, label: 'AIO' },
 ];
 
 const BossLayout = ({ children }: { children: React.ReactNode }) => {

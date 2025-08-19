@@ -1,0 +1,53 @@
+{
+  "portfolio": {
+    "name": "Yassine Boumiza",
+    "description": "Professional portfolio showcasing career experience and skills",
+    "location": {
+      "city": "Greater Montreal",
+      "province": "Quebec",
+      "country": "Canada"
+    },
+    "profession_types": [
+      "Software Developer",
+      "Professional",
+      "Specialist"
+    ],
+    "specialties": [
+      "Web Development",
+      "Software Engineering",
+      "Technology Solutions"
+    ],
+    "website": "https://boumiza.com",
+    "sections": [
+      {
+        "name": "Experience",
+        "description": "Professional work experience and career history"
+      },
+      {
+        "name": "Education",
+        "description": "Educational background and academic achievements"
+      },
+      {
+        "name": "Skills",
+        "description": "Technical and professional skills"
+      },
+      {
+        "name": "Certifications",
+        "description": "Professional certifications and achievements"
+      }
+    ],
+    "contact": {
+      "email": "iboumiza@hotmail.com",
+      "linkedin": "https://www.linkedin.com/in/yassine-boumiza/"
+    },
+    "features": [
+      "Portfolio showcase",
+      "Professional experience",
+      "Skills demonstration",
+      "Contact information"
+    ],
+    "languages": [
+      "English"
+    ]
+  }
+}
