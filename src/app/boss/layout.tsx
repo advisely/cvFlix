@@ -41,7 +41,7 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
         <div className="demo-logo-vertical" style={{ height: '32px', margin: '16px', color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
-          cvFlix
+          resumeFlex
         </div>
         <Menu
           theme="dark"

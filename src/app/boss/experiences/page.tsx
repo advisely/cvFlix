@@ -195,6 +195,16 @@ const ExperiencesPage = () => {
   };
 
   const handleGallerySelect = (selectedMedia: MediaItem) => {
+    // Check if this media is already selected for this type
+    const currentMedia = mediaType === 'homepage' ? homepageMedia : cardMedia;
+    const isAlreadySelected = currentMedia.some(m => m.id === selectedMedia.id || m.url === selectedMedia.url);
+
+    if (isAlreadySelected) {
+      message.warning('This media is already selected for this section');
+      setIsGalleryVisible(false);
+      return;
+    }
+
     if (mediaType === 'homepage') setHomepageMedia([...homepageMedia, selectedMedia]);
     if (mediaType === 'card') setCardMedia([...cardMedia, selectedMedia]);
     setIsGalleryVisible(false);
@@ -253,8 +263,8 @@ const ExperiencesPage = () => {
         </Button>
         <div style={{ marginTop: 16 }}>
           <Row gutter={[16, 16]}>
-            {media.map((item: MediaItem) => (
-              <Col key={item.id || item.url} xs={12} sm={8} md={6} lg={4}>
+            {media.map((item: MediaItem, index: number) => (
+              <Col key={`${title.toLowerCase().replace(/ /g, "-")}-${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
                 <div style={{ position: 'relative', marginBottom: 8 }}>
                   {item.type === 'image' ? (
                     <img

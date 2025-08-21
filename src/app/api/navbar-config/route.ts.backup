@@ -22,8 +22,7 @@ export async function GET() {
           backgroundImageUrl: null,
           gradientFrom: "#141414",
           gradientTo: "#1a1a1a",
-          fontFamily: "Inter",
-          logoFontFamily: "Inter"
+          fontFamily: "Inter"
         }
       });
     }
@@ -52,8 +51,7 @@ export async function PUT(request: NextRequest) {
       backgroundImageUrl,
       gradientFrom,
       gradientTo,
-      fontFamily,
-      logoFontFamily
+      fontFamily
     } = body;
 
     // Get existing config or create new one
@@ -73,8 +71,7 @@ export async function PUT(request: NextRequest) {
       ...(backgroundImageUrl !== undefined && { backgroundImageUrl }),
       ...(gradientFrom !== undefined && { gradientFrom }),
       ...(gradientTo !== undefined && { gradientTo }),
-      ...(fontFamily !== undefined && { fontFamily }),
-      ...(logoFontFamily !== undefined && { logoFontFamily })
+      ...(fontFamily !== undefined && { fontFamily })
     };
 
     if (navbarConfig) {
@@ -100,8 +97,7 @@ export async function PUT(request: NextRequest) {
           backgroundImageUrl: backgroundImageUrl || null,
           gradientFrom: gradientFrom || "#141414",
           gradientTo: gradientTo || "#1a1a1a",
-          fontFamily: fontFamily || "Inter",
-          logoFontFamily: logoFontFamily || "Inter"
+          fontFamily: fontFamily || "Inter"
         }
       });
     }

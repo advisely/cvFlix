@@ -140,6 +140,24 @@ Transform into comprehensive professional experience management:
   - Optimize queries for enhanced data
   - Provide rollback strategy
 
+#### 5. **Next.js Specialist** (Architecture)
+- **Responsibility**: Next.js 15 optimization and architecture
+- **Skills**: Next.js 15, App Directory, API Routes, SSR/SSG, Performance
+- **Tasks**:
+  - Optimize Next.js app directory structure
+  - Enhance API routes performance and caching
+  - Implement proper SSR/SSG strategies
+  - Optimize build and deployment processes
+
+#### 6. **Functional Analyst** (Requirements)
+- **Responsibility**: Business requirements and feature analysis
+- **Skills**: Requirements analysis, User story mapping, Business logic validation
+- **Tasks**:
+  - Validate user requirements and acceptance criteria
+  - Map business logic to technical implementation
+  - Define feature specifications and edge cases
+  - Ensure alignment between business needs and technical solution
+
 ### Team Lead Assignment
 - **Tech Lead Orchestrator**: Overall technical coordination and architecture decisions
 - **Frontend React Developer**: Day-to-day implementation lead
@@ -293,9 +311,11 @@ This enhancement serves as foundation for:
 | **Floating Card UI Implementation** | @agent-react-expert | React 19 components with Ant Design floating cards, shadow effects, and click interactions |
 | **Enhanced Form & Description Field** | @agent-frontend-developer | Form enhancement with new description field and improved layout |
 | **Database Schema Enhancement** | @agent-api-architect | Add description field to Highlight model and update API endpoints |
+| **Next.js Architecture & Optimization** | @agent-nextjs-expert | Next.js 15 app directory structure, API routes optimization, and SSR/SSG implementation |
 | **Tailwind CSS Styling** | @agent-tailwind-css-expert | Floating card shadows, elevation effects, and responsive design |
 | **Media Display Enhancement** | @agent-react-expert | Improved video playback controls and media integration within cards |
 | **Performance Optimization** | @agent-performance-optimizer | Lazy loading, smooth animations, and sub-2 second load times |
+| **Requirements Analysis & Business Logic** | @agent-functional-analyst | User requirements validation, business logic mapping, and feature specification |
 | **Code Quality Assurance** | @agent-code-reviewer | Security review, maintainability, and TypeScript coverage |
 | **Technical Coordination** | @agent-tech-lead-orchestrator | Overall task delegation and architectural decisions |
 
@@ -303,7 +323,9 @@ This enhancement serves as foundation for:
 - **react-expert**: Essential for complex React 19 component architecture with hooks and state management
 - **frontend-developer**: Core UI implementation and responsive design across devices
 - **api-architect**: Database schema updates and API endpoint modifications for new description field
+- **nextjs-expert**: Critical for Next.js 15 app directory optimization, API routes enhancement, and SSR/SSG implementation
 - **tailwind-css-expert**: Advanced CSS effects for floating cards with shadows and elevation
+- **functional-analyst**: Essential for requirements validation, business logic analysis, and feature specification alignment
 - **performance-optimizer**: Critical for achieving sub-2 second load time requirements
 - **code-reviewer**: Mandatory quality gate for production deployment
 - **tech-lead-orchestrator**: Coordination of multi-agent workflow for complex enhancement

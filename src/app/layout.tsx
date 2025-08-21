@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Caveat_Brush, Pacifico } from "next/font/google";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import '@ant-design/v5-patch-for-react-19';
 import ConsoleFilter from '@/components/ConsoleFilter';
@@ -17,6 +17,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   display: 'swap',
   fallback: ['ui-monospace', 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'monospace'],
+});
+
+const caveatBrush = Caveat_Brush({
+  variable: "--font-caveat-brush",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+  fallback: ['cursive'],
+});
+
+const pacifico = Pacifico({
+  variable: "--font-pacifico",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+  fallback: ['cursive'],
 });
 
 export const metadata: Metadata = {
@@ -39,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${caveatBrush.variable} ${pacifico.variable} antialiased`}
       >
         <ConsoleFilter />
         <AntdRegistry>{children}</AntdRegistry>

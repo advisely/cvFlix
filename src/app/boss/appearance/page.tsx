@@ -23,6 +23,7 @@ interface NavbarConfig {
   gradientFrom: string;
   gradientTo: string;
   fontFamily: string;
+  logoFontFamily: string;
 }
 
 interface FooterConfig {
@@ -94,7 +95,8 @@ const AppearancePage = () => {
         logoForm.setFieldsValue({
           logoText: config.logoText,
           useImageLogo: config.useImageLogo,
-          logoImageUrl: config.logoImageUrl
+          logoImageUrl: config.logoImageUrl,
+          logoFontFamily: config.logoFontFamily || "Inter"
         });
 
         backgroundForm.setFieldsValue({
@@ -107,10 +109,10 @@ const AppearancePage = () => {
         });
 
         footerForm.setFieldsValue({
-          logoText: footerConfigData.logoText || "cvFlix",
+          logoText: footerConfigData.logoText || "resumeflex",
           useImageLogo: footerConfigData.useImageLogo || false,
           logoImageUrl: footerConfigData.logoImageUrl || null,
-          copyrightText: footerConfigData.copyrightText || "© 2025 cvFlix. All rights reserved.",
+          copyrightText: footerConfigData.copyrightText || "© 2025 resumeflex. All rights reserved.",
           linkedinUrl: footerConfigData.linkedinUrl || "",
           showLinkedin: footerConfigData.showLinkedin !== undefined ? footerConfigData.showLinkedin : true,
           backgroundColor: footerConfigData.backgroundColor || "#0a0a0a",
@@ -378,6 +380,26 @@ const AppearancePage = () => {
           >
             <Input placeholder="e.g., resumeflex, MyPortfolio, John Doe" />
           </Form.Item>
+\n          <Form.Item
+            name="logoFontFamily"
+            label="Logo Font Family"
+            rules={[{ required: true, message: 'Please select a logo font family' }]}
+          >
+            <Select placeholder="Select logo font family">
+              <Option value="Inter">Inter (Default)</Option>
+              <Option value="Arial">Arial</Option>
+              <Option value="Helvetica">Helvetica</Option>
+              <Option value="Georgia">Georgia</Option>
+              <Option value="Times New Roman">Times New Roman</Option>
+              <Option value="Roboto">Roboto</Option>
+              <Option value="Open Sans">Open Sans</Option>
+              <Option value="Lato">Lato</Option>
+              <Option value="Montserrat">Montserrat</Option>
+              <Option value="Poppins">Poppins</Option>
+              <Option value="var(--font-caveat-brush)">Caveat Brush (Google Font)</Option>
+              <Option value="var(--font-pacifico)">Pacifico (Google Font)</Option>
+            </Select>
+          </Form.Item>
 
           <Form.Item
             name="useImageLogo"
@@ -505,9 +527,9 @@ const AppearancePage = () => {
         </Form>
       </Card>
 
-      {/* Background & Font Configuration Card */}
+      {/* Background & Website Font Configuration Card */}
       <Card
-        title="Background & Font Configuration"
+        title="Background & Website Font Configuration"
         style={{ marginTop: 24 }}
         extra={
           <Button
@@ -520,7 +542,7 @@ const AppearancePage = () => {
         }
       >
         <p style={{ marginBottom: 16, color: '#666' }}>
-          Customize your homepage background and font style.
+          Customize your homepage background and general website font style (logo font is configured separately).
         </p>
 
         <Form
@@ -530,7 +552,7 @@ const AppearancePage = () => {
         >
           <Form.Item
             name="fontFamily"
-            label="Font Family"
+            label="Website Font Family"
             rules={[{ required: true, message: 'Please select a font family' }]}
           >
             <Select placeholder="Select font family">
@@ -544,6 +566,8 @@ const AppearancePage = () => {
               <Option value="Lato">Lato</Option>
               <Option value="Montserrat">Montserrat</Option>
               <Option value="Poppins">Poppins</Option>
+              <Option value="var(--font-caveat-brush)">Caveat Brush (Google Font)</Option>
+              <Option value="var(--font-pacifico)">Pacifico (Google Font)</Option>
             </Select>
           </Form.Item>
 
@@ -680,7 +704,7 @@ const AppearancePage = () => {
             label="Footer Logo Text"
             rules={[{ required: true, message: 'Please enter footer logo text' }]}
           >
-            <Input placeholder="e.g., cvFlix, MyPortfolio, John Doe" />
+            <Input placeholder="e.g., resumeflex, MyPortfolio, John Doe" />
           </Form.Item>
 
           <Form.Item

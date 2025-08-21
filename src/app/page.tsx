@@ -55,6 +55,7 @@ interface NavbarConfig {
   gradientFrom: string;
   gradientTo: string;
   fontFamily: string;
+  logoFontFamily: string;
 }
 
 export default function Home() {
@@ -104,7 +105,8 @@ export default function Home() {
             backgroundImageUrl: null,
             gradientFrom: '#141414',
             gradientTo: '#1a1a1a',
-            fontFamily: 'Inter'
+            fontFamily: 'Inter',
+            logoFontFamily: 'Inter'
           }
         });
       } finally {
@@ -187,7 +189,10 @@ export default function Home() {
                   className="h-8 md:h-12 w-auto"
                 />
               ) : (
-                <h1 className="text-2xl md:text-4xl font-bold text-[#e50914]">
+                <h1 
+                  className="text-2xl md:text-4xl font-bold text-[#e50914]"
+                  style={{ fontFamily: navbarConfig.logoFontFamily }}
+                >
                   {navbarConfig.logoText}
                 </h1>
               )}

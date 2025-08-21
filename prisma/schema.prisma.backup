@@ -29,7 +29,9 @@ model Experience {
   companyId       String
   accomplishments Accomplishment[]
   company         Company          @relation(fields: [companyId], references: [id])
-  media           Media[]
+  media           Media[]          @relation("ExperienceMedia")
+  homepageMedia   Media[]          @relation("ExperienceHomepageMedia")
+  cardMedia       Media[]          @relation("ExperienceCardMedia")
   projects        Project[]
 }
 
@@ -75,18 +77,20 @@ model Certification {
 }
 
 model Highlight {
-  id          String    @id @default(cuid())
-  title       String
-  company     String
-  description String?
-  startDate   DateTime
-  media       Media[]
-  createdAt   DateTime  @default(now())
+  id              String    @id @default(cuid())
+  title           String
+  company         String
+  description     String?
+  startDate       DateTime
+  media           Media[]   @relation("HighlightMedia")
+  homepageMedia   Media[]   @relation("HighlightHomepageMedia")
+  cardMedia       Media[]   @relation("HighlightCardMedia")
+  createdAt       DateTime  @default(now())
 }
 
 model NavbarConfig {
   id                String   @id @default(cuid())
-  logoText          String   @default("cvFlix")
+  logoText          String   @default("resumeflex")
   logoImageUrl      String?
   useImageLogo      Boolean  @default(false)
   workExperienceLabel String @default("Work Experience")
@@ -106,10 +110,10 @@ model NavbarConfig {
 
 model FooterConfig {
   id              String   @id @default(cuid())
-  logoText        String   @default("cvFlix")
+  logoText        String   @default("resumeflex")
   logoImageUrl    String?
   useImageLogo    Boolean  @default(false)
-  copyrightText   String   @default("© 2025 cvFlix. All rights reserved.")
+  copyrightText   String   @default("© 2025 resumeflex. All rights reserved.")
   linkedinUrl     String?
   showLinkedin    Boolean  @default(true)
   backgroundColor String   @default("#0a0a0a")
@@ -119,18 +123,26 @@ model FooterConfig {
 }
 
 model Media {
-  id              String         @id @default(cuid())
-  url             String
-  type            String
-  experienceId    String?
-  educationId     String?
-  skillId         String?
-  certificationId String?
-  highlightId     String?
-  createdAt       DateTime       @default(now())
-  experience      Experience?    @relation(fields: [experienceId], references: [id])
-  education       Education?     @relation(fields: [educationId], references: [id])
-  skill           Skill?         @relation(fields: [skillId], references: [id])
-  certification   Certification? @relation(fields: [certificationId], references: [id])
-  highlight       Highlight?     @relation(fields: [highlightId], references: [id])
+  id                        String         @id @default(cuid())
+  url                       String
+  type                      String
+  experienceId              String?
+  experienceHomepageId      String?
+  experienceCardId          String?
+  educationId               String?
+  skillId                   String?
+  certificationId           String?
+  highlightId               String?
+  highlightHomepageId       String?
+  highlightCardId           String?
+  createdAt                 DateTime       @default(now())
+  experience                Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])
+  experienceHomepage        Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
+  experienceCard            Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
+  education                 Education?     @relation(fields: [educationId], references: [id])
+  skill                     Skill?         @relation(fields: [skillId], references: [id])
+  certification             Certification? @relation(fields: [certificationId], references: [id])
+  highlight                 Highlight?     @relation("HighlightMedia", fields: [highlightId], references: [id])
+  highlightHomepage         Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
+  highlightCard             Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
 }
