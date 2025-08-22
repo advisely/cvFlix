@@ -292,28 +292,47 @@ const EducationPage = () => {
       title: 'Institution',
       dataIndex: 'institution',
       key: 'institution',
+      sorter: (a: EducationWithMedia, b: EducationWithMedia) => 
+        a.institution.localeCompare(b.institution),
+      showSorterTooltip: false
     },
     {
       title: 'Degree',
       dataIndex: 'degree',
       key: 'degree',
+      sorter: (a: EducationWithMedia, b: EducationWithMedia) => 
+        a.degree.localeCompare(b.degree),
+      showSorterTooltip: false
     },
     {
-      title: 'Field',
+      title: 'Field of Study',
       dataIndex: 'field',
       key: 'field',
+      sorter: (a: EducationWithMedia, b: EducationWithMedia) => 
+        a.field.localeCompare(b.field),
+      showSorterTooltip: false
     },
     {
       title: 'Start Date',
       dataIndex: 'startDate',
       key: 'startDate',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+      sorter: (a: EducationWithMedia, b: EducationWithMedia) => 
+        dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+      showSorterTooltip: false
     },
     {
       title: 'End Date',
       dataIndex: 'endDate',
       key: 'endDate',
-      render: (date: string | null) => date ? new Date(date).toLocaleDateString() : 'Present',
+      render: (date: string | null) => date ? dayjs(date).format('YYYY-MM-DD') : 'Present',
+      sorter: (a: EducationWithMedia, b: EducationWithMedia) => {
+        // Handle null end dates (Present) - treat as future date for sorting
+        const aDate = a.endDate ? dayjs(a.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
+        const bDate = b.endDate ? dayjs(b.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
+        return aDate - bDate;
+      },
+      showSorterTooltip: false
     },
     {
       title: 'Actions',
