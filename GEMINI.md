@@ -1,4 +1,4 @@
-# Project Plan: cvFlix
+# Project Plan: resumeFlex
 
 ## 1. Initial Project Summary (Completed)
 
@@ -13,7 +13,7 @@ The initial objective was to build a complete, Netflix-inspired resume portfolio
 -   **Comprehensive Media Management**: Integrated a system for uploading and associating media with all relevant content types.
 
 ### Initial Project Status: ✅ COMPLETED
-The foundational cvFlix application was successfully completed, delivering a robust and fully functional portfolio platform.
+The foundational resumeFlex application was successfully completed, delivering a robust and fully functional portfolio platform.
 
 ---
 

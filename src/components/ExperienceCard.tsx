@@ -1,8 +1,21 @@
-import { Company, Experience, Media } from '@prisma/client'
+import { Company, Media } from '@prisma/client'
 import { useState } from 'react'
 
+// Serialized version for client-side use
+interface SerializedExperience {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+  companyId: string;
+  company: Company;
+  media?: Media[];
+  homepageMedia?: Media[];
+}
+
 interface ExperienceCardProps {
-  experience: Experience & { company: Company; media?: Media[], homepageMedia?: Media[] }
+  experience: SerializedExperience;
   onClick: () => void;
 }
 
@@ -10,7 +23,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ experience, onClick }) 
   const { title, company, startDate, homepageMedia = [] } = experience
   const [imageError, setImageError] = useState(false)
 
-  const formatDate = (date: Date | null) => {
+  const formatDate = (date: string | null) => {
     if (!date) return 'Present'
     return new Date(date).getFullYear().toString()
   }

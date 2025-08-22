@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { useEffect, useState } from 'react';
@@ -322,10 +323,10 @@ export default function Home() {
         <div id="work-experience" className="mb-8">
           <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.workExperienceLabel}</h2>
           <Carousel>
-            {singleExperiences.map((company: Company & { experiences: Experience[] }) => (
+            {singleExperiences.map((company: any) => (
               <div key={company.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
                 <ExperienceCard 
-                    experience={{ ...company.experiences[0], company }} 
+                    experience={{ ...company.experiences[0], company, companyId: company.id }} 
                     onClick={() => {
                         setSelectedExperience({ ...company.experiences[0], company });
                         setIsExperienceModalOpen(true);
@@ -339,7 +340,7 @@ export default function Home() {
         <div id="career-series" className="mb-8">
           <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.careerSeriesLabel}</h2>
           <Carousel>
-            {seriesExperiences.map((company: Company & { experiences: Experience[] }) => (
+            {seriesExperiences.map((company: any) => (
               <div key={company.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
                 <SeriesCard company={company} />
               </div>

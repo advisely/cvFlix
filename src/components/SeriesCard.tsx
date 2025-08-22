@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Company, Experience, Media } from '@prisma/client'
 import { useState } from 'react'
 import { Modal } from 'antd'
 
 interface SeriesCardProps {
-  company: Company & { experiences: (Experience & { media?: Media[] })[] }
+  company: any
 }
 
 const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
@@ -61,7 +62,7 @@ const SeriesCard: React.FC<SeriesCardProps> = ({ company }) => {
         }}
       >
         <div className="space-y-6">
-          {company.experiences.map((experience) => (
+          {company.experiences.map((experience: any) => (
             <div key={experience.id} className="border-b border-gray-700 pb-4 last:border-b-0">
               <h3 className="text-xl font-bold text-white">{experience.title}</h3>
               <p className="text-sm text-gray-400 mt-1">

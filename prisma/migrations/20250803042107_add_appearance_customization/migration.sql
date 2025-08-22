@@ -3,7 +3,7 @@ PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_NavbarConfig" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "logoText" TEXT NOT NULL DEFAULT 'cvFlix',
+    "logoText" TEXT NOT NULL DEFAULT 'resumeFlex',
     "logoImageUrl" TEXT,
     "useImageLogo" BOOLEAN NOT NULL DEFAULT false,
     "workExperienceLabel" TEXT NOT NULL DEFAULT 'Work Experience',

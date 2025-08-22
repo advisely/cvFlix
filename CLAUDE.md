@@ -1,9 +1,9 @@
-# CLAUDE Project Management - cvFlix
+# CLAUDE Project Management - resumeFlex
 
 ## Project Overview
 
 ### Mission Statement
-Transform the cvFlix highlights management system from basic text/image editing into a comprehensive professional experience management platform with enhanced UI/UX featuring floating cards with advanced media capabilities.
+Transform the resumeFlex highlights management system from basic text/image editing into a comprehensive professional experience management platform with enhanced UI/UX featuring floating cards with advanced media capabilities.
 
 ### Strategic Business Objectives
 - **Enhanced User Experience**: Implement floating card interface with background shadow and elevation
@@ -107,7 +107,7 @@ Transform into comprehensive professional experience management:
 #### 1. **Frontend React Developer** (Primary)
 - **Responsibility**: Implement floating card UI with Ant Design components
 - **Skills**: React 19, TypeScript, Ant Design, CSS animations
-- **Tasks**: 
+- **Tasks**:
   - Design floating card component with shadow/elevation
   - Implement click-to-reveal functionality
   - Enhance form layout with new description field
