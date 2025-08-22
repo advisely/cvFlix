@@ -476,10 +476,43 @@ const HighlightsPage = () => {
   );
 
   const columns = [
-    { title: 'Title', dataIndex: 'title', key: 'title' },
-    { title: "Description", dataIndex: "description", key: "description", render: (text: string) => text || "No description" },
-    { title: 'Company', dataIndex: 'company', key: 'company' },
-    { title: 'Start Date', dataIndex: 'startDate', key: 'startDate', render: (date: string) => dayjs(date).format('YYYY-MM-DD') },
+    { 
+      title: 'Title', 
+      dataIndex: 'title', 
+      key: 'title',
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
+        a.title.localeCompare(b.title),
+      showSorterTooltip: false
+    },
+    { 
+      title: "Description", 
+      dataIndex: "description", 
+      key: "description", 
+      render: (text: string) => text || "No description",
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => {
+        const aDesc = a.description || '';
+        const bDesc = b.description || '';
+        return aDesc.localeCompare(bDesc);
+      },
+      showSorterTooltip: false
+    },
+    { 
+      title: 'Company', 
+      dataIndex: 'company', 
+      key: 'company',
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
+        a.company.localeCompare(b.company),
+      showSorterTooltip: false
+    },
+    { 
+      title: 'Start Date', 
+      dataIndex: 'startDate', 
+      key: 'startDate', 
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
+        dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+      showSorterTooltip: false
+    },
     {
       title: 'Media',
       key: 'media',

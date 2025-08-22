@@ -284,12 +284,34 @@ const CertificationsPage = () => {
   };
 
   const columns = [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Issuer', dataIndex: 'issuer', key: 'issuer' },
-    { title: 'Issue Date', dataIndex: 'issueDate', key: 'issueDate', render: (date: string) => dayjs(date).format('YYYY-MM-DD') },
     {
-      title: 'Action',
-      key: 'action',
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a: CertificationWithMedia, b: CertificationWithMedia) => 
+        a.name.localeCompare(b.name),
+      showSorterTooltip: false
+    },
+    {
+      title: 'Issuer',
+      dataIndex: 'issuer',
+      key: 'issuer',
+      sorter: (a: CertificationWithMedia, b: CertificationWithMedia) => 
+        a.issuer.localeCompare(b.issuer),
+      showSorterTooltip: false
+    },
+    {
+      title: 'Issue Date',
+      dataIndex: 'issueDate',
+      key: 'issueDate',
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+      sorter: (a: CertificationWithMedia, b: CertificationWithMedia) => 
+        dayjs(a.issueDate).valueOf() - dayjs(b.issueDate).valueOf(),
+      showSorterTooltip: false
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
       render: (_: unknown, record: CertificationWithMedia) => (
         <span>
           <Button type="link" onClick={() => handleEdit(record)}>Edit</Button>

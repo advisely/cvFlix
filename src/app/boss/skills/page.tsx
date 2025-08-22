@@ -279,8 +279,22 @@ const SkillsPage = () => {
   };
 
   const columns = [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Category', dataIndex: 'category', key: 'category' },
+    { 
+      title: 'Name', 
+      dataIndex: 'name', 
+      key: 'name',
+      sorter: (a: SkillWithMedia, b: SkillWithMedia) => 
+        a.name.localeCompare(b.name),
+      showSorterTooltip: false
+    },
+    { 
+      title: 'Category', 
+      dataIndex: 'category', 
+      key: 'category',
+      sorter: (a: SkillWithMedia, b: SkillWithMedia) => 
+        a.category.localeCompare(b.category),
+      showSorterTooltip: false
+    },
     {
       title: 'Action',
       key: 'action',
