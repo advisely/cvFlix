@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Image, Row, Col } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Row, Col } from 'antd';
 import { useEffect, useState } from 'react';
 import { Company } from '@prisma/client';
 import { ExperienceWithCompany, MediaItem, MediaApiResponse } from './types';
@@ -216,10 +216,44 @@ const ExperiencesPage = () => {
   };
 
   const columns = [
-    { title: 'Title', dataIndex: 'title', key: 'title' },
-    { title: 'Company', dataIndex: ['company', 'name'], key: 'company' },
-    { title: 'Start Date', dataIndex: 'startDate', key: 'startDate', render: (date: string) => dayjs(date).format('YYYY-MM-DD') },
-    { title: 'End Date', dataIndex: 'endDate', key: 'endDate', render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : 'Present' },
+    { 
+      title: 'Title', 
+      dataIndex: 'title', 
+      key: 'title',
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
+        a.title.localeCompare(b.title),
+      showSorterTooltip: false
+    },
+    { 
+      title: 'Company', 
+      dataIndex: ['company', 'name'], 
+      key: 'company',
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
+        a.company.name.localeCompare(b.company.name),
+      showSorterTooltip: false
+    },
+    { 
+      title: 'Start Date', 
+      dataIndex: 'startDate', 
+      key: 'startDate', 
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
+        dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+      showSorterTooltip: false
+    },
+    { 
+      title: 'End Date', 
+      dataIndex: 'endDate', 
+      key: 'endDate', 
+      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : 'Present',
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => {
+        // Handle null end dates (Present) - treat as future date for sorting
+        const aDate = a.endDate ? dayjs(a.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
+        const bDate = b.endDate ? dayjs(b.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
+        return aDate - bDate;
+      },
+      showSorterTooltip: false
+    },
     {
       title: 'Action',
       key: 'action',
