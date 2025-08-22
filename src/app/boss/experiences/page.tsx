@@ -170,9 +170,9 @@ const ExperiencesPage = () => {
       const result = await response.json();
 
       const newMedia: MediaItem = {
-        id: '',
+        id: result.id,
         url: result.url,
-        type: isImage ? 'image' : 'video',
+        type: result.type,
         experienceId: experienceId === 'new' ? '' : experienceId
       };
 
@@ -273,9 +273,27 @@ const ExperiencesPage = () => {
                       style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
                     />
                   ) : (
-                    <div style={{ width: '100%', height: 100, backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
-                      <PlayCircleOutlined style={{ fontSize: 24, color: '#666' }} />
-                    </div>
+                    <video
+                      src={item.url}
+                      style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
+                      muted
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLVideoElement).play().catch(() => {});
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLVideoElement).pause();
+                        (e.target as HTMLVideoElement).currentTime = 0;
+                      }}
+                      onError={(e) => {
+                        // Fallback to icon if video fails to load
+                        const target = e.target as HTMLVideoElement;
+                        target.style.display = 'none';
+                        const fallback = document.createElement('div');
+                        fallback.style.cssText = 'width: 100%; height: 100px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 4px;';
+                        fallback.innerHTML = '<span style="font-size: 24px; color: #666;">▶</span>';
+                        target.parentNode?.appendChild(fallback);
+                      }}
+                    />
                   )}
                   <Button
                     type="text"
@@ -365,25 +383,56 @@ const ExperiencesPage = () => {
                 style={{ cursor: 'pointer', border: '1px solid #d9d9d9', borderRadius: '4px', padding: '8px' }}
               >
                 {item.type === 'image' ? (
-                  <Image
+                  <img
                     src={item.url}
                     alt="Gallery item"
-                    style={{ width: '100%', height: '100px', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '4px' }}
                   />
                 ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100px',
-                    backgroundColor: '#f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <PlayCircleOutlined style={{ fontSize: '24px' }} />
+                  <div style={{ position: 'relative', width: '100%', height: '100px', borderRadius: '4px', overflow: 'hidden' }}>
+                    <video
+                      src={item.url}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      muted
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLVideoElement).play().catch(() => {});
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLVideoElement).pause();
+                        (e.target as HTMLVideoElement).currentTime = 0;
+                      }}
+                      onError={() => {
+                        // Fallback handled by parent div styling
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      color: 'white',
+                      fontSize: '24px',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none'
+                    }}>
+                      <PlayCircleOutlined />
+                    </div>
                   </div>
                 )}
-                <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                  {item.type === 'image' ? 'Image' : 'Video'}
+                <div style={{ marginTop: '8px', textAlign: 'center', fontSize: '12px', fontWeight: '500' }}>
+                  <span style={{
+                    backgroundColor: item.type === 'image' ? '#52c41a' : '#1890ff',
+                    color: 'white',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '10px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {item.type === 'image' ? 'Image' : 'Video'}
+                  </span>
+                  <div style={{ marginTop: '4px', fontSize: '11px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.url.split('/').pop()?.split('.')[0] || 'Unknown'}
+                  </div>
                 </div>
               </div>
             </Col>

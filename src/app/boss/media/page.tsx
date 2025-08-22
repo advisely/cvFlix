@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Typography, Tag, Popconfirm, message, Spin, Empty, Input, Select, Space } from 'antd';
-import { DeleteOutlined, SearchOutlined, FileImageOutlined, VideoCameraOutlined, FilterOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Typography, Tag, Popconfirm, message, Spin, Empty, Input, Select, Space, Modal } from 'antd';
+import { DeleteOutlined, SearchOutlined, FileImageOutlined, VideoCameraOutlined, FilterOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -23,6 +23,12 @@ interface MediaFile {
   fileSize?: number;
   dimensions?: { width: number; height: number };
   isUsed?: boolean;
+  // Relationship objects from API
+  experience?: { id: string; title: string } | null;
+  education?: { id: string; title: string } | null;
+  skill?: { id: string; name: string } | null;
+  certification?: { id: string; name: string } | null;
+  highlight?: { id: string; title: string } | null;
 }
 
 const MediaPage = () => {
@@ -31,6 +37,10 @@ const MediaPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'image' | 'video' | 'used' | 'unused'>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [previewMedia, setPreviewMedia] = useState<MediaFile | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [editingFileName, setEditingFileName] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState('');
 
   useEffect(() => {
     fetchMedia();
@@ -64,7 +74,13 @@ const MediaPage = () => {
             item.certificationId ||
             item.highlightId ||
             item.highlightHomepageId ||
-            item.highlightCardId
+            item.highlightCardId ||
+            // Check if media is used in any experience's homepageMedia or cardMedia
+            item.experience ||
+            item.education ||
+            item.skill ||
+            item.certification ||
+            item.highlight
           );
 
           // Get usage details
@@ -126,6 +142,37 @@ const MediaPage = () => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleRename = async (id: string, newName: string) => {
+    try {
+      const response = await fetch(`/api/media/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileName: newName }),
+      });
+
+      if (response.ok) {
+        setMedia(media.map(item =>
+          item.id === id ? { ...item, fileName: newName } : item
+        ));
+        message.success('File renamed successfully');
+        setEditingFileName(null);
+        setNewFileName('');
+      } else {
+        throw new Error('Failed to rename');
+      }
+    } catch (error) {
+      console.error('Failed to rename file:', error);
+      message.error('Failed to rename file');
+    }
+  };
+
+  const handlePreview = (item: MediaFile) => {
+    setPreviewMedia(item);
+    setIsPreviewVisible(true);
   };
 
   const getUsageInfo = (item: MediaFile) => {
@@ -215,7 +262,10 @@ const MediaPage = () => {
                   hoverable
                   style={{ height: '100%' }}
                   cover={
-                    <div style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
+                    <div
+                      style={{ height: 200, overflow: 'hidden', position: 'relative', cursor: 'pointer' }}
+                      onClick={() => handlePreview(item)}
+                    >
                       {item.type === 'image' ? (
                         <img
                           src={item.url}
@@ -230,18 +280,25 @@ const MediaPage = () => {
                           }}
                         />
                       ) : (
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          backgroundColor: '#f0f0f0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexDirection: 'column'
-                        }}>
-                          <VideoCameraOutlined style={{ fontSize: 48, color: '#999' }} />
-                          <Text type="secondary" style={{ marginTop: 8 }}>Video File</Text>
-                        </div>
+                        <video
+                          src={item.url}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                          muted
+                          onMouseEnter={(e) => {
+                            (e.target as HTMLVideoElement).play().catch(() => {});
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.target as HTMLVideoElement).pause();
+                            (e.target as HTMLVideoElement).currentTime = 0;
+                          }}
+                          onError={() => {
+                            // Fallback to icon display if video fails to load
+                          }}
+                        />
                       )}
 
                       {/* Media Type Badge */}
@@ -278,6 +335,18 @@ const MediaPage = () => {
                     </div>
                   }
                   actions={[
+                    <Button
+                      key="rename"
+                      type="text"
+                      icon={<EditOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingFileName(item.id);
+                        setNewFileName(item.fileName || '');
+                      }}
+                    >
+                      Rename
+                    </Button>,
                     <Popconfirm
                       key="delete"
                       title="Delete this media file?"
@@ -327,6 +396,89 @@ const MediaPage = () => {
           })}
         </Row>
       )}
+
+      {/* Preview Modal */}
+      <Modal
+        open={isPreviewVisible}
+        onCancel={() => setIsPreviewVisible(false)}
+        footer={null}
+        width="90vw"
+        style={{ maxWidth: '1000px', top: 20 }}
+        centered
+        maskClosable={true}
+        destroyOnClose
+        title={previewMedia?.fileName}
+      >
+        {previewMedia && (
+          <div style={{ textAlign: 'center' }}>
+            {previewMedia.type === 'image' ? (
+              <img
+                src={previewMedia.url}
+                alt={previewMedia.fileName}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '70vh',
+                  objectFit: 'contain'
+                }}
+              />
+            ) : (
+              <video
+                src={previewMedia.url}
+                controls
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '70vh',
+                  objectFit: 'contain'
+                }}
+                autoPlay
+                muted
+              />
+            )}
+            <div style={{ marginTop: 16, textAlign: 'left' }}>
+              <Text strong>File Details:</Text>
+              <div style={{ marginTop: 8 }}>
+                <div>Type: {previewMedia.type}</div>
+                <div>Size: {formatFileSize(previewMedia.fileSize || 0)}</div>
+                {previewMedia.dimensions && (
+                  <div>Dimensions: {previewMedia.dimensions.width} × {previewMedia.dimensions.height} px</div>
+                )}
+                <div>Created: {new Date(previewMedia.createdAt).toLocaleDateString()}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Rename Modal */}
+      <Modal
+        open={!!editingFileName}
+        onCancel={() => {
+          setEditingFileName(null);
+          setNewFileName('');
+        }}
+        onOk={() => {
+          if (editingFileName && newFileName.trim()) {
+            handleRename(editingFileName, newFileName.trim());
+          }
+        }}
+        title="Rename File"
+        okText="Rename"
+        cancelText="Cancel"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Text>Enter new filename:</Text>
+        </div>
+        <Input
+          value={newFileName}
+          onChange={(e) => setNewFileName(e.target.value)}
+          placeholder="Enter filename..."
+          onPressEnter={() => {
+            if (editingFileName && newFileName.trim()) {
+              handleRename(editingFileName, newFileName.trim());
+            }
+          }}
+        />
+      </Modal>
     </div>
   );
 };

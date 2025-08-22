@@ -11,15 +11,19 @@ interface MediaModalProps {
   onClose: () => void;
   media: Media;
   highlightTitle: string;
+  company?: string;
+  description?: string | null;
+  startDate?: string;
+  endDate?: string | null;
 }
 
 // Performance-optimized video controls
-const VideoControls = memo(({ 
-  isPlaying, 
-  isMuted, 
-  onPlayPause, 
-  onMuteToggle, 
-  onClose 
+const VideoControls = memo(({
+  isPlaying,
+  isMuted,
+  onPlayPause,
+  onMuteToggle,
+  onClose
 }: {
   isPlaying: boolean;
   isMuted: boolean;
@@ -42,8 +46,8 @@ const VideoControls = memo(({
       onClick={onMuteToggle}
       className="!text-white !border-0 !w-8 !h-8 sm:!w-10 sm:!h-10 !rounded-full flex items-center justify-center touch-manipulation transition-all duration-200"
       size="large"
-      style={{ 
-        willChange: 'transform', 
+      style={{
+        willChange: 'transform',
         backfaceVisibility: 'hidden',
         backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.7)' : 'rgba(0, 0, 0, 0.5)'
       }}
@@ -77,7 +81,7 @@ const ImageControls = memo(({ onClose }: { onClose: () => void }) => (
 
 ImageControls.displayName = 'ImageControls';
 
-const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaModalProps) => {
+const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, description, startDate, endDate }: MediaModalProps) => {
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,10 +118,10 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
   useEffect(() => {
     if (isVisible && videoRef.current && media.type === 'video') {
       const video = videoRef.current;
-      
+
       // Optimize video loading
       video.preload = 'metadata';
-      
+
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise
@@ -151,7 +155,7 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
               <div className="w-8 h-8 border-2 border-white/30 border-t-white animate-spin rounded-full" />
             </div>
           )}
-          
+
           <video
             ref={videoRef}
             className="max-w-full max-h-full object-contain"
@@ -169,7 +173,7 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
           >
             <source src={media.url} type="video/mp4" />
           </video>
-          
+
           <VideoControls
             isPlaying={isPlaying}
             isMuted={isMuted}
@@ -177,6 +181,26 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
             onMuteToggle={handleMuteToggle}
             onClose={onClose}
           />
+
+          {/* Information overlay */}
+          <div className="absolute bottom-4 left-4 right-4 text-white bg-black/50 backdrop-blur-sm rounded-lg p-4">
+            <h3 className="text-lg font-bold mb-1">{highlightTitle}</h3>
+            {company && <p className="text-sm text-white/90 mb-1">{company}</p>}
+            {description && <p className="text-xs text-white/80 mb-1">{description}</p>}
+            <p className="text-xs text-white/70">
+              {startDate && new Date(startDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+              {endDate && ` - ${new Date(endDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}`}
+              {startDate && !endDate && ' - Present'}
+            </p>
+          </div>
         </div>
       );
     }
@@ -198,20 +222,40 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
             }}
             onLoadingComplete={() => setIsLoading(false)}
           />
-          
+
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
               <div className="w-8 h-8 border-2 border-white/30 border-t-white animate-spin rounded-full" />
             </div>
           )}
-          
+
           <ImageControls onClose={onClose} />
+
+          {/* Information overlay */}
+          <div className="absolute bottom-4 left-4 right-4 text-white bg-black/50 backdrop-blur-sm rounded-lg p-4">
+            <h3 className="text-lg font-bold mb-1">{highlightTitle}</h3>
+            {company && <p className="text-sm text-white/90 mb-1">{company}</p>}
+            {description && <p className="text-xs text-white/80 mb-1">{description}</p>}
+            <p className="text-xs text-white/70">
+              {startDate && new Date(startDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+              {endDate && ` - ${new Date(endDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}`}
+              {startDate && !endDate && ' - Present'}
+            </p>
+          </div>
         </div>
       );
     }
 
     return null;
-  }, [media, highlightTitle, isPlaying, isMuted, isLoading, handlePlayPause, handleMuteToggle, onClose, handleVideoPlay, handleVideoPause, handleVideoLoadStart, handleVideoCanPlay]);
+  }, [media, highlightTitle, company, description, startDate, endDate, isPlaying, isMuted, isLoading, handlePlayPause, handleMuteToggle, onClose, handleVideoPlay, handleVideoPause, handleVideoLoadStart, handleVideoCanPlay]);
 
   return (
     <>
@@ -222,13 +266,13 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
         closable={false}
         centered
         width="95vw"
-        destroyOnClose={true}
-        style={{ 
+        destroyOnHidden={true}
+        style={{
           maxWidth: '1000px',
           top: 0,
         }}
         styles={{
-          body: { 
+          body: {
             padding: 0,
             height: '70vh',
             maxHeight: '800px',
@@ -244,7 +288,7 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
             willChange: 'transform',
             backfaceVisibility: 'hidden',
           },
-          mask: { 
+          mask: {
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(4px)',
           }
@@ -252,16 +296,16 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle }: MediaMod
       >
         {renderOptimizedMedia()}
       </Modal>
-      
+
       <style jsx>{`
         :global(.ant-modal-mask) {
           backdrop-filter: blur(4px);
         }
-        
+
         :global(.ant-modal) {
           animation: modalSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         @keyframes modalSlideIn {
           from {
             opacity: 0;

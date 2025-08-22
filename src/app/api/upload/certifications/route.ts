@@ -13,16 +13,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+    // Validate file type - support both images and videos
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size - larger limit for videos (50MB for videos, 10MB for images)
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB for videos, 10MB for images
+
+    console.log('Certifications file upload validation:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
+      isVideo,
+      maxSize,
+      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2)
+    });
+
     if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large' }, { status: 400 });
+      return NextResponse.json({
+        error: `File too large. Max size: ${isVideo ? '50MB' : '10MB'}. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      }, { status: 400 });
     }
 
     // Validate certificationId to prevent path traversal

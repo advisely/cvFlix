@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,16 +14,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    // Validate file type - support both images and videos
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size - larger limit for videos (50MB for videos, 10MB for images)
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB for videos, 10MB for images
+
+    console.log('File upload validation:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
+      isVideo,
+      maxSize,
+      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2)
+    });
+
     if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large' }, { status: 400 });
+      return NextResponse.json({
+        error: `File too large. Max size: ${isVideo ? '50MB' : '10MB'}. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      }, { status: 400 });
     }
 
     // Validate experienceId to prevent path traversal
@@ -36,7 +54,8 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename with proper extension validation
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!fileExtension || !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
+    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
       return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
     }
 
@@ -51,11 +70,22 @@ export async function POST(request: NextRequest) {
     // Return the relative URL - Next.js will serve from public directory
     const publicUrl = `/uploads/experiences/${experienceId}/${filename}`;
 
+    // Create Media record in database
+    const mediaType = isVideo ? 'video' : 'image';
+    const mediaRecord = await prisma.media.create({
+      data: {
+        url: publicUrl,
+        type: mediaType,
+        // Don't connect to experience yet - this will be done when saving the experience
+      }
+    });
+
     return NextResponse.json({
+      id: mediaRecord.id,
       url: publicUrl,
+      type: mediaType,
       filename,
       size: file.size,
-      type: file.type,
     });
   } catch (error) {
     console.error('Upload error:', error);
