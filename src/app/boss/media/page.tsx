@@ -12,6 +12,8 @@ interface MediaFile {
   url: string;
   type: 'image' | 'video';
   experienceId?: string | null;
+  experienceHomepageId?: string | null;
+  experienceCardId?: string | null;
   educationId?: string | null;
   skillId?: string | null;
   certificationId?: string | null;
@@ -25,10 +27,14 @@ interface MediaFile {
   isUsed?: boolean;
   // Relationship objects from API
   experience?: { id: string; title: string } | null;
+  experienceHomepage?: { id: string; title: string } | null;
+  experienceCard?: { id: string; title: string } | null;
   education?: { id: string; title: string } | null;
   skill?: { id: string; name: string } | null;
   certification?: { id: string; name: string } | null;
   highlight?: { id: string; title: string } | null;
+  highlightHomepage?: { id: string; title: string } | null;
+  highlightCard?: { id: string; title: string } | null;
 }
 
 const MediaPage = () => {
@@ -69,29 +75,37 @@ const MediaPage = () => {
           const fileName = item.url.split('/').pop() || 'Unknown';
           const isUsed = !!(
             item.experienceId ||
+            item.experienceHomepageId ||
+            item.experienceCardId ||
             item.educationId ||
             item.skillId ||
             item.certificationId ||
             item.highlightId ||
             item.highlightHomepageId ||
             item.highlightCardId ||
-            // Check if media is used in any experience's homepageMedia or cardMedia
+            // Check if media is used via relationship objects from API
             item.experience ||
+            item.experienceHomepage ||
+            item.experienceCard ||
             item.education ||
             item.skill ||
             item.certification ||
-            item.highlight
+            item.highlight ||
+            item.highlightHomepage ||
+            item.highlightCard
           );
 
           // Get usage details
           const usageDetails = [];
-          if (item.experienceId) usageDetails.push('Experience');
-          if (item.educationId) usageDetails.push('Education');
-          if (item.skillId) usageDetails.push('Skill');
-          if (item.certificationId) usageDetails.push('Certification');
-          if (item.highlightId) usageDetails.push('Highlight');
-          if (item.highlightHomepageId) usageDetails.push('Homepage');
-          if (item.highlightCardId) usageDetails.push('Card');
+          if (item.experienceId || item.experience) usageDetails.push('Experience');
+          if (item.experienceHomepageId || item.experienceHomepage) usageDetails.push('Experience Homepage');
+          if (item.experienceCardId || item.experienceCard) usageDetails.push('Experience Card');
+          if (item.educationId || item.education) usageDetails.push('Education');
+          if (item.skillId || item.skill) usageDetails.push('Skill');
+          if (item.certificationId || item.certification) usageDetails.push('Certification');
+          if (item.highlightId || item.highlight) usageDetails.push('Highlight');
+          if (item.highlightHomepageId || item.highlightHomepage) usageDetails.push('Highlight Homepage');
+          if (item.highlightCardId || item.highlightCard) usageDetails.push('Highlight Card');
 
           // Try to get file size and dimensions (this would need server-side implementation)
           return {
@@ -179,13 +193,15 @@ const MediaPage = () => {
     if (!item.isUsed) return { text: 'Unused', color: 'orange' };
 
     const usageTypes = [];
-    if (item.experienceId) usageTypes.push('Experience');
-    if (item.educationId) usageTypes.push('Education');
-    if (item.skillId) usageTypes.push('Skill');
-    if (item.certificationId) usageTypes.push('Certification');
-    if (item.highlightId) usageTypes.push('Highlight');
-    if (item.highlightHomepageId) usageTypes.push('Homepage');
-    if (item.highlightCardId) usageTypes.push('Card');
+    if (item.experienceId || item.experience) usageTypes.push('Experience');
+    if (item.experienceHomepageId || item.experienceHomepage) usageTypes.push('Experience Homepage');
+    if (item.experienceCardId || item.experienceCard) usageTypes.push('Experience Card');
+    if (item.educationId || item.education) usageTypes.push('Education');
+    if (item.skillId || item.skill) usageTypes.push('Skill');
+    if (item.certificationId || item.certification) usageTypes.push('Certification');
+    if (item.highlightId || item.highlight) usageTypes.push('Highlight');
+    if (item.highlightHomepageId || item.highlightHomepage) usageTypes.push('Highlight Homepage');
+    if (item.highlightCardId || item.highlightCard) usageTypes.push('Highlight Card');
 
     return { text: usageTypes.join(', '), color: 'green' };
   };
@@ -406,7 +422,7 @@ const MediaPage = () => {
         style={{ maxWidth: '1000px', top: 20 }}
         centered
         maskClosable={true}
-        destroyOnClose
+        destroyOnHidden
         title={previewMedia?.fileName}
       >
         {previewMedia && (

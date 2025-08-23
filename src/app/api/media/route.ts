@@ -8,10 +8,14 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       include: {
         experience: true,
+        experienceHomepage: true,
+        experienceCard: true,
         education: true,
         skill: true,
         certification: true,
-        highlight: true
+        highlight: true,
+        highlightHomepage: true,
+        highlightCard: true
       }
     })
     return NextResponse.json(media)

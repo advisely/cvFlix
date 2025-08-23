@@ -11,9 +11,6 @@ export async function GET() {
             homepageMedia: true,
             cardMedia: true,
           },
-          orderBy: {
-            startDate: 'desc',
-          },
         },
       },
     })
@@ -53,7 +50,7 @@ export async function GET() {
           logoText: "resumeflex",
           logoImageUrl: null,
           useImageLogo: false,
-          workExperienceLabel: "Portfolio",
+          workExperienceLabel: "Work Experience",
           careerSeriesLabel: "Career Series",
           educationLabel: "Education",
           certificationsLabel: "Certifications",
@@ -69,16 +66,12 @@ export async function GET() {
       })
     }
 
-    // Combine all companies and sort by their most recent experience start date
-    const portfolioExperiences = companies
-      .sort((a, b) => {
-        const aStartDate = new Date(a.experiences[0].startDate);
-        const bStartDate = new Date(b.experiences[0].startDate);
-        return bStartDate.getTime() - aStartDate.getTime(); // DESC order (most recent first)
-      });
+    const singleExperiences = companies.filter((company) => company.experiences.length === 1)
+    const seriesExperiences = companies.filter((company) => company.experiences.length > 1)
 
     return NextResponse.json({
-      portfolioExperiences,
+      singleExperiences,
+      seriesExperiences,
       educations,
       certifications,
       skills,

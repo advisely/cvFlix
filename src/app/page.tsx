@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import ExperienceCard from '@/components/ExperienceCard'
-import SeriesCard from '@/components/SeriesCard'
 import { Carousel } from '@/components/Carousel'
 import EducationCard from '@/components/EducationCard'
 import CertificationCard from '@/components/CertificationCard'
@@ -61,8 +60,7 @@ interface NavbarConfig {
 
 export default function Home() {
   const [data, setData] = useState<{
-    singleExperiences: (Company & { experiences: Experience[] })[];
-    seriesExperiences: (Company & { experiences: Experience[] })[];
+    portfolioExperiences: (Company & { experiences: Experience[] })[];
     educations: (Education & { media: Media[] })[];
     certifications: (Certification & { media: Media[] })[];
     skills: (Skill & { media: Media[] })[];
@@ -85,8 +83,7 @@ export default function Home() {
       } catch (error) {
         console.error('Failed to fetch data:', error);
         setData({
-          singleExperiences: [],
-          seriesExperiences: [],
+          portfolioExperiences: [],
           educations: [],
           certifications: [],
           skills: [],
@@ -96,7 +93,7 @@ export default function Home() {
             logoText: 'resumeflex',
             logoImageUrl: null,
             useImageLogo: false,
-            workExperienceLabel: 'Work Experience',
+            workExperienceLabel: 'Portfolio',
             careerSeriesLabel: 'Career Series',
             educationLabel: 'Education',
             certificationsLabel: 'Certifications',
@@ -123,8 +120,7 @@ export default function Home() {
       <main className="bg-[#141414] text-white min-h-screen">
         <div className="p-4 md:p-8">
           <div className="h-12 bg-[#404040] rounded mb-8 w-1/4 animate-pulse"></div>
-          <SkeletonCarousel title="Work Experience" cardType="movie" count={3} />
-          <SkeletonCarousel title="Career Series" cardType="series" count={2} />
+          <SkeletonCarousel title="Portfolio" cardType="movie" count={3} />
           <SkeletonCarousel title="Education" cardType="education" count={2} />
           <SkeletonCarousel title="Certifications" cardType="certification" count={2} />
           <SkeletonCarousel title="Skills" cardType="skill" count={3} />
@@ -144,7 +140,7 @@ export default function Home() {
     );
   }
 
-  const { singleExperiences, seriesExperiences, educations, certifications, skills, highlights, navbarConfig } = data;
+  const { portfolioExperiences, educations, certifications, skills, highlights, navbarConfig } = data;
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -210,14 +206,6 @@ export default function Home() {
                     className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
                   >
                     {navbarConfig.workExperienceLabel}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('career-series')}
-                    className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                  >
-                    {navbarConfig.careerSeriesLabel}
                   </button>
                 </li>
                 <li>
@@ -328,7 +316,7 @@ export default function Home() {
         <div id="work-experience" className="mb-8">
           <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.workExperienceLabel}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {singleExperiences.map((company: any) => (
+            {portfolioExperiences.map((company: any) => (
               <div key={company.id}>
                 <ExperienceCard
                     experience={{ ...company.experiences[0], company, companyId: company.id }}
@@ -340,17 +328,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div id="career-series" className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.careerSeriesLabel}</h2>
-          <Carousel>
-            {seriesExperiences.map((company: any) => (
-              <div key={company.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                <SeriesCard company={company} />
-              </div>
-            ))}
-          </Carousel>
         </div>
 
         <div id="education" className="mb-8">
