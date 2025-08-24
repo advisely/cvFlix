@@ -380,24 +380,62 @@ const AppearancePage = () => {
           >
             <Input placeholder="e.g., resumeflex, MyPortfolio, John Doe" />
           </Form.Item>
-\n          <Form.Item
+          <Form.Item
             name="logoFontFamily"
             label="Logo Font Family"
             rules={[{ required: true, message: 'Please select a logo font family' }]}
           >
-            <Select placeholder="Select logo font family">
-              <Option value="Inter">Inter (Default)</Option>
-              <Option value="Arial">Arial</Option>
-              <Option value="Helvetica">Helvetica</Option>
-              <Option value="Georgia">Georgia</Option>
-              <Option value="Times New Roman">Times New Roman</Option>
-              <Option value="Roboto">Roboto</Option>
-              <Option value="Open Sans">Open Sans</Option>
-              <Option value="Lato">Lato</Option>
-              <Option value="Montserrat">Montserrat</Option>
-              <Option value="Poppins">Poppins</Option>
-              <Option value="var(--font-caveat-brush)">Caveat Brush (Google Font)</Option>
-              <Option value="var(--font-pacifico)">Pacifico (Google Font)</Option>
+            <Select 
+              placeholder="Select logo font family" 
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children as any)?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+              dropdownStyle={{ 
+                fontSize: '16px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                paddingTop: '8px',
+                paddingBottom: '8px'
+              }}
+              style={{ fontSize: '14px' }}
+            >
+              <Option value="Inter">
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: '500' }}>Inter (Default)</span>
+              </Option>
+              <Option value="Arial">
+                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '16px', fontWeight: '500' }}>Arial</span>
+              </Option>
+              <Option value="Helvetica">
+                <span style={{ fontFamily: 'Helvetica, sans-serif', fontSize: '16px', fontWeight: '500' }}>Helvetica</span>
+              </Option>
+              <Option value="Georgia">
+                <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: '500' }}>Georgia</span>
+              </Option>
+              <Option value="Times New Roman">
+                <span style={{ fontFamily: '"Times New Roman", serif', fontSize: '16px', fontWeight: '500' }}>Times New Roman</span>
+              </Option>
+              <Option value="Roboto">
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', fontWeight: '500' }}>Roboto</span>
+              </Option>
+              <Option value="Open Sans">
+                <span style={{ fontFamily: '"Open Sans", sans-serif', fontSize: '16px', fontWeight: '500' }}>Open Sans</span>
+              </Option>
+              <Option value="Lato">
+                <span style={{ fontFamily: 'Lato, sans-serif', fontSize: '16px', fontWeight: '500' }}>Lato</span>
+              </Option>
+              <Option value="Montserrat">
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '16px', fontWeight: '500' }}>Montserrat</span>
+              </Option>
+              <Option value="Poppins">
+                <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '16px', fontWeight: '500' }}>Poppins</span>
+              </Option>
+              <Option value="var(--font-caveat-brush)">
+                <span style={{ fontFamily: 'var(--font-caveat-brush), cursive', fontSize: '18px', fontWeight: '500' }}>Caveat Brush (Google Font)</span>
+              </Option>
+              <Option value="var(--font-pacifico)">
+                <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
+              </Option>
             </Select>
           </Form.Item>
 
@@ -555,19 +593,57 @@ const AppearancePage = () => {
             label="Website Font Family"
             rules={[{ required: true, message: 'Please select a font family' }]}
           >
-            <Select placeholder="Select font family">
-              <Option value="Inter">Inter (Default)</Option>
-              <Option value="Arial">Arial</Option>
-              <Option value="Helvetica">Helvetica</Option>
-              <Option value="Georgia">Georgia</Option>
-              <Option value="Times New Roman">Times New Roman</Option>
-              <Option value="Roboto">Roboto</Option>
-              <Option value="Open Sans">Open Sans</Option>
-              <Option value="Lato">Lato</Option>
-              <Option value="Montserrat">Montserrat</Option>
-              <Option value="Poppins">Poppins</Option>
-              <Option value="var(--font-caveat-brush)">Caveat Brush (Google Font)</Option>
-              <Option value="var(--font-pacifico)">Pacifico (Google Font)</Option>
+            <Select 
+              placeholder="Select font family"
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children as any)?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+              dropdownStyle={{ 
+                fontSize: '16px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                paddingTop: '8px',
+                paddingBottom: '8px'
+              }}
+              style={{ fontSize: '14px' }}
+            >
+              <Option value="Inter">
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: '500' }}>Inter (Default)</span>
+              </Option>
+              <Option value="Arial">
+                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '16px', fontWeight: '500' }}>Arial</span>
+              </Option>
+              <Option value="Helvetica">
+                <span style={{ fontFamily: 'Helvetica, sans-serif', fontSize: '16px', fontWeight: '500' }}>Helvetica</span>
+              </Option>
+              <Option value="Georgia">
+                <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: '500' }}>Georgia</span>
+              </Option>
+              <Option value="Times New Roman">
+                <span style={{ fontFamily: '"Times New Roman", serif', fontSize: '16px', fontWeight: '500' }}>Times New Roman</span>
+              </Option>
+              <Option value="Roboto">
+                <span style={{ fontFamily: 'Roboto, sans-serif', fontSize: '16px', fontWeight: '500' }}>Roboto</span>
+              </Option>
+              <Option value="Open Sans">
+                <span style={{ fontFamily: '"Open Sans", sans-serif', fontSize: '16px', fontWeight: '500' }}>Open Sans</span>
+              </Option>
+              <Option value="Lato">
+                <span style={{ fontFamily: 'Lato, sans-serif', fontSize: '16px', fontWeight: '500' }}>Lato</span>
+              </Option>
+              <Option value="Montserrat">
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '16px', fontWeight: '500' }}>Montserrat</span>
+              </Option>
+              <Option value="Poppins">
+                <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '16px', fontWeight: '500' }}>Poppins</span>
+              </Option>
+              <Option value="var(--font-caveat-brush)">
+                <span style={{ fontFamily: 'var(--font-caveat-brush), cursive', fontSize: '18px', fontWeight: '500' }}>Caveat Brush (Google Font)</span>
+              </Option>
+              <Option value="var(--font-pacifico)">
+                <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
+              </Option>
             </Select>
           </Form.Item>
 

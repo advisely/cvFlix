@@ -11,30 +11,49 @@ export async function PUT(request: Request, context: RouteContext) {
   try {
     const {
       title,
+      titleFr,
       companyId,
       description,
+      descriptionFr,
       startDate,
       endDate,
-      media = [],          // FIXED: Default empty array to prevent undefined
-      homepageMedia = [],  // FIXED: Default empty array to prevent undefined  
-      cardMedia = []       // FIXED: Default empty array to prevent undefined
+      dateRanges = [],
+      media = [],
+      homepageMedia = [],  
+      cardMedia = []
     } = await request.json();
+
+    // Use dateRanges if provided, otherwise fall back to startDate/endDate
+    const rangesToUpdate = dateRanges.length > 0 
+      ? dateRanges 
+      : [{ startDate, endDate }];
 
     const updatedExperience = await prisma.experience.update({
       where: { id },
       data: {
         title,
+        titleFr,
         company: { connect: { id: companyId } },
         description,
-        startDate,
-        endDate,
-        // FIXED: Safe array handling with fallback to empty arrays
+        descriptionFr,
+        startDate, // Keep for backward compatibility
+        endDate,   // Keep for backward compatibility
+        dateRanges: {
+          deleteMany: {}, // Remove existing date ranges
+          create: rangesToUpdate.map(range => ({
+            startDate: new Date(range.startDate),
+            endDate: range.endDate ? new Date(range.endDate) : null
+          }))
+        },
         media: { set: (media || []).map((m: { id: string }) => ({ id: m.id })) },
         homepageMedia: { set: (homepageMedia || []).map((m: { id: string }) => ({ id: m.id })) },
         cardMedia: { set: (cardMedia || []).map((m: { id: string }) => ({ id: m.id })) },
       },
       include: {
         company: true,
+        dateRanges: {
+          orderBy: { startDate: 'asc' }
+        },
         media: true,
         homepageMedia: true,
         cardMedia: true

@@ -16,28 +16,48 @@ model User {
 model Company {
   id          String       @id @default(cuid())
   name        String       @unique
+  nameFr      String
   logoUrl     String?
   experiences Experience[]
+  highlights  Highlight[]
 }
 
 model Experience {
-  id              String           @id @default(cuid())
+  id              String                @id @default(cuid())
   title           String
-  startDate       DateTime
-  endDate         DateTime?
+  titleFr         String
+  startDate       DateTime              // Kept for backward compatibility
+  endDate         DateTime?             // Kept for backward compatibility
   description     String
+  descriptionFr   String
   companyId       String
+  dateRanges      ExperienceDateRange[] // NEW: Multi-period support
   accomplishments Accomplishment[]
-  company         Company          @relation(fields: [companyId], references: [id])
-  media           Media[]          @relation("ExperienceMedia")
-  homepageMedia   Media[]          @relation("ExperienceHomepageMedia")
-  cardMedia       Media[]          @relation("ExperienceCardMedia")
+  company         Company               @relation(fields: [companyId], references: [id])
+  media           Media[]               @relation("ExperienceMedia")
+  homepageMedia   Media[]               @relation("ExperienceHomepageMedia")
+  cardMedia       Media[]               @relation("ExperienceCardMedia")
   projects        Project[]
+}
+
+model ExperienceDateRange {
+  id           String     @id @default(cuid())
+  startDate    DateTime
+  endDate      DateTime?  // null indicates current/ongoing position
+  experienceId String
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  @@index([experienceId])
+  @@index([startDate])
+  @@index([endDate])
 }
 
 model Accomplishment {
   id           String     @id @default(cuid())
   description  String
+  descriptionFr String
   experienceId String
   experience   Experience @relation(fields: [experienceId], references: [id])
 }
@@ -45,14 +65,18 @@ model Accomplishment {
 model Skill {
   id       String @id @default(cuid())
   name     String
+  nameFr   String
   category String
+  categoryFr String
   media    Media[]
 }
 
 model Project {
   id           String     @id @default(cuid())
   name         String
+  nameFr       String
   description  String
+  descriptionFr String
   url          String?
   experienceId String
   experience   Experience @relation(fields: [experienceId], references: [id])
@@ -61,8 +85,11 @@ model Project {
 model Education {
   id          String    @id @default(cuid())
   institution String
+  institutionFr String
   degree      String
+  degreeFr    String
   field       String
+  fieldFr     String
   startDate   DateTime
   endDate     DateTime?
   media       Media[]
@@ -71,7 +98,9 @@ model Education {
 model Certification {
   id        String   @id @default(cuid())
   name      String
+  nameFr    String
   issuer    String
+  issuerFr  String
   issueDate DateTime
   media     Media[]
 }
@@ -79,8 +108,11 @@ model Certification {
 model Highlight {
   id              String    @id @default(cuid())
   title           String
-  company         String
+  titleFr         String
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id])
   description     String?
+  descriptionFr   String?
   startDate       DateTime
   media           Media[]   @relation("HighlightMedia")
   homepageMedia   Media[]   @relation("HighlightHomepageMedia")
@@ -91,13 +123,19 @@ model Highlight {
 model NavbarConfig {
   id                String   @id @default(cuid())
   logoText          String   @default("resumeflex")
+  logoTextFr        String   @default("resumeflex")
   logoImageUrl      String?
   useImageLogo      Boolean  @default(false)
   workExperienceLabel String @default("Work Experience")
+  workExperienceLabelFr String @default("Expérience de travail")
   careerSeriesLabel   String @default("Career Series")
+  careerSeriesLabelFr String @default("Série de carrière")
   educationLabel      String @default("Education")
+  educationLabelFr    String @default("Éducation")
   certificationsLabel String @default("Certifications")
+  certificationsLabelFr String @default("Certifications")
   skillsLabel         String @default("Skills")
+  skillsLabelFr       String @default("Compétences")
   backgroundColor   String   @default("#141414")
   backgroundType    String   @default("color") // "color", "gradient", "image"
   backgroundImageUrl String?
@@ -112,9 +150,11 @@ model NavbarConfig {
 model FooterConfig {
   id              String   @id @default(cuid())
   logoText        String   @default("resumeflex")
+  logoTextFr      String   @default("resumeflex")
   logoImageUrl    String?
   useImageLogo    Boolean  @default(false)
   copyrightText   String   @default("© 2025 resumeflex. All rights reserved.")
+  copyrightTextFr String   @default("© 2025 resumeflex. Tous droits réservés.")
   linkedinUrl     String?
   showLinkedin    Boolean  @default(true)
   backgroundColor String   @default("#0a0a0a")

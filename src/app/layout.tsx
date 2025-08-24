@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Caveat_Brush, Pacifico } from "next/font/google";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import '@ant-design/v5-patch-for-react-19';
 import ConsoleFilter from '@/components/ConsoleFilter';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -58,7 +59,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${caveatBrush.variable} ${pacifico.variable} antialiased`}
       >
         <ConsoleFilter />
-        <AntdRegistry>{children}</AntdRegistry>
+        <LanguageProvider>
+          <AntdRegistry>{children}</AntdRegistry>
+        </LanguageProvider>
       </body>
     </html>
   );

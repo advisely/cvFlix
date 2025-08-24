@@ -8,7 +8,8 @@ A modern, interactive web application that presents a professional resume in the
 - **Netflix-inspired UI** with dark theme and smooth animations
 - **Responsive carousels** for browsing different content sections
 - **Movie cards** for single work experiences
-- **Series cards** for companies with multiple roles
+- **Series cards** for companies with multiple roles (with compound date display)
+- **Multi-period experience support** showing compound dates (e.g., "2016 - 2018 - 2022")
 - **Skeleton loading states** for smooth user experience
 - **Mobile-first responsive design** that works on all devices
 

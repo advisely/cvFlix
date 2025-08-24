@@ -1,12 +1,16 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Row, Col } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Row, Col, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { Company } from '@prisma/client';
-import { ExperienceWithCompany, MediaItem, MediaApiResponse } from './types';
+import { ExperienceWithCompany, MediaItem, MediaApiResponse, ExperienceDateRange } from './types';
 import dayjs from 'dayjs';
 import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import CleanupBlobUrls from './cleanup-blob-urls';
+import MultilingualFormTabs from '@/components/MultilingualFormTabs';
+import DateRangeManager from '@/components/DateRangeManager';
+
+const { Text } = Typography;
 
 const ExperiencesPage = () => {
   const [experiences, setExperiences] = useState<ExperienceWithCompany[]>([]);
@@ -19,6 +23,9 @@ const ExperiencesPage = () => {
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
   const [mediaType, setMediaType] = useState<'homepage' | 'card'>('homepage');
+  const [dateRanges, setDateRanges] = useState<ExperienceDateRange[]>([
+    { id: '', startDate: '', endDate: null, isCurrent: false }
+  ]);
 
 
   useEffect(() => {
@@ -51,6 +58,7 @@ const ExperiencesPage = () => {
     setEditingRecord(null);
     setHomepageMedia([]);
     setCardMedia([]);
+    setDateRanges([{ id: `range-${Date.now()}`, startDate: '', endDate: null, isCurrent: false }]);
     form.resetFields();
     setIsModalVisible(true);
   };
@@ -69,12 +77,24 @@ const ExperiencesPage = () => {
     setHomepageMedia(getMediaFor(record.homepageMedia));
     setCardMedia(getMediaFor(record.cardMedia));
 
+    // Convert single date fields to date ranges for backward compatibility
+    const existingDateRanges = record.dateRanges || [{
+      id: `range-${Date.now()}`,
+      startDate: typeof record.startDate === 'string' ? record.startDate : new Date(record.startDate).toISOString(),
+      endDate: record.endDate ? (typeof record.endDate === 'string' ? record.endDate : new Date(record.endDate).toISOString()) : null,
+      isCurrent: !record.endDate,
+      experienceId: record.id
+    }];
+
+    setDateRanges(existingDateRanges);
+
     form.setFieldsValue({
       title: record.title,
+      titleFr: record.titleFr,
       companyId: record.companyId,
       description: record.description,
-      startDate: dayjs(record.startDate),
-      endDate: record.endDate ? dayjs(record.endDate) : null,
+      descriptionFr: record.descriptionFr,
+      dateRanges: existingDateRanges
     });
     setIsModalVisible(true);
   };
@@ -85,10 +105,17 @@ const ExperiencesPage = () => {
       const url = editingRecord ? `/api/experiences/${editingRecord.id}` : '/api/experiences';
       const method = editingRecord ? 'PUT' : 'POST';
 
+      // For backward compatibility, use the first date range for startDate/endDate
+      const primaryRange = dateRanges.find(r => r.startDate) || dateRanges[0];
+      
       const experienceData = {
         ...values,
-        startDate: values.startDate.toISOString(),
-        endDate: values.endDate ? values.endDate.toISOString() : null,
+        startDate: primaryRange?.startDate ? dayjs(primaryRange.startDate).toISOString() : new Date().toISOString(),
+        endDate: primaryRange?.endDate ? dayjs(primaryRange.endDate).toISOString() : null,
+        dateRanges: dateRanges.map(range => ({
+          startDate: range.startDate,
+          endDate: range.isCurrent ? null : range.endDate
+        })),
         homepageMedia: homepageMedia.map(m => ({ id: m.id, url: m.url, type: m.type })),
         cardMedia: cardMedia.map(m => ({ id: m.id, url: m.url, type: m.type }))
       };
@@ -215,42 +242,87 @@ const ExperiencesPage = () => {
     if (type === 'card') setCardMedia(cardMedia.filter(m => m.url !== mediaUrl));
   };
 
+  const formatDateRanges = (ranges: ExperienceDateRange[]): string => {
+    return ranges
+      .filter(range => range.startDate)
+      .map(range => {
+        const start = dayjs(range.startDate).format('YYYY');
+        const end = range.endDate ? dayjs(range.endDate).format('YYYY') : 'Present';
+        return start === end.slice(0, 4) ? start : `${start}-${end}`;
+      })
+      .join(', ');
+  };
+
+  const handleDateRangesChange = (ranges: ExperienceDateRange[]) => {
+    setDateRanges(ranges);
+    form.setFieldsValue({ dateRanges: ranges });
+  };
+
+  // Custom validator for date ranges
+  const validateDateRanges = (_: unknown, value: ExperienceDateRange[]) => {
+    if (!value || value.length === 0) {
+      return Promise.reject(new Error('At least one employment period is required'));
+    }
+    
+    const hasValidRange = value.some(range => range.startDate);
+    if (!hasValidRange) {
+      return Promise.reject(new Error('At least one employment period must have a start date'));
+    }
+    
+    return Promise.resolve();
+  };
+
   const columns = [
-    { 
-      title: 'Title', 
-      dataIndex: 'title', 
+    {
+      title: 'Title',
+      dataIndex: 'title',
       key: 'title',
-      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) =>
         a.title.localeCompare(b.title),
       showSorterTooltip: false
     },
-    { 
-      title: 'Company', 
-      dataIndex: ['company', 'name'], 
+    {
+      title: 'Company',
+      dataIndex: ['company', 'name'],
       key: 'company',
-      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
+      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) =>
         a.company.name.localeCompare(b.company.name),
       showSorterTooltip: false
     },
-    { 
-      title: 'Start Date', 
-      dataIndex: 'startDate', 
-      key: 'startDate', 
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
-      sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => 
-        dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
-      showSorterTooltip: false
-    },
-    { 
-      title: 'End Date', 
-      dataIndex: 'endDate', 
-      key: 'endDate', 
-      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : 'Present',
+    {
+      title: 'Employment Periods',
+      key: 'dateRanges',
+      render: (_, record: ExperienceWithCompany) => {
+        // For backward compatibility, create date range from single dates if dateRanges doesn't exist
+        const ranges = record.dateRanges || [{
+          id: '1',
+          startDate: typeof record.startDate === 'string' ? record.startDate : new Date(record.startDate).toISOString(),
+          endDate: record.endDate ? (typeof record.endDate === 'string' ? record.endDate : new Date(record.endDate).toISOString()) : null,
+          isCurrent: !record.endDate
+        }];
+        
+        const formatted = formatDateRanges(ranges);
+        const hasCurrent = ranges.some(r => !r.endDate || r.isCurrent);
+        
+        return (
+          <div>
+            <Text>{formatted}</Text>
+            {hasCurrent && (
+              <Tag color="green" style={{ marginLeft: 8 }}>
+                Current
+              </Tag>
+            )}
+          </div>
+        );
+      },
       sorter: (a: ExperienceWithCompany, b: ExperienceWithCompany) => {
-        // Handle null end dates (Present) - treat as future date for sorting
-        const aDate = a.endDate ? dayjs(a.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
-        const bDate = b.endDate ? dayjs(b.endDate).valueOf() : dayjs().add(100, 'years').valueOf();
-        return aDate - bDate;
+        // Sort by earliest start date across all ranges
+        const aRanges = a.dateRanges || [{ startDate: typeof a.startDate === 'string' ? a.startDate : new Date(a.startDate).toISOString(), endDate: a.endDate }];
+        const bRanges = b.dateRanges || [{ startDate: typeof b.startDate === 'string' ? b.startDate : new Date(b.startDate).toISOString(), endDate: b.endDate }];
+        
+        const aEarliest = Math.min(...aRanges.map(r => new Date(r.startDate).getTime()));
+        const bEarliest = Math.min(...bRanges.map(r => new Date(r.startDate).getTime()));
+        return bEarliest - aEarliest; // Most recent first
       },
       showSorterTooltip: false
     },
@@ -363,9 +435,6 @@ const ExperiencesPage = () => {
         width={800}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="title" label="Title" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
           <Form.Item name="companyId" label="Company" rules={[{ required: true }]}>
             <Select>
               {companies.map(company => (
@@ -373,15 +442,53 @@ const ExperiencesPage = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input.TextArea />
+
+          <Form.Item
+            label="Employment Periods"
+            name="dateRanges"
+            rules={[
+              { required: true, message: 'At least one employment period is required' },
+              { validator: validateDateRanges }
+            ]}
+          >
+            <DateRangeManager
+              value={dateRanges}
+              onChange={handleDateRangesChange}
+              validation={{
+                allowOverlaps: true,
+                maxRanges: 10,
+                requireMinimumDuration: true
+              }}
+            />
           </Form.Item>
-          <Form.Item name="startDate" label="Start Date" rules={[{ required: true }]}>
-            <DatePicker />
-          </Form.Item>
-          <Form.Item name="endDate" label="End Date">
-            <DatePicker />
-          </Form.Item>
+
+          <MultilingualFormTabs
+            form={form}
+            englishFields={['title', 'description']}
+            frenchFields={['titleFr', 'descriptionFr']}
+          >
+            {(language) => (
+              <>
+                <Form.Item
+                  name={language === 'en' ? 'title' : 'titleFr'}
+                  label={`Title (${language === 'en' ? 'English' : 'Français'})`}
+                  rules={[{ required: true, message: `Please enter the title in ${language === 'en' ? 'English' : 'French'}` }]}
+                >
+                  <Input placeholder={`Enter title in ${language === 'en' ? 'English' : 'French'}`} />
+                </Form.Item>
+                <Form.Item
+                  name={language === 'en' ? 'description' : 'descriptionFr'}
+                  label={`Description (${language === 'en' ? 'English' : 'Français'})`}
+                  rules={[{ required: true, message: `Please enter the description in ${language === 'en' ? 'English' : 'French'}` }]}
+                >
+                  <Input.TextArea
+                    rows={4}
+                    placeholder={`Enter description in ${language === 'en' ? 'English' : 'French'}`}
+                  />
+                </Form.Item>
+              </>
+            )}
+          </MultilingualFormTabs>
 
           <MediaUploadSection
             title="Homepage Media"

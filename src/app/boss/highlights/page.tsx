@@ -1,14 +1,17 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import { HighlightWithMedia, MediaItem, MediaApiResponse } from './types';
+import { Company } from '@prisma/client';
 import dayjs from 'dayjs';
 import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, TableOutlined, AppstoreOutlined, HomeOutlined, CreditCardOutlined } from '@ant-design/icons';
 import HighlightCardGrid from '@/components/HighlightCardGrid';
+import MultilingualFormTabs from '@/components/MultilingualFormTabs';
 
 const HighlightsPage = () => {
   const [highlights, setHighlights] = useState<HighlightWithMedia[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<HighlightWithMedia | null>(null);
   const [form] = Form.useForm();
@@ -25,12 +28,14 @@ const HighlightsPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [highlightsResponse, mediaResponse] = await Promise.all([
+      const [highlightsResponse, mediaResponse, companiesResponse] = await Promise.all([
         fetch('/api/highlights'),
-        fetch('/api/media')
+        fetch('/api/media'),
+        fetch('/api/companies')
       ]);
       const highlightsData = await highlightsResponse.json();
       const mediaData = await mediaResponse.json();
+      const companiesData = await companiesResponse.json();
 
       // Map all media data to ensure proper typing
       const allMediaData = mediaData.map((item: MediaApiResponse) => ({
@@ -49,6 +54,7 @@ const HighlightsPage = () => {
 
       setHighlights(highlightsData);
       setAllMedia(allMediaData);
+      setCompanies(companiesData);
     };
 
     fetchData();
@@ -119,6 +125,17 @@ const HighlightsPage = () => {
           fetch('/api/highlights'),
           fetch('/api/media')
         ]);
+        
+        if (!highlightsResponse.ok) {
+          console.error('Failed to refresh highlights:', highlightsResponse.status, await highlightsResponse.text());
+          throw new Error(`Failed to refresh highlights: ${highlightsResponse.status}`);
+        }
+        
+        if (!mediaResponse.ok) {
+          console.error('Failed to refresh media:', mediaResponse.status, await mediaResponse.text());
+          throw new Error(`Failed to refresh media: ${mediaResponse.status}`);
+        }
+        
         const highlightsData = await highlightsResponse.json();
         const mediaData = await mediaResponse.json();
 
@@ -186,8 +203,10 @@ const HighlightsPage = () => {
 
     form.setFieldsValue({
       title: record.title,
-      company: record.company,
+      titleFr: record.titleFr,
+      companyId: record.companyId,
       description: record.description,
+      descriptionFr: record.descriptionFr,
       startDate: dayjs(record.startDate),
     });
     setIsModalVisible(true);
@@ -220,6 +239,7 @@ const HighlightsPage = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('highlightId', highlightId === 'new' ? 'temp' : highlightId);
+      formData.append('mediaType', mediaType);
 
       // Upload to server
       const response = await fetch('/api/upload/highlights', {
@@ -273,6 +293,17 @@ const HighlightsPage = () => {
               fetch('/api/media'),
               fetch('/api/highlights')
             ]);
+            
+            if (!allMediaResponse.ok) {
+              console.error('Failed to fetch media:', allMediaResponse.status, await allMediaResponse.text());
+              throw new Error(`Failed to fetch media: ${allMediaResponse.status}`);
+            }
+            
+            if (!highlightsResponse.ok) {
+              console.error('Failed to fetch highlights:', highlightsResponse.status, await highlightsResponse.text());
+              throw new Error(`Failed to fetch highlights: ${highlightsResponse.status}`);
+            }
+            
             const allMediaData = await allMediaResponse.json();
             const highlightsData = await highlightsResponse.json();
 
@@ -476,18 +507,18 @@ const HighlightsPage = () => {
   );
 
   const columns = [
-    { 
-      title: 'Title', 
-      dataIndex: 'title', 
+    {
+      title: 'Title',
+      dataIndex: 'title',
       key: 'title',
-      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) =>
         a.title.localeCompare(b.title),
       showSorterTooltip: false
     },
-    { 
-      title: "Description", 
-      dataIndex: "description", 
-      key: "description", 
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
       render: (text: string) => text || "No description",
       sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => {
         const aDesc = a.description || '';
@@ -496,20 +527,20 @@ const HighlightsPage = () => {
       },
       showSorterTooltip: false
     },
-    { 
-      title: 'Company', 
-      dataIndex: 'company', 
+    {
+      title: 'Company',
+      dataIndex: ['company', 'name'],
       key: 'company',
-      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
-        a.company.localeCompare(b.company),
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) =>
+        a.company.name.localeCompare(b.company.name),
       showSorterTooltip: false
     },
-    { 
-      title: 'Start Date', 
-      dataIndex: 'startDate', 
-      key: 'startDate', 
+    {
+      title: 'Start Date',
+      dataIndex: 'startDate',
+      key: 'startDate',
       render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
-      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) => 
+      sorter: (a: HighlightWithMedia, b: HighlightWithMedia) =>
         dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
       showSorterTooltip: false
     },
@@ -618,10 +649,21 @@ const HighlightsPage = () => {
             <HighlightCardGrid
               highlights={highlights.map(highlight => ({
                 ...highlight,
-                media: [...(highlight.homepageMedia || []), ...(highlight.cardMedia || [])].map(item => ({
-                  ...item,
+                company: highlight.company.name, // Convert company object to string
+                media: (highlight.homepageMedia || []).map(item => ({
+                  id: item.id,
+                  url: item.url,
+                  type: item.type,
+                  experienceId: item.experienceId,
+                  educationId: item.educationId,
+                  skillId: item.skillId,
+                  certificationId: item.certificationId,
+                  highlightId: item.highlightId,
+                  highlightHomepageId: item.highlightHomepageId,
+                  highlightCardId: item.highlightCardId,
                   experienceHomepageId: null,
-                  experienceCardId: null
+                  experienceCardId: null,
+                  createdAt: item.createdAt
                 }))
               }))}
               title=""
@@ -683,18 +725,45 @@ const HighlightsPage = () => {
         styles={{ body: { maxHeight: '80vh', overflowY: 'auto' } }}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="title" label="Position Title" rules={[{ required: true }]}>
-            <Input />
+          <Form.Item name="companyId" label="Company" rules={[{ required: true }]}>
+            <Select placeholder="Select a company">
+              {companies.map(company => (
+                <Select.Option key={company.id} value={company.id}>{company.name}</Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Form.Item name="company" label="Company Name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} placeholder="Optional description for this highlight" />
-          </Form.Item>
+
           <Form.Item name="startDate" label="Start Date" rules={[{ required: true }]}>
             <DatePicker />
           </Form.Item>
+
+          <MultilingualFormTabs
+            form={form}
+            englishFields={['title', 'description']}
+            frenchFields={['titleFr', 'descriptionFr']}
+          >
+            {(language) => (
+              <>
+                <Form.Item
+                  name={language === 'en' ? 'title' : 'titleFr'}
+                  label={`Position Title (${language === 'en' ? 'English' : 'Français'})`}
+                  rules={[{ required: true, message: `Please enter the position title in ${language === 'en' ? 'English' : 'French'}` }]}
+                >
+                  <Input placeholder={`Enter position title in ${language === 'en' ? 'English' : 'French'}`} />
+                </Form.Item>
+                <Form.Item
+                  name={language === 'en' ? 'description' : 'descriptionFr'}
+                  label={`Description (${language === 'en' ? 'English' : 'Français'})`}
+                  rules={[{ required: false }]}
+                >
+                  <Input.TextArea
+                    rows={3}
+                    placeholder={`Optional description in ${language === 'en' ? 'English' : 'French'}`}
+                  />
+                </Form.Item>
+              </>
+            )}
+          </MultilingualFormTabs>
 
           <Divider />
 

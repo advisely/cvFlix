@@ -16,7 +16,8 @@ import {
   SafetyCertificateOutlined,
   FileImageOutlined,
   RobotOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  BankOutlined
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -24,6 +25,7 @@ const { Header, Sider, Content } = Layout;
 const menuItems = [
   { key: '/boss', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/boss/appearance', icon: <SkinOutlined />, label: 'Appearance' },
+  { key: '/boss/companies', icon: <BankOutlined />, label: 'Companies' },
   { key: '/boss/highlights', icon: <StarOutlined />, label: 'Highlights' },
   { key: '/boss/experiences', icon: <LaptopOutlined />, label: 'Experiences' },
   { key: '/boss/education', icon: <ReadOutlined />, label: 'Education' },
@@ -38,8 +40,21 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+      <Sider 
+        collapsible 
+        collapsed={collapsed} 
+        onCollapse={(value) => setCollapsed(value)}
+        style={{ 
+          overflow: 'auto', 
+          height: '100vh', 
+          position: 'fixed', 
+          left: 0, 
+          top: 0, 
+          bottom: 0,
+          zIndex: 1000
+        }}
+      >
         <div className="demo-logo-vertical" style={{ height: '32px', margin: '16px', color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
           resumeFlex
         </div>
@@ -54,8 +69,17 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
           }))}
         />
       </Sider>
-      <Layout>
-        <Header style={{ padding: '0 16px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
+        <Header style={{ 
+          padding: '0 16px', 
+          background: '#fff', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}>
           <div></div>
           <div>
             <Button
@@ -75,12 +99,25 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
             </Button>
           </div>
         </Header>
-        <Content style={{ margin: '16px' }}>
-          <div style={{ padding: 24, minHeight: 'calc(100vh - 176px)', background: '#fff', borderRadius: '8px' }}>
-            {children}
-          </div>
-        </Content>
-        <AdminFooter />
+        <div style={{ 
+          flex: 1, 
+          overflow: 'auto', 
+          height: 'calc(100vh - 64px)', // 64px is header height
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <Content style={{ margin: '16px', flex: 1 }}>
+            <div style={{ 
+              padding: 24, 
+              background: '#fff', 
+              borderRadius: '8px',
+              minHeight: '100%'
+            }}>
+              {children}
+            </div>
+          </Content>
+          <AdminFooter />
+        </div>
       </Layout>
     </Layout>
   );

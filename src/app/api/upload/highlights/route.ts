@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Check if this is for a new highlight (temp ID)
+    const isNewHighlight = highlightId === 'temp' || highlightId === 'new';
+
     // Validate file type - support both images and videos
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -76,7 +79,18 @@ export async function POST(request: NextRequest) {
     // Create public URL
     const publicUrl = `/uploads/highlights/${highlightId}/${mediaType}/${fileName}`;
 
-    // Save media record to database with appropriate relationship
+    // For new highlights, we only save the file and return the URL
+    // The media record will be created when the highlight is saved
+    if (isNewHighlight) {
+      return NextResponse.json({
+        url: publicUrl,
+        type: fileType,
+        mediaType: mediaType,
+        isTemporary: true
+      });
+    }
+
+    // For existing highlights, save media record to database with appropriate relationship
     const mediaData: {
       url: string;
       type: string;

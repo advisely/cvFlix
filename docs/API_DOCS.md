@@ -15,22 +15,55 @@ All admin endpoints require authentication via NextAuth.js session.
 
 ### Resume Data
 - `GET /api/data` - Get all resume data for the public site
-  - **Returns:** Complete resume data including companies, experiences, education, certifications, skills, and highlights
+  - **Returns:** Complete resume data including portfolio experiences (companies with experiences), education, certifications, skills, highlights, and navbar configuration
   - **Response Format:**
     ```json
     {
-      "companies": [
+      "portfolioExperiences": [
         {
           "id": "string",
           "name": "string",
+          "nameFr": "string",
           "logoUrl": "string",
-          "experiences": [...]
+          "experiences": [
+            {
+              "id": "string",
+              "title": "string",
+              "titleFr": "string",
+              "startDate": "ISO date string",
+              "endDate": "ISO date string (optional)",
+              "description": "string",
+              "descriptionFr": "string",
+              "companyId": "string",
+              "media": [...],
+              "homepageMedia": [...],
+              "cardMedia": [...],
+              "dateRanges": [
+                {
+                  "id": "string",
+                  "startDate": "ISO date string",
+                  "endDate": "ISO date string (optional)",
+                  "isCurrent": "boolean"
+                }
+              ]
+            }
+          ]
         }
       ],
-      "education": [...],
+      "educations": [...],
       "certifications": [...],
       "skills": [...],
-      "highlights": [...]
+      "highlights": [...],
+      "navbarConfig": {
+        "logoText": "string",
+        "logoTextFr": "string",
+        "logoFontFamily": "string",
+        "workExperienceLabel": "string",
+        "workExperienceLabelFr": "string",
+        "backgroundColor": "string",
+        "fontFamily": "string",
+        ...
+      }
     }
     ```
 
@@ -425,6 +458,61 @@ Currently, the API is unversioned. Future versions may implement versioning via:
 - URL path versioning (`/api/v1/...`)
 - Header versioning (`API-Version: 1.0`)
 - Query parameter versioning (`?version=1.0`)
+
+## 🔄 Multi-Period Experience Support
+
+### Overview
+The application supports multi-period experiences, allowing companies to have multiple employment periods with compound date displays.
+
+### Data Structure
+- **Legacy Support:** Single experiences with `startDate` and `endDate` fields
+- **Multi-Period Support:** Experiences with `dateRanges` array containing multiple employment periods
+- **Compound Display:** Shows all start years separated by dashes (e.g., "2016 - 2018 - 2022")
+
+### API Response Enhancement
+The `/api/data` endpoint now includes:
+- `dateRanges` array for each experience when available
+- Backward compatibility with legacy single-period experiences
+- Enhanced portfolio experience structure with multi-period support
+
+### Frontend Processing
+- `convertCompaniesToMultiPeriodExperiences()` utility function processes raw API data
+- `ProfessionalTimeline` component displays compound dates
+- `ExperienceCard` component handles both single and multi-period experiences
+- Automatic detection and conversion of multi-period data
+
+### Example Multi-Period Experience
+```json
+{
+  "id": "exp-123",
+  "title": "Software Engineer",
+  "company": {
+    "name": "National Bank of Canada"
+  },
+  "dateRanges": [
+    {
+      "id": "range-1",
+      "startDate": "2015-07-01T00:00:00.000Z",
+      "endDate": "2016-07-29T00:00:00.000Z",
+      "isCurrent": false
+    },
+    {
+      "id": "range-2",
+      "startDate": "2018-01-01T00:00:00.000Z",
+      "endDate": "2019-03-29T00:00:00.000Z",
+      "isCurrent": false
+    },
+    {
+      "id": "range-3",
+      "startDate": "2022-09-05T00:00:00.000Z",
+      "endDate": null,
+      "isCurrent": true
+    }
+  ]
+}
+```
+
+This would display as "2015 - 2018 - 2022" in the portfolio section.
 
 ## 📚 Additional Resources
 

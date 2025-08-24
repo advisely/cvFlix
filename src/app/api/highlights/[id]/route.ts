@@ -4,13 +4,13 @@ import { prisma } from '@/lib/prisma';
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json();
-    const { title, company, description, startDate } = body;
+    const { title, titleFr, companyId, description, descriptionFr, startDate } = body;
     const { id } = await params;
 
     // Validate required fields
-    if (!title || !company || !startDate) {
+    if (!title || !titleFr || !companyId || !startDate) {
       return NextResponse.json(
-        { error: 'Title, company, and start date are required' },
+        { error: 'Title (English and French), company, and start date are required' },
         { status: 400 }
       );
     }
@@ -19,11 +19,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       where: { id },
       data: {
         title,
-        company,
+        titleFr,
+        companyId,
         description: description || null,
+        descriptionFr: descriptionFr || null,
         startDate: new Date(startDate),
       },
       include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            nameFr: true,
+            logoUrl: true,
+          }
+        },
         media: true,
         homepageMedia: true,
         cardMedia: true,

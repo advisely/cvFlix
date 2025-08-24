@@ -255,6 +255,18 @@ video, img {
   }
 }
 
+/* Mobile responsive fixes for admin layout */
+@media (max-width: 768px) {
+  .ant-layout-sider-collapsed {
+    margin-left: -200px !important;
+  }
+  
+  .ant-layout-sider {
+    position: fixed !important;
+    z-index: 1000 !important;
+  }
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .floating-card-optimized,

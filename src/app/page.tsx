@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { MultiPeriodExperience } from '@/components/ExperienceCard'
 import ExperienceCard from '@/components/ExperienceCard'
 import { Carousel } from '@/components/Carousel'
 import EducationCard from '@/components/EducationCard'
@@ -12,6 +13,9 @@ import HighlightCardGrid from '@/components/HighlightCardGrid'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
 import Footer from '@/components/Footer'
 import MediaModal from '@/components/MediaModal';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { convertCompaniesToMultiPeriodExperiences } from '@/utils/experienceUtils'
+import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext';
 import type { Company, Education, Certification, Skill, Media } from '@prisma/client'
 
 interface Highlight {
@@ -29,10 +33,13 @@ interface Highlight {
 interface Experience {
     id: string;
     title: string;
+    titleFr: string;
     company: Company;
     description?: string | null;
+    descriptionFr?: string | null;
     startDate: string;
     endDate?: string | null;
+    companyId: string;
     createdAt: string;
     media: Media[];
     homepageMedia?: Media[];
@@ -42,13 +49,19 @@ interface Experience {
 interface NavbarConfig {
   id: string;
   logoText: string;
+  logoTextFr: string;
   logoImageUrl: string | null;
   useImageLogo: boolean;
   workExperienceLabel: string;
+  workExperienceLabelFr: string;
   careerSeriesLabel: string;
+  careerSeriesLabelFr: string;
   educationLabel: string;
+  educationLabelFr: string;
   certificationsLabel: string;
+  certificationsLabelFr: string;
   skillsLabel: string;
+  skillsLabelFr: string;
   backgroundColor: string;
   backgroundType: string;
   backgroundImageUrl: string | null;
@@ -59,6 +72,7 @@ interface NavbarConfig {
 }
 
 export default function Home() {
+  const { language } = useLanguage();
   const [data, setData] = useState<{
     portfolioExperiences: (Company & { experiences: Experience[] })[];
     educations: (Education & { media: Media[] })[];
@@ -73,6 +87,7 @@ export default function Home() {
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [isHighlightModalOpen, setIsHighlightModalOpen] = useState(false);
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
+  const [multiPeriodExperiences, setMultiPeriodExperiences] = useState<MultiPeriodExperience[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,13 +106,19 @@ export default function Home() {
           navbarConfig: {
             id: '',
             logoText: 'resumeflex',
+            logoTextFr: 'resumeflex',
             logoImageUrl: null,
             useImageLogo: false,
             workExperienceLabel: 'Portfolio',
+            workExperienceLabelFr: 'Portfolio',
             careerSeriesLabel: 'Career Series',
+            careerSeriesLabelFr: 'Série de carrière',
             educationLabel: 'Education',
+            educationLabelFr: 'Éducation',
             certificationsLabel: 'Certifications',
+            certificationsLabelFr: 'Certifications',
             skillsLabel: 'Skills',
+            skillsLabelFr: 'Compétences',
             backgroundColor: '#141414',
             backgroundType: 'color',
             backgroundImageUrl: null,
@@ -114,6 +135,15 @@ export default function Home() {
 
     fetchData();
   }, []);
+
+  // Process portfolio experiences into multi-period format
+  useEffect(() => {
+    if (data?.portfolioExperiences) {
+      const multiPeriod = convertCompaniesToMultiPeriodExperiences(data.portfolioExperiences);
+      setMultiPeriodExperiences(multiPeriod);
+    }
+  }, [data?.portfolioExperiences]);
+
 
   if (loading) {
     return (
@@ -140,7 +170,7 @@ export default function Home() {
     );
   }
 
-  const { portfolioExperiences, educations, certifications, skills, highlights, navbarConfig } = data;
+  const { educations, certifications, skills, highlights, navbarConfig } = data;
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -150,6 +180,10 @@ export default function Home() {
   };
 
   const getBackgroundStyle = () => {
+    if (!navbarConfig) {
+      return { backgroundColor: '#141414' }; // Default background
+    }
+
     switch (navbarConfig.backgroundType) {
       case 'gradient':
         return {
@@ -199,40 +233,43 @@ export default function Home() {
             </div>
 
             <nav className="flex-grow">
-              <ul className="flex flex-wrap gap-4 md:gap-6 justify-center md:justify-end">
-                <li>
-                  <button
-                    onClick={() => scrollToSection('work-experience')}
-                    className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                  >
-                    {navbarConfig.workExperienceLabel}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('education')}
-                    className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                  >
-                    {navbarConfig.educationLabel}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('certifications')}
-                    className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                  >
-                    {navbarConfig.certificationsLabel}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => scrollToSection('skills')}
-                    className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                  >
-                    {navbarConfig.skillsLabel}
-                  </button>
-                </li>
-              </ul>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
+                <ul className="flex flex-wrap gap-4 md:gap-6 justify-center md:justify-end">
+                  <li>
+                    <button
+                      onClick={() => scrollToSection('work-experience')}
+                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
+                    >
+                      {getLocalizedText(navbarConfig.workExperienceLabel, navbarConfig.workExperienceLabelFr, language)}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => scrollToSection('education')}
+                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
+                    >
+                      {getLocalizedText(navbarConfig.educationLabel, navbarConfig.educationLabelFr, language)}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => scrollToSection('certifications')}
+                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
+                    >
+                      {getLocalizedText(navbarConfig.certificationsLabel, navbarConfig.certificationsLabelFr, language)}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => scrollToSection('skills')}
+                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
+                    >
+                      {getLocalizedText(navbarConfig.skillsLabel, navbarConfig.skillsLabelFr, language)}
+                    </button>
+                  </li>
+                </ul>
+                <LanguageSwitcher variant="navbar" />
+              </div>
             </nav>
           </div>
         </header>
@@ -314,16 +351,28 @@ export default function Home() {
         )}
 
         <div id="work-experience" className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.workExperienceLabel}</h2>
+          <h2 className="text-xl md:text-2xl font-bold mb-4">{getLocalizedText(navbarConfig.workExperienceLabel, navbarConfig.workExperienceLabelFr, language)}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {portfolioExperiences.map((company: any) => (
-              <div key={company.id}>
+            {multiPeriodExperiences.map((experience) => (
+              <div key={experience.id}>
                 <ExperienceCard
-                    experience={{ ...company.experiences[0], company, companyId: company.id }}
-                    onClick={() => {
-                        setSelectedExperience({ ...company.experiences[0], company });
-                        setIsExperienceModalOpen(true);
-                    }}
+                  experience={experience}
+                  variant="detailed"
+                  showTimeline={true}
+                  maxTimelineRanges={3}
+                  onClick={() => {
+                    // For modal display, use the first media from the experience
+                    const firstMedia = experience.cardMedia?.[0] || experience.media?.[0];
+                    if (firstMedia) {
+                      setSelectedExperience({
+                        ...experience,
+                        company: experience.company,
+                        cardMedia: experience.cardMedia,
+                        media: experience.media
+                      } as any);
+                      setIsExperienceModalOpen(true);
+                    }
+                  }}
                 />
               </div>
             ))}

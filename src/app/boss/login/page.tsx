@@ -6,6 +6,8 @@ import { signIn } from 'next-auth/react';
 import { LoginFormData } from './types';
 
 const LoginPage = () => {
+  const [form] = Form.useForm();
+
   const onFinish = (values: LoginFormData) => {
     signIn('credentials', { email: values.email, password: values.password, callbackUrl: '/boss' });
   };
@@ -13,6 +15,7 @@ const LoginPage = () => {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Form
+        form={form}
         name="basic"
         initialValues={{ remember: true }}
         onFinish={onFinish}

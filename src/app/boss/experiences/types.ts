@@ -5,14 +5,25 @@ export type ExperienceWithCompany = Experience & {
   media?: Media[];
   homepageMedia?: Media[];
   cardMedia?: Media[];
+  dateRanges?: ExperienceDateRange[];
 };
+
+export interface ExperienceDateRange {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  experienceId?: string;
+  isCurrent?: boolean;
+  error?: string;
+}
 
 export interface ExperienceFormData {
   title: string;
-  startDate: string;
-  endDate: string | null;
+  titleFr: string;
   description: string;
+  descriptionFr: string;
   companyId: string;
+  dateRanges: ExperienceDateRange[];
 }
 
 export type MediaItem = {

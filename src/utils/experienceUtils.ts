@@ -1,0 +1,211 @@
+import { Media } from '@prisma/client';
+import { ExperienceDateRange, MultiPeriodExperience } from '@/components/ExperienceCard';
+
+// Interface for date ranges from the API
+interface DateRangeFromAPI {
+  id: string;
+  startDate: string;
+  endDate?: string | null;
+}
+
+// Interface matching the current API response structure
+interface ExperienceFromAPI {
+  id: string;
+  title: string;
+  titleFr: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+  descriptionFr?: string | null;
+  companyId: string;
+  media?: Media[];
+  homepageMedia?: Media[];
+  cardMedia?: Media[];
+  dateRanges?: DateRangeFromAPI[];
+  createdAt: string;
+}
+
+interface CompanyWithExperiences {
+  id: string;
+  name: string;
+  nameFr: string;
+  logoUrl?: string | null;
+  experiences: ExperienceFromAPI[];
+}
+
+// Convert company-based experiences to multi-period experience
+export const convertToMultiPeriodExperience = (company: CompanyWithExperiences): MultiPeriodExperience => {
+  const experiences = company.experiences || [];
+
+  // Sort experiences by start date
+  const sortedExperiences = [...experiences].sort((a, b) =>
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+
+  // Create date ranges from all experiences - check if dateRanges exist, otherwise use legacy fields
+  const dateRanges: ExperienceDateRange[] = [];
+
+  sortedExperiences.forEach(exp => {
+    if (exp.dateRanges && exp.dateRanges.length > 0) {
+      // Use new dateRanges if available
+      exp.dateRanges.forEach((range: DateRangeFromAPI) => {
+        dateRanges.push({
+          id: range.id,
+          startDate: range.startDate,
+          endDate: range.endDate || null,
+          isCurrent: !range.endDate
+        });
+      });
+    } else {
+      // Fallback to legacy startDate/endDate
+      dateRanges.push({
+        id: `range-${exp.id}`,
+        startDate: exp.startDate,
+        endDate: exp.endDate || null,
+        isCurrent: !exp.endDate
+      });
+    }
+  });
+
+  // Get the most recent experience for primary title and description
+  const primaryExperience = sortedExperiences[sortedExperiences.length - 1] || sortedExperiences[0];
+
+  if (!primaryExperience) {
+    throw new Error(`No experiences found for company ${company.name}`);
+  }
+
+  // Calculate computed properties
+  const earliestStartDate = sortedExperiences[0]?.startDate || primaryExperience.startDate;
+  const latestEndDate = sortedExperiences
+    .filter(exp => exp.endDate)
+    .sort((a, b) => new Date(b.endDate!).getTime() - new Date(a.endDate!).getTime())[0]?.endDate || null;
+
+  const isCurrentPosition = sortedExperiences.some(exp => !exp.endDate);
+
+  const totalDurationMonths = dateRanges.reduce((total, range) => {
+    const start = new Date(range.startDate);
+    const end = range.endDate ? new Date(range.endDate) : new Date();
+    const diffInMonths = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+    return total + diffInMonths;
+  }, 0);
+
+  const formattedPeriods = formatDateRanges(dateRanges);
+
+  // Aggregate all media from all experiences
+  const allMedia = sortedExperiences.reduce((acc, exp) => {
+    return [...acc, ...(exp.media || [])];
+  }, [] as Media[]);
+
+  const allHomepageMedia = sortedExperiences.reduce((acc, exp) => {
+    return [...acc, ...(exp.homepageMedia || [])];
+  }, [] as Media[]);
+
+  const allCardMedia = sortedExperiences.reduce((acc, exp) => {
+    return [...acc, ...(exp.cardMedia || [])];
+  }, [] as Media[]);
+
+  return {
+    id: primaryExperience.id,
+    title: primaryExperience.title,
+    titleFr: primaryExperience.titleFr,
+    description: primaryExperience.description,
+    descriptionFr: primaryExperience.descriptionFr,
+    companyId: company.id,
+    company: {
+      id: company.id,
+      name: company.name,
+      nameFr: company.nameFr,
+      logoUrl: company.logoUrl || null
+    },
+    dateRanges,
+    earliestStartDate,
+    latestEndDate,
+    isCurrentPosition,
+    totalDurationMonths,
+    formattedPeriods,
+    media: allMedia,
+    homepageMedia: allHomepageMedia,
+    cardMedia: allCardMedia
+  };
+};
+
+// Convert array of companies to array of multi-period experiences
+export const convertCompaniesToMultiPeriodExperiences = (companies: CompanyWithExperiences[]): MultiPeriodExperience[] => {
+  return companies
+    .filter(company => company.experiences && company.experiences.length > 0)
+    .map(convertToMultiPeriodExperience)
+    .sort((a, b) => {
+      // Sort by earliest start date, most recent first
+      const aEarliest = new Date(a.earliestStartDate).getTime();
+      const bEarliest = new Date(b.earliestStartDate).getTime();
+      return bEarliest - aEarliest;
+    });
+};
+
+// FIXED: Utility function to format only start years separated by dashes
+const formatDateRanges = (ranges: ExperienceDateRange[]): string => {
+  const sortedRanges = ranges.sort((a, b) =>
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+
+  return sortedRanges.map(range => {
+    return new Date(range.startDate).getFullYear().toString();
+  }).join(" - ");
+};
+
+// Enhanced sorting functions for multi-period experiences
+export const sortExperiences = (experiences: MultiPeriodExperience[], sortBy: string) => {
+  switch (sortBy) {
+    case 'earliestStart':
+      return experiences.sort((a, b) => {
+        const aEarliest = new Date(a.earliestStartDate).getTime();
+        const bEarliest = new Date(b.earliestStartDate).getTime();
+        return bEarliest - aEarliest; // Most recent first
+      });
+
+    case 'latestEnd':
+      return experiences.sort((a, b) => {
+        const aLatest = a.latestEndDate ? new Date(a.latestEndDate).getTime() : Date.now();
+        const bLatest = b.latestEndDate ? new Date(b.latestEndDate).getTime() : Date.now();
+        return bLatest - aLatest;
+      });
+
+    case 'totalDuration':
+      return experiences.sort((a, b) => b.totalDurationMonths - a.totalDurationMonths);
+
+    case 'currentFirst':
+      return experiences.sort((a, b) => {
+        const aCurrent = a.isCurrentPosition ? 1 : 0;
+        const bCurrent = b.isCurrentPosition ? 1 : 0;
+        return bCurrent - aCurrent;
+      });
+
+    case 'multiPeriodFirst':
+      return experiences.sort((a, b) => {
+        const aMultiPeriod = a.dateRanges.length > 1 ? 1 : 0;
+        const bMultiPeriod = b.dateRanges.length > 1 ? 1 : 0;
+        return bMultiPeriod - aMultiPeriod;
+      });
+
+    default:
+      return experiences;
+  }
+};
+
+// Get experience statistics for analytics
+export const getExperienceStats = (experiences: MultiPeriodExperience[]) => {
+  const totalExperiences = experiences.length;
+  const multiPeriodExperiences = experiences.filter(exp => exp.dateRanges.length > 1).length;
+  const currentPositions = experiences.filter(exp => exp.isCurrentPosition).length;
+  const totalYearsExperience = experiences.reduce((total, exp) => total + (exp.totalDurationMonths / 12), 0);
+
+  return {
+    totalExperiences,
+    multiPeriodExperiences,
+    currentPositions,
+    totalYearsExperience: Math.round(totalYearsExperience * 10) / 10,
+    averageExperienceLength: totalExperiences > 0 ? Math.round((totalYearsExperience / totalExperiences) * 10) / 10 : 0
+  };
+};
+
+export type { CompanyWithExperiences, ExperienceFromAPI };

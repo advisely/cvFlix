@@ -10,6 +10,11 @@ export async function GET() {
             media: true,
             homepageMedia: true,
             cardMedia: true,
+            dateRanges: {
+              orderBy: {
+                startDate: 'asc',
+              },
+            },
           },
           orderBy: {
             startDate: 'desc',
@@ -71,9 +76,10 @@ export async function GET() {
 
     // Combine all companies and sort by their most recent experience start date
     const portfolioExperiences = companies
+      .filter(company => company.experiences && company.experiences.length > 0)
       .sort((a, b) => {
-        const aStartDate = new Date(a.experiences[0].startDate);
-        const bStartDate = new Date(b.experiences[0].startDate);
+        const aStartDate = new Date(a.experiences[0]!.startDate);
+        const bStartDate = new Date(b.experiences[0]!.startDate);
         return bStartDate.getTime() - aStartDate.getTime(); // DESC order (most recent first)
       });
 

@@ -1,0 +1,234 @@
+'use client'
+
+import React, { useMemo } from 'react';
+import { Typography, Badge, Tooltip, Button } from 'antd';
+import { HistoryOutlined } from '@ant-design/icons';
+// import { useLanguage } from '@/contexts/LanguageContext'; // Commented out - not used
+
+const { Text } = Typography;
+
+export interface ExperienceDateRange {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  isCurrent?: boolean;
+}
+
+interface ProfessionalTimelineProps {
+  dateRanges: ExperienceDateRange[];
+  format?: 'compact' | 'detailed' | 'visual';
+  maxRanges?: number;
+  showDuration?: boolean;
+  showCurrentIndicator?: boolean;
+  className?: string;
+}
+
+// Utility function to calculate duration between two dates
+const calculateDuration = (startDate: string, endDate: string | null): string => {
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+  const diffInMonths = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+  
+  if (diffInMonths < 12) {
+    return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'}`;
+  } else {
+    const years = Math.floor(diffInMonths / 12);
+    const remainingMonths = diffInMonths % 12;
+    if (remainingMonths === 0) {
+      return `${years} ${years === 1 ? 'year' : 'years'}`;
+    }
+    return `${years} ${years === 1 ? 'year' : 'years'}, ${remainingMonths} ${remainingMonths === 1 ? 'month' : 'months'}`;
+  }
+};
+
+// Function to format date ranges into display string
+const formatDateRanges = (ranges: ExperienceDateRange[]): string => {
+  const sortedRanges = ranges.sort((a, b) => 
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+  
+  return sortedRanges.map(range => {
+    const startYear = new Date(range.startDate).getFullYear();
+    
+    if (!range.endDate) {
+      return `${startYear}-Present`;
+    }
+    
+    const endYear = new Date(range.endDate).getFullYear();
+    return startYear === endYear ? `${startYear}` : `${startYear}-${endYear}`;
+  }).join(', ');
+};
+
+// Calculate total experience across all date ranges
+const calculateTotalExperience = (ranges: ExperienceDateRange[]): number => {
+  const totalMonths = ranges.reduce((total, range) => {
+    const start = new Date(range.startDate);
+    const end = range.endDate ? new Date(range.endDate) : new Date();
+    const diffInMonths = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+    return total + diffInMonths;
+  }, 0);
+  
+  return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+};
+
+const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
+  dateRanges,
+  format = 'detailed',
+  maxRanges = 5,
+  showDuration = false,
+  showCurrentIndicator = true,
+  className = ''
+}) => {
+  // const { t } = useLanguage(); // Commented out - not used
+
+  const sortedRanges = useMemo(() => 
+    dateRanges.sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    ), [dateRanges]
+  );
+
+  const displayRanges = sortedRanges.slice(0, maxRanges);
+  const hasMoreRanges = sortedRanges.length > maxRanges;
+  const hasCurrentPosition = sortedRanges.some(r => !r.endDate);
+  const totalYears = calculateTotalExperience(sortedRanges);
+
+  if (!dateRanges.length || !dateRanges.some(r => r.startDate)) {
+    return null;
+  }
+
+  if (format === 'compact') {
+    return (
+      <div className={`timeline-compact ${className}`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Text className="text-white/80 font-medium">
+            {formatDateRanges(displayRanges)}
+          </Text>
+          {hasMoreRanges && (
+            <Tooltip title={`${sortedRanges.length - maxRanges} additional employment periods`}>
+              <Text type="secondary" className="text-xs">
+                (+{sortedRanges.length - maxRanges} more)
+              </Text>
+            </Tooltip>
+          )}
+          {hasCurrentPosition && showCurrentIndicator && (
+            <Badge status="processing" text="Current" className="ml-2" />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (format === 'visual') {
+    return (
+      <div className={`timeline-visual ${className}`}>
+        <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#404040]">
+          <div className="flex items-center gap-2 mb-3">
+            <HistoryOutlined className="text-[#e50914]" />
+            <Text className="text-white font-medium">Employment Timeline</Text>
+            {dateRanges.length > 1 && (
+              <Tooltip title="Multiple employment periods">
+                <Badge count={dateRanges.length} size="small" style={{ backgroundColor: '#e50914' }} />
+              </Tooltip>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {displayRanges.map((range, _index) => (
+              <div key={range.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${!range.endDate ? 'bg-green-500' : 'bg-[#808080]'}`} />
+                  <div>
+                    <Text className="text-white text-sm">
+                      {new Date(range.startDate).getFullYear()} - {range.endDate ? new Date(range.endDate).getFullYear() : 'Present'}
+                    </Text>
+                    {showDuration && (
+                      <div>
+                        <Text type="secondary" className="text-xs">
+                          {calculateDuration(range.startDate, range.endDate)}
+                        </Text>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {!range.endDate && showCurrentIndicator && (
+                  <Badge status="processing" text="Current" size="small" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {totalYears > 0 && (
+            <div className="mt-4 pt-3 border-t border-[#404040]/50">
+              <Text type="secondary" className="text-xs">
+                Total Experience: {totalYears} {totalYears === 1 ? 'year' : 'years'}
+                {dateRanges.length > 1 && ` across ${dateRanges.length} periods`}
+              </Text>
+            </div>
+          )}
+
+          {hasMoreRanges && (
+            <div className="mt-3">
+              <Button type="link" size="small" className="!text-[#e50914] !p-0">
+                View all {sortedRanges.length} employment periods
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Default 'detailed' format
+  return (
+    <div className={`timeline-detailed ${className}`}>
+      <div className="bg-[#1a1a1a]/50 rounded-lg p-3 border-l-4 border-[#e50914]">
+        <div className="mb-2">
+          <Text className="text-white/90 font-semibold">
+            {formatDateRanges(displayRanges)}
+          </Text>
+          {hasCurrentPosition && showCurrentIndicator && (
+            <Badge status="processing" text="Current Position" className="ml-3" />
+          )}
+        </div>
+
+        {showDuration && totalYears > 0 && (
+          <div className="mb-2">
+            <Text type="secondary" className="text-sm">
+              Total Experience: {totalYears} {totalYears === 1 ? 'year' : 'years'}
+              {dateRanges.length > 1 && ` • ${dateRanges.length} periods`}
+            </Text>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 mt-2">
+          {displayRanges.map((range, _index) => (
+            <div 
+              key={range.id} 
+              className="inline-flex items-center gap-2 px-3 py-1 bg-[#303030] rounded-full border border-[#404040] text-xs"
+            >
+              <Text className="text-white/80">
+                {new Date(range.startDate).getFullYear()} - {range.endDate ? new Date(range.endDate).getFullYear() : 'Present'}
+              </Text>
+              {!range.endDate && (
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {hasMoreRanges && (
+          <div className="mt-2">
+            <Tooltip title={`Total: ${sortedRanges.length} employment periods`}>
+              <Button type="link" size="small" className="!text-[#e50914] !p-0 !h-auto">
+                +{sortedRanges.length - maxRanges} more periods
+              </Button>
+            </Tooltip>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProfessionalTimeline;

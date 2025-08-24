@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface FooterConfig {
   id: string;
@@ -107,8 +108,9 @@ export default function Footer() {
             {config.copyrightText}
           </div>
 
-          {/* Social Links */}
+          {/* Social Links and Language Switcher */}
           <div className="flex items-center space-x-4">
+            <LanguageSwitcher variant="footer" />
             {config.showLinkedin && config.linkedinUrl && (
               <a
                 href={config.linkedinUrl}

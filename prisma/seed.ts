@@ -23,14 +23,14 @@ async function main() {
   })
 
   // Companies
-  const bnc = await prisma.company.create({ data: { name: 'Banque Nationale du Canada' } });
-  const bombardier = await prisma.company.create({ data: { name: 'Bombardier' } });
-  const cn = await prisma.company.create({ data: { name: 'CN (Canadian National)' } });
-  const exo = await prisma.company.create({ data: { name: 'EXO (Réseau de transport métropolitain)' } });
-  const bmo = await prisma.company.create({ data: { name: 'Banque de Montréal' } });
-  const cibc = await prisma.company.create({ data: { name: 'Banque CIBC' } });
-  const fct = await prisma.company.create({ data: { name: 'Services de titres FCT' } });
-  const beyondTheRack = await prisma.company.create({ data: { name: 'Beyond the Rack' } });
+  const bnc = await prisma.company.create({ data: { name: 'National Bank of Canada', nameFr: 'Banque Nationale du Canada' } });
+  const bombardier = await prisma.company.create({ data: { name: 'Bombardier', nameFr: 'Bombardier' } });
+  const cn = await prisma.company.create({ data: { name: 'CN (Canadian National)', nameFr: 'CN (Canadien National)' } });
+  const exo = await prisma.company.create({ data: { name: 'EXO (Metropolitan Transport Network)', nameFr: 'EXO (Réseau de transport métropolitain)' } });
+  const bmo = await prisma.company.create({ data: { name: 'Bank of Montreal', nameFr: 'Banque de Montréal' } });
+  const cibc = await prisma.company.create({ data: { name: 'CIBC Bank', nameFr: 'Banque CIBC' } });
+  const fct = await prisma.company.create({ data: { name: 'FCT Title Services', nameFr: 'Services de titres FCT' } });
+  const beyondTheRack = await prisma.company.create({ data: { name: 'Beyond the Rack', nameFr: 'Beyond the Rack' } });
 
   // Experiences
   await prisma.experience.createMany({

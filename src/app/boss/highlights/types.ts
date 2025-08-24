@@ -29,8 +29,16 @@ export interface MediaApiResponse {
 export interface HighlightWithMedia {
   id: string;
   title: string;
-  company: string;
+  titleFr: string;
+  companyId: string;
+  company: {
+    id: string;
+    name: string;
+    nameFr: string;
+    logoUrl?: string | null;
+  };
   description?: string | null;
+  descriptionFr?: string | null;
   startDate: string;
   createdAt: string;
   media: MediaItem[];           // Legacy field for backward compatibility
