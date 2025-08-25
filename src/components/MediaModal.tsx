@@ -15,6 +15,13 @@ interface MediaModalProps {
   description?: string | null;
   startDate?: string;
   endDate?: string | null;
+  dateRanges?: Array<{
+    id: string;
+    startDate: string;
+    endDate?: string | null;
+    isCurrent: boolean;
+  }>;
+  formattedPeriods?: string;
 }
 
 // Performance-optimized video controls
@@ -81,7 +88,7 @@ const ImageControls = memo(({ onClose }: { onClose: () => void }) => (
 
 ImageControls.displayName = 'ImageControls';
 
-const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, description, startDate, endDate }: MediaModalProps) => {
+const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, description, startDate, endDate, dateRanges, formattedPeriods }: MediaModalProps) => {
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -188,17 +195,13 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, d
             {company && <p className="text-sm text-white/90 mb-1">{company}</p>}
             {description && <p className="text-xs text-white/80 mb-1">{description}</p>}
             <p className="text-xs text-white/70">
-              {startDate && new Date(startDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}
-              {endDate && ` - ${new Date(endDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}`}
-              {startDate && !endDate && ' - Present'}
+              {formattedPeriods ? formattedPeriods : (
+                <>
+                  {startDate && new Date(startDate).getFullYear()}
+                  {endDate && ` - ${new Date(endDate).getFullYear()}`}
+                  {startDate && !endDate && ' - Present'}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -237,17 +240,13 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, d
             {company && <p className="text-sm text-white/90 mb-1">{company}</p>}
             {description && <p className="text-xs text-white/80 mb-1">{description}</p>}
             <p className="text-xs text-white/70">
-              {startDate && new Date(startDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}
-              {endDate && ` - ${new Date(endDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-              })}`}
-              {startDate && !endDate && ' - Present'}
+              {formattedPeriods ? formattedPeriods : (
+                <>
+                  {startDate && new Date(startDate).getFullYear()}
+                  {endDate && ` - ${new Date(endDate).getFullYear()}`}
+                  {startDate && !endDate && ' - Present'}
+                </>
+              )}
             </p>
           </div>
         </div>

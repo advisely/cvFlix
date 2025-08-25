@@ -21,8 +21,10 @@ import type { Company, Education, Certification, Skill, Media } from '@prisma/cl
 interface Highlight {
   id: string;
   title: string;
+  titleFr: string;
   company: Company;
   description?: string | null;
+  descriptionFr?: string | null;
   startDate: string;
   createdAt: string;
   media: Media[];
@@ -312,7 +314,7 @@ export default function Home() {
               <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                 <div className="text-white">
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight">
-                    {highlights[0].title}
+                    {getLocalizedText(highlights[0].title, highlights[0].titleFr, language)}
                   </h2>
                   <div className="flex items-center gap-2 mb-2">
                     {highlights[0].company.logoUrl && (
@@ -328,7 +330,7 @@ export default function Home() {
                       />
                     )}
                     <p className="text-lg md:text-xl font-semibold text-[#e50914]">
-                      {highlights[0].company.name}
+                      {getLocalizedText(highlights[0].company.name, highlights[0].company.nameFr, language)}
                     </p>
                   </div>
                   <p className="text-sm md:text-base text-white/70">
@@ -367,13 +369,19 @@ export default function Home() {
                   maxTimelineRanges={3}
                   onClick={() => {
                     // For modal display, use the first media from the experience
-                    const firstMedia = experience.cardMedia?.[0] || experience.media?.[0];
+                    const firstMedia = experience.cardMedia?.[0] || experience.media?.[0] || experience.homepageMedia?.[0];
                     if (firstMedia) {
                       setSelectedExperience({
                         ...experience,
                         company: experience.company,
                         cardMedia: experience.cardMedia,
-                        media: experience.media
+                        media: experience.media,
+                        homepageMedia: experience.homepageMedia,
+                        // For compound cards, show the formatted periods in the modal
+                        startDate: experience.earliestStartDate,
+                        endDate: experience.latestEndDate,
+                        dateRanges: experience.dateRanges,
+                        formattedPeriods: experience.formattedPeriods
                       } as any);
                       setIsExperienceModalOpen(true);
                     }
@@ -428,26 +436,28 @@ export default function Home() {
             setSelectedHighlight(null);
           }}
           media={selectedHighlight.cardMedia[0]}
-          highlightTitle={selectedHighlight.title}
-          company={selectedHighlight.company.name}
-          description={selectedHighlight.description}
+          highlightTitle={getLocalizedText(selectedHighlight.title, selectedHighlight.titleFr, language)}
+          company={getLocalizedText(selectedHighlight.company.name, selectedHighlight.company.nameFr, language)}
+          description={getLocalizedText(selectedHighlight.description, selectedHighlight.descriptionFr, language)}
           startDate={selectedHighlight.startDate}
         />
       )}
 
-      {selectedExperience && (selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0]) && (
+      {selectedExperience && (selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0] || selectedExperience.homepageMedia?.[0]) && (
         <MediaModal
           isVisible={isExperienceModalOpen}
           onClose={() => {
             setIsExperienceModalOpen(false);
             setSelectedExperience(null);
           }}
-          media={selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0]}
+          media={selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0] || selectedExperience.homepageMedia?.[0]}
           highlightTitle={selectedExperience.title}
           company={selectedExperience.company.name}
           description={selectedExperience.description}
           startDate={selectedExperience.startDate}
           endDate={selectedExperience.endDate}
+          dateRanges={selectedExperience.dateRanges}
+          formattedPeriods={selectedExperience.formattedPeriods}
         />
       )}
 

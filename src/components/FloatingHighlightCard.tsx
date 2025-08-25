@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Card, Typography, Button, Popconfirm } from 'antd';
 import { PlayCircleOutlined, CalendarOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext';
 import type { Media, Company } from '@prisma/client';
 import MediaModal from './MediaModal';
 
@@ -11,8 +12,10 @@ const { Title, Text } = Typography;
 interface Highlight {
   id: string;
   title: string;
+  titleFr: string;
   company: Company;
   description?: string | null;
+  descriptionFr?: string | null;
   startDate: string;
   createdAt: string;
 }
@@ -169,6 +172,7 @@ const FloatingHighlightCard = memo(({
   index = 0,
   isVisible = true
 }: FloatingHighlightCardProps) => {
+  const { language } = useLanguage();
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isMediaModalVisible, setIsMediaModalVisible] = useState(false);
@@ -206,7 +210,7 @@ const FloatingHighlightCard = memo(({
         <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] flex items-center justify-center border-b border-[#404040]">
           <div className="text-center text-white/40">
             <HomeOutlined className="text-4xl mb-2" />
-            <Text className="text-sm text-white/60 block">{highlight.company.name}</Text>
+            <Text className="text-sm text-white/60 block">{getLocalizedText(highlight.company.name, highlight.company.nameFr, language)}</Text>
           </div>
         </div>
       );
@@ -237,7 +241,7 @@ const FloatingHighlightCard = memo(({
           <>
             <LazyImage
               src={primaryMedia.url}
-              alt={highlight.title}
+              alt={getLocalizedText(highlight.title, highlight.titleFr, language)}
               isVisible={isVisible}
               onError={() => setImageError(true)}
               priority={index < 3} // Prioritize first 3 cards
@@ -249,7 +253,7 @@ const FloatingHighlightCard = memo(({
     );
 
     return mediaContainer;
-  }, [primaryMedia, imageError, videoError, highlight.title, highlight.company.name, handleMediaClick, isVisible, index]);
+  }, [primaryMedia, imageError, videoError, highlight.title, highlight.titleFr, highlight.company.name, highlight.company.nameFr, language, handleMediaClick, isVisible, index]);
 
   // Performance-optimized card styles with hardware acceleration
   const cardStyles = {
@@ -316,7 +320,7 @@ const FloatingHighlightCard = memo(({
                 className="!text-white !mb-1 !font-semibold leading-tight text-sm sm:text-base"
                 ellipsis={{ rows: 2, tooltip: true }}
               >
-                {highlight.title}
+                {getLocalizedText(highlight.title, highlight.titleFr, language)}
               </Title>
               
               <div className="flex items-center gap-2 mb-1 sm:mb-2">
@@ -333,7 +337,7 @@ const FloatingHighlightCard = memo(({
                   />
                 )}
                 <Text className="!text-[#e50914] font-semibold text-xs sm:text-sm">
-                  {highlight.company.name}
+                  {getLocalizedText(highlight.company.name, highlight.company.nameFr, language)}
                 </Text>
               </div>
             </div>
@@ -400,9 +404,9 @@ const FloatingHighlightCard = memo(({
           isVisible={isMediaModalVisible}
           onClose={handleModalClose}
           media={primaryMedia}
-          highlightTitle={highlight.title}
-          company={highlight.company.name}
-          description={highlight.description}
+          highlightTitle={getLocalizedText(highlight.title, highlight.titleFr, language)}
+          company={getLocalizedText(highlight.company.name, highlight.company.nameFr, language)}
+          description={getLocalizedText(highlight.description, highlight.descriptionFr, language)}
           startDate={highlight.startDate}
         />
       )}

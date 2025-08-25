@@ -149,7 +149,12 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={`experience-card ${cardClasses}`} onClick={onClick} data-card-id={experience.id}>
+    <div 
+      className={`experience-card ${cardClasses}`} 
+      onClick={onClick} 
+      data-card-id={experience.id}
+      style={{ cursor: 'pointer' }}
+    >
       {/* Enhanced Media Section with optimized loading states and aspect ratio */}
       <div className="w-full h-48 bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center relative overflow-hidden">
         {/* Hardware-accelerated loading state with smooth transition */}

@@ -3,15 +3,17 @@
 import { Row, Col, Typography, Empty, Spin } from 'antd';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import FloatingHighlightCard from './FloatingHighlightCard';
-import type { Media } from '@prisma/client';
+import type { Media, Company } from '@prisma/client';
 
 const { Title } = Typography;
 
 interface Highlight {
   id: string;
   title: string;
-  company: string;
+  titleFr: string;
+  company: Company;
   description?: string | null;
+  descriptionFr?: string | null;
   startDate: string;
   createdAt: string;
 }
