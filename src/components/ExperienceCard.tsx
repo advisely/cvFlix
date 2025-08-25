@@ -122,13 +122,11 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
 
   // Separate error handlers for different image types
   const handleHomepageImageError = () => {
-    console.log('Homepage image failed to load:', firstImage?.url)
     setHomepageImageError(true)
     setImageLoading(false)
   }
 
   const handleCompanyLogoError = () => {
-    console.log('Company logo failed to load:', companyLogo)
     setCompanyLogoError(true)
     setImageLoading(false)
   }
@@ -137,21 +135,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
     setImageLoading(false)
   }
 
-  // Enhanced DEBUG logging - Company logos next to company name
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 ExperienceCard Debug (Company logos next to company name):', {
-      companyName: localizedCompanyName,
-      companyLogo: companyLogo ? 'Available for company name display' : 'Not available',
-      firstImage: firstImage?.url,
-      shouldShowHomepageImage,
-      shouldShowCompanyLogo: 'Separate from main image - used next to company name',
-      shouldShowLetterFallback,
-      homepageImageError,
-      companyLogoError,
-      imageLoading,
-      note: 'Company logos now display next to company name, removed from timeline'
-    });
-  }
+  // Image loading state management optimized
 
   const isMultiPeriod = dateRanges.length > 1;
 

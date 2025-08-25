@@ -345,7 +345,7 @@ export default function Home() {
             showActions={true}
             gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
             onCardClick={(highlight) => {
-              console.log('Highlight clicked:', highlight.title);
+              // Highlight interaction handled by grid component
             }}
           />
         )}
