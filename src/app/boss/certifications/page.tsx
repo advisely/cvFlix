@@ -333,6 +333,7 @@ const CertificationsPage = () => {
         onOk={handleOk}
         onCancel={handleCancel}
         width={800}
+        forceRender
       >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>

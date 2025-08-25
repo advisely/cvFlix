@@ -433,6 +433,7 @@ const ExperiencesPage = () => {
         onOk={handleOk}
         onCancel={handleCancel}
         width={800}
+        forceRender
       >
         <Form form={form} layout="vertical">
           <Form.Item name="companyId" label="Company" rules={[{ required: true }]}>

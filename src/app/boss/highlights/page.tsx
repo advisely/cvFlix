@@ -723,6 +723,7 @@ const HighlightsPage = () => {
         width={1000}
         style={{ top: 20 }}
         styles={{ body: { maxHeight: '80vh', overflowY: 'auto' } }}
+        forceRender
       >
         <Form form={form} layout="vertical">
           <Form.Item name="companyId" label="Company" rules={[{ required: true }]}>

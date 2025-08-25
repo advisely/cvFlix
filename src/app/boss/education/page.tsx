@@ -358,6 +358,7 @@ const EducationPage = () => {
         onOk={handleOk}
         onCancel={handleCancel}
         width={800}
+        forceRender
       >
         <Form form={form} layout="vertical">
           <Form.Item name="institution" label="Institution" rules={[{ required: true }]}>

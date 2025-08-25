@@ -218,6 +218,7 @@ const CompaniesPage = () => {
         width={600}
         style={{ top: 20 }}
         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
+        forceRender
       >
         <Form form={form} layout="vertical">
           <MultilingualFormTabs
@@ -237,33 +238,32 @@ const CompaniesPage = () => {
           </MultilingualFormTabs>
 
           <Form.Item name="logoUrl" label="Company Logo">
-            <div>
-              <Upload
-                beforeUpload={handleLogoUpload}
-                showUploadList={false}
-                accept="image/*"
-              >
-                <Button icon={<UploadOutlined />}>Upload Logo</Button>
-              </Upload>
-              <Form.Item name="logoUrl" noStyle>
-                <Input
-                  placeholder="Or enter logo URL directly"
-                  style={{ marginTop: 8 }}
+            <Input
+              placeholder="Or enter logo URL directly"
+              addonBefore={
+                <Upload
+                  beforeUpload={handleLogoUpload}
+                  showUploadList={false}
+                  accept="image/*"
+                >
+                  <Button icon={<UploadOutlined />} size="small" type="text">
+                    Upload
+                  </Button>
+                </Upload>
+              }
+            />
+            {form.getFieldValue('logoUrl') && (
+              <div style={{ marginTop: 8 }}>
+                <Image
+                  src={form.getFieldValue('logoUrl')}
+                  alt="Logo preview"
+                  width={60}
+                  height={60}
+                  style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                  fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0zMCAzMEMyNy41MTQ3IDMwIDI1LjUgMzIuMDE0NyAyNS41IDM0LjVWNDAuNUMyNS41IDQyLjk4NTMgMjcuNTE0NyA0NSAzMCA0NUgzNC41QzM2Ljk4NTMgNDUgMzkgNDIuOTg1MyAzOSA0MC41VjM0LjVDMzkgMzIuMDE0NyAzNi45ODUzIDMwIDM0LjUgMzBIMzBaIiBmaWxsPSIjQzRDNEM0Ii8+CjxwYXRoIGQ9Ik0yNS41IDI1LjVDMjUuNSAyMy4wMTQ3IDI3LjUxNDcgMjEgMzAgMjFIMzQuNUMzNi45ODUzIDIxIDM5IDIzLjAxNDcgMzkgMjUuNVYyN0gzOS43NUMzOS43NSAyNy44Mjg0IDQwLjQyMTYgMjguNSA0MS4yNSAyOC41VjMwLjc1QzQxLjI1IDMxLjU3ODQgNDAuNTc4NCAzMi4yNSAzOS43NSAzMi4yNUgzOVYzNC41QzM5IDM2Ljk4NTMgMzYuOTg1MyAzOSAzNC41IDM5SDMwQzI7LjUxNDcgMzkgMjUuNSAzNi45ODUzIDI1LjUgMzQuNVYzMi4yNUgyMC4yNUMxOS40MjE2IDMyLjI1IDE4Ljc1IDMxLjU3ODQgMTguNzUgMzAuNzVWMjguNUMxOC43NSAyNy42NzE2IDE5LjQyMTYgMjcgMjAuMjUgMjdIMjUuNVYyNS41WiIgZmlsbD0iI0M0QzRDNCIvPgo8L3N2Zz4K"
                 />
-              </Form.Item>
-              {form.getFieldValue('logoUrl') && (
-                <div style={{ marginTop: 8 }}>
-                  <Image
-                    src={form.getFieldValue('logoUrl')}
-                    alt="Logo preview"
-                    width={60}
-                    height={60}
-                    style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #d9d9d9' }}
-                    fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0zMCAzMEMyNy41MTQ3IDMwIDI1LjUgMzIuMDE0NyAyNS41IDM0LjVWNDAuNUMyNS41IDQyLjk4NTMgMjcuNTE0NyA0NSAzMCA0NUgzNC41QzM2Ljk4NTMgNDUgMzkgNDIuOTg1MyAzOSA0MC41VjM0LjVDMzkgMzIuMDE0NyAzNi45ODUzIDMwIDM0LjUgMzBIMzBaIiBmaWxsPSIjQzRDNEM0Ii8+CjxwYXRoIGQ9Ik0yNS41IDI1LjVDMjUuNSAyMy4wMTQ3IDI3LjUxNDcgMjEgMzAgMjFIMzQuNUMzNi45ODUzIDIxIDM5IDIzLjAxNDcgMzkgMjUuNVYyN0gzOS43NUMzOS43NSAyNy44Mjg0IDQwLjQyMTYgMjguNSA0MS4yNSAyOC41VjMwLjc1QzQxLjI1IDMxLjU3ODQgNDAuNTc4NCAzMi4yNSAzOS43NSAzMi4yNUgzOVYzNC41QzM5IDM2Ljk4NTMgMzYuOTg1MyAzOSAzNC41IDM5SDMwQzI3LjUxNDcgMzkgMjUuNSAzNi45ODUzIDI1LjUgMzQuNVYzMi4yNUgyMC4yNUMxOS40MjE2IDMyLjI1IDE4Ljc1IDMxLjU3ODQgMTguNzUgMzAuNzVWMjguNUMxOC43NSAyNy42NzE2IDE5LjQyMTYgMjcgMjAuMjUgMjdIMjUuNVYyNS41WiIgZmlsbD0iI0M0QzRDNCIvPgo8L3N2Zz4K"
-                  />
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </Form.Item>
         </Form>
       </Modal>

@@ -84,40 +84,49 @@ const AppearancePage = () => {
         }));
         setAllMedia(imageMedia);
 
-        form.setFieldsValue({
-          workExperienceLabel: config.workExperienceLabel,
-          careerSeriesLabel: config.careerSeriesLabel,
-          educationLabel: config.educationLabel,
-          certificationsLabel: config.certificationsLabel,
-          skillsLabel: config.skillsLabel,
-        });
+        // Ensure form components are properly connected before setting field values
+        if (form && config) {
+          form.setFieldsValue({
+            workExperienceLabel: config.workExperienceLabel,
+            careerSeriesLabel: config.careerSeriesLabel,
+            educationLabel: config.educationLabel,
+            certificationsLabel: config.certificationsLabel,
+            skillsLabel: config.skillsLabel,
+          });
+        }
 
-        logoForm.setFieldsValue({
-          logoText: config.logoText,
-          useImageLogo: config.useImageLogo,
-          logoImageUrl: config.logoImageUrl,
-          logoFontFamily: config.logoFontFamily || "Inter"
-        });
+        if (logoForm && config) {
+          logoForm.setFieldsValue({
+            logoText: config.logoText,
+            useImageLogo: config.useImageLogo,
+            logoImageUrl: config.logoImageUrl,
+            logoFontFamily: config.logoFontFamily || "Inter"
+          });
+        }
 
-        backgroundForm.setFieldsValue({
-          backgroundColor: config.backgroundColor,
-          backgroundType: config.backgroundType,
-          backgroundImageUrl: config.backgroundImageUrl,
-          gradientFrom: config.gradientFrom,
-          gradientTo: config.gradientTo,
-          fontFamily: config.fontFamily
-        });
+        if (backgroundForm && config) {
+          backgroundForm.setFieldsValue({
+            backgroundColor: config.backgroundColor,
+            backgroundType: config.backgroundType,
+            backgroundImageUrl: config.backgroundImageUrl,
+            gradientFrom: config.gradientFrom,
+            gradientTo: config.gradientTo,
+            fontFamily: config.fontFamily
+          });
+        }
 
-        footerForm.setFieldsValue({
-          logoText: footerConfigData.logoText || "resumeflex",
-          useImageLogo: footerConfigData.useImageLogo || false,
-          logoImageUrl: footerConfigData.logoImageUrl || null,
-          copyrightText: footerConfigData.copyrightText || "© 2025 resumeflex. All rights reserved.",
-          linkedinUrl: footerConfigData.linkedinUrl || "",
-          showLinkedin: footerConfigData.showLinkedin !== undefined ? footerConfigData.showLinkedin : true,
-          backgroundColor: footerConfigData.backgroundColor || "#0a0a0a",
-          textColor: footerConfigData.textColor || "#ffffff"
-        });
+        if (footerForm && footerConfigData) {
+          footerForm.setFieldsValue({
+            logoText: footerConfigData.logoText || "resumeflex",
+            useImageLogo: footerConfigData.useImageLogo || false,
+            logoImageUrl: footerConfigData.logoImageUrl || null,
+            copyrightText: footerConfigData.copyrightText || "© 2025 resumeflex. All rights reserved.",
+            linkedinUrl: footerConfigData.linkedinUrl || "",
+            showLinkedin: footerConfigData.showLinkedin !== undefined ? footerConfigData.showLinkedin : true,
+            backgroundColor: footerConfigData.backgroundColor || "#0a0a0a",
+            textColor: footerConfigData.textColor || "#ffffff"
+          });
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
         message.error('Failed to load configuration');
@@ -125,7 +134,17 @@ const AppearancePage = () => {
     };
 
     fetchData();
-  }, [form, logoForm, backgroundForm]);
+  }, [form, logoForm, backgroundForm, footerForm]);
+
+  // Cleanup forms on unmount
+  useEffect(() => {
+    return () => {
+      if (form) form.resetFields();
+      if (logoForm) logoForm.resetFields();
+      if (backgroundForm) backgroundForm.resetFields();
+      if (footerForm) footerForm.resetFields();
+    };
+  }, [form, logoForm, backgroundForm, footerForm]);
 
   const handleSave = async () => {
     try {
