@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react';
-import type { Media } from '@prisma/client';
+import type { Media, Company } from '@prisma/client';
 
 interface Highlight {
   id: string;
   title: string;
-  company: string;
+  company: Company;
   description?: string | null;
   startDate: string;
   createdAt: string;
@@ -78,9 +78,23 @@ const HighlightCard = ({ highlight, onClick }: HighlightCardProps) => {
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight">
             {highlight.title}
           </h2>
-          <p className="text-lg md:text-xl text-white/90 mb-2">
-            {highlight.company}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            {highlight.company.logoUrl && (
+              <img
+                src={highlight.company.logoUrl}
+                alt={`${highlight.company.name} logo`}
+                className="object-contain rounded-sm shadow-sm"
+                style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            )}
+            <p className="text-lg md:text-xl font-semibold text-[#e50914]">
+              {highlight.company.name}
+            </p>
+          </div>
           <p className="text-sm md:text-base text-white/70">
             {formatDate(highlight.startDate)}
           </p>

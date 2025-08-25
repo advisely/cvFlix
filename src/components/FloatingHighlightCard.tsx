@@ -3,15 +3,15 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Card, Typography, Button, Popconfirm } from 'antd';
 import { PlayCircleOutlined, CalendarOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { Media } from '@prisma/client';
+import type { Media, Company } from '@prisma/client';
 import MediaModal from './MediaModal';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface Highlight {
   id: string;
   title: string;
-  company: string;
+  company: Company;
   description?: string | null;
   startDate: string;
   createdAt: string;
@@ -178,15 +178,7 @@ const FloatingHighlightCard = memo(({
   // Prioritize cardMedia, then fall back to legacy media
   const primaryMedia = highlight.cardMedia?.[0] || highlight.media?.[0];
 
-  // Memoized date formatting for performance
-  const formattedDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }, []);
+  // Removed formattedDate - using simple year display instead
 
   // Optimized media click handler
   const handleMediaClick = useCallback((e: React.MouseEvent) => {
@@ -214,7 +206,7 @@ const FloatingHighlightCard = memo(({
         <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] flex items-center justify-center border-b border-[#404040]">
           <div className="text-center text-white/40">
             <HomeOutlined className="text-4xl mb-2" />
-            <Text className="text-sm text-white/60 block">{highlight.company}</Text>
+            <Text className="text-sm text-white/60 block">{highlight.company.name}</Text>
           </div>
         </div>
       );
@@ -257,7 +249,7 @@ const FloatingHighlightCard = memo(({
     );
 
     return mediaContainer;
-  }, [primaryMedia, imageError, videoError, highlight.title, highlight.company, handleMediaClick, isVisible, index]);
+  }, [primaryMedia, imageError, videoError, highlight.title, highlight.company.name, handleMediaClick, isVisible, index]);
 
   // Performance-optimized card styles with hardware acceleration
   const cardStyles = {
@@ -327,35 +319,32 @@ const FloatingHighlightCard = memo(({
                 {highlight.title}
               </Title>
               
-              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                <HomeOutlined className="text-[#e50914] text-xs sm:text-sm" />
-                <Text className="!text-[#e50914] font-medium text-xs sm:text-sm">
-                  {highlight.company}
+              <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                {highlight.company.logoUrl && (
+                  <img
+                    src={highlight.company.logoUrl}
+                    alt={`${highlight.company.name} logo`}
+                    className="object-contain rounded-sm shadow-sm"
+                    style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                )}
+                <Text className="!text-[#e50914] font-semibold text-xs sm:text-sm">
+                  {highlight.company.name}
                 </Text>
               </div>
             </div>
 
-            {/* Description */}
-            {highlight.description && variant !== 'compact' && (
-              <div className="mb-2 sm:mb-3">
-                <Paragraph 
-                  className="!text-white/80 !mb-0 text-xs sm:text-sm leading-relaxed"
-                  ellipsis={{ 
-                    rows: variant === 'detailed' ? 3 : 2, 
-                    tooltip: highlight.description 
-                  }}
-                >
-                  {highlight.description}
-                </Paragraph>
-              </div>
-            )}
 
-            {/* Date and metadata */}
+            {/* Date and metadata - Show year only */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <CalendarOutlined className="text-white/60 text-xs" />
                 <Text className="!text-white/60 text-xs">
-                  {formattedDate(highlight.startDate)}
+                  {new Date(highlight.startDate).getFullYear()}
                 </Text>
               </div>
             </div>
@@ -412,6 +401,9 @@ const FloatingHighlightCard = memo(({
           onClose={handleModalClose}
           media={primaryMedia}
           highlightTitle={highlight.title}
+          company={highlight.company.name}
+          description={highlight.description}
+          startDate={highlight.startDate}
         />
       )}
     </>

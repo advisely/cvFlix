@@ -41,6 +41,7 @@ export async function GET() {
 
     const highlights = await prisma.highlight.findMany({
       include: {
+        company: true,
         homepageMedia: true,
         cardMedia: true,
         media: true,

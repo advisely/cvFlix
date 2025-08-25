@@ -21,7 +21,7 @@ import type { Company, Education, Certification, Skill, Media } from '@prisma/cl
 interface Highlight {
   id: string;
   title: string;
-  company: string;
+  company: Company;
   description?: string | null;
   startDate: string;
   createdAt: string;
@@ -314,20 +314,25 @@ export default function Home() {
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight">
                     {highlights[0].title}
                   </h2>
-                  <p className="text-lg md:text-xl text-white/90 mb-2">
-                    {highlights[0].company}
-                  </p>
-                  {highlights[0].description && (
-                    <p className="text-sm md:text-base text-white/80 mb-2 line-clamp-2">
-                      {highlights[0].description}
+                  <div className="flex items-center gap-2 mb-2">
+                    {highlights[0].company.logoUrl && (
+                      <img
+                        src={highlights[0].company.logoUrl}
+                        alt={`${highlights[0].company.name} logo`}
+                        className="object-contain rounded-sm shadow-sm"
+                        style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <p className="text-lg md:text-xl font-semibold text-[#e50914]">
+                      {highlights[0].company.name}
                     </p>
-                  )}
+                  </div>
                   <p className="text-sm md:text-base text-white/70">
-                    {new Date(highlights[0].startDate).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
+                    {new Date(highlights[0].startDate).getFullYear()}
                   </p>
                 </div>
               </div>
@@ -344,7 +349,7 @@ export default function Home() {
             variant="default"
             showActions={true}
             gridProps={{ xs: 24, sm: 12, md: 8, lg: 6, xl: 6, xxl: 4 }}
-            onCardClick={(highlight) => {
+            onCardClick={() => {
               // Highlight interaction handled by grid component
             }}
           />
@@ -424,7 +429,7 @@ export default function Home() {
           }}
           media={selectedHighlight.cardMedia[0]}
           highlightTitle={selectedHighlight.title}
-          company={selectedHighlight.company}
+          company={selectedHighlight.company.name}
           description={selectedHighlight.description}
           startDate={selectedHighlight.startDate}
         />
