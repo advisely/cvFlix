@@ -77,6 +77,7 @@ const MultilingualFormTabs: React.FC<MultilingualFormTabsProps> = ({
         onChange={setActiveTab}
         items={tabItems}
         size="large"
+        destroyInactiveTabPane={false}
         tabBarStyle={{
           marginBottom: '24px',
           borderBottom: '1px solid #d9d9d9'

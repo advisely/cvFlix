@@ -4,11 +4,29 @@ import { NextResponse } from 'next/server'
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
+    console.log('PUT /api/companies/[id] - Company ID:', params.id)
+    console.log('PUT /api/companies/[id] - Request body:', JSON.stringify(body, null, 2))
+    
     const { name, nameFr, logoUrl } = body
 
-    if (!name || !nameFr) {
-      return NextResponse.json({ error: 'Company name in both languages is required' }, { status: 400 })
+    // Enhanced validation with better error messages
+    if (!name || name.trim() === '') {
+      console.log('PUT /api/companies/[id] - Validation failed: English name is missing or empty')
+      return NextResponse.json({ 
+        error: 'Company name (English) is required',
+        debug: { name, nameFr, receivedKeys: Object.keys(body) }
+      }, { status: 400 })
     }
+    
+    if (!nameFr || nameFr.trim() === '') {
+      console.log('PUT /api/companies/[id] - Validation failed: French name is missing or empty')
+      return NextResponse.json({ 
+        error: 'Company name (French) is required',
+        debug: { name, nameFr, receivedKeys: Object.keys(body) }
+      }, { status: 400 })
+    }
+
+    console.log('PUT /api/companies/[id] - Validation passed, updating company')
 
     const company = await prisma.company.update({
       where: { id: params.id },
@@ -19,9 +37,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }
     })
 
+    console.log('PUT /api/companies/[id] - Company updated successfully')
     return NextResponse.json(company)
   } catch (error) {
-    console.error('Error updating company:', error)
+    console.error('PUT /api/companies/[id] - Error updating company:', error)
     if (error instanceof Error && error.message.includes('Unique constraint')) {
       return NextResponse.json({ error: 'A company with this name already exists' }, { status: 400 })
     }

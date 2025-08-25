@@ -45,9 +45,45 @@ const CompaniesPage = () => {
 
   const handleOk = async () => {
     try {
-      const values = await form.validateFields();
+      console.log("=== COMPANY FORM DEBUG ===");
+      console.log("Form validation starting...");
+      
+      // Explicitly validate all required fields
+      console.log("Validating fields explicitly: ['name', 'nameFr']");
+      await form.validateFields(['name', 'nameFr']);
+      
+      // Get all form values explicitly
+      const values = form.getFieldsValue(['name', 'nameFr', 'logoUrl']);
+      console.log("Form validation successful, values:", JSON.stringify(values, null, 2));
+      console.log("Form values keys:", Object.keys(values));
+      console.log("Form field values breakdown:");
+      console.log("  - name:", JSON.stringify(values.name), "type:", typeof values.name);
+      console.log("  - nameFr:", JSON.stringify(values.nameFr), "type:", typeof values.nameFr);
+      console.log("  - logoUrl:", JSON.stringify(values.logoUrl), "type:", typeof values.logoUrl);
+      
+      // Additional client-side validation
+      if (!values.name?.trim()) {
+        console.log("Client-side validation failed: name is empty");
+        message.error('English company name is required');
+        return;
+      }
+      
+      if (!values.nameFr?.trim()) {
+        console.log("Client-side validation failed: nameFr is empty");
+        message.error('French company name is required');
+        return;
+      }
+      
+      console.log("All validations passed, proceeding with API call");
+      
       const url = editingRecord ? `/api/companies/${editingRecord.id}` : '/api/companies';
       const method = editingRecord ? 'PUT' : 'POST';
+      
+      console.log("API call details:");
+      console.log("  - URL:", url);
+      console.log("  - Method:", method);
+      console.log("  - Editing record:", editingRecord ? editingRecord.id : "null");
+      console.log("  - Request body:", JSON.stringify(values));
 
       const response = await fetch(url, {
         method,
@@ -55,20 +91,32 @@ const CompaniesPage = () => {
         body: JSON.stringify(values),
       });
 
+      console.log("Response received:");
+      console.log("  - Status:", response.status);
+      console.log("  - OK:", response.ok);
+
       if (response.ok) {
+        console.log("Response successful, fetching companies...");
         await fetchCompanies();
         setIsModalVisible(false);
         message.success(`Company ${editingRecord ? 'updated' : 'created'} successfully!`);
+        console.log("=== END COMPANY FORM DEBUG ===");
       } else {
         const errorData = await response.json();
+        console.log("Response failed, error data:", JSON.stringify(errorData, null, 2));
+        console.log("=== END COMPANY FORM DEBUG ===");
         message.error(`Failed to save company: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Failed to save company:', error);
-      message.error('Failed to save company');
+      console.log("=== END COMPANY FORM DEBUG ===");
+      if (error.errorFields && error.errorFields.length > 0) {
+        message.error(`Please fix the following errors: ${error.errorFields.map(f => f.errors[0]).join(', ')}`);
+      } else {
+        message.error('Failed to save company');
+      }
     }
   };
-
   const handleCancel = () => {
     setIsModalVisible(false);
   };
@@ -94,7 +142,7 @@ const CompaniesPage = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload/companies', {
         method: 'POST',
         body: formData,
       });
@@ -252,18 +300,25 @@ const CompaniesPage = () => {
                 </Upload>
               }
             />
-            {form.getFieldValue('logoUrl') && (
-              <div style={{ marginTop: 8 }}>
-                <Image
-                  src={form.getFieldValue('logoUrl')}
-                  alt="Logo preview"
-                  width={60}
-                  height={60}
-                  style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #d9d9d9' }}
-                  fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0zMCAzMEMyNy41MTQ3IDMwIDI1LjUgMzIuMDE0NyAyNS41IDM0LjVWNDAuNUMyNS41IDQyLjk4NTMgMjcuNTE0NyA0NSAzMCA0NUgzNC41QzM2Ljk4NTMgNDUgMzkgNDIuOTg1MyAzOSA0MC41VjM0LjVDMzkgMzIuMDE0NyAzNi45ODUzIDMwIDM0LjUgMzBIMzBaIiBmaWxsPSIjQzRDNEM0Ii8+CjxwYXRoIGQ9Ik0yNS41IDI1LjVDMjUuNSAyMy4wMTQ3IDI3LjUxNDcgMjEgMzAgMjFIMzQuNUMzNi45ODUzIDIxIDM5IDIzLjAxNDcgMzkgMjUuNVYyN0gzOS43NUMzOS43NSAyNy44Mjg0IDQwLjQyMTYgMjguNSA0MS4yNSAyOC41VjMwLjc1QzQxLjI1IDMxLjU3ODQgNDAuNTc4NCAzMi4yNSAzOS43NSAzMi4yNUgzOVYzNC41QzM5IDM2Ljk4NTMgMzYuOTg1MyAzOSAzNC41IDM5SDMwQzI7LjUxNDcgMzkgMjUuNSAzNi45ODUzIDI1LjUgMzQuNVYzMi4yNUgyMC4yNUMxOS40MjE2IDMyLjI1IDE4Ljc1IDMxLjU3ODQgMTguNzUgMzAuNzVWMjguNUMxOC43NSAyNy42NzE2IDE5LjQyMTYgMjcgMjAuMjUgMjdIMjUuNVYyNS41WiIgZmlsbD0iI0M0QzRDNCIvPgo8L3N2Zz4K"
-                />
-              </div>
-            )}
+          </Form.Item>
+          
+          {/* Logo Preview with proper form dependency tracking */}
+          <Form.Item noStyle dependencies={['logoUrl']}>
+            {({ getFieldValue }) => {
+              const currentLogoUrl = getFieldValue('logoUrl');
+              return currentLogoUrl ? (
+                <div style={{ marginTop: 8, marginBottom: 16 }}>
+                  <Image
+                    src={currentLogoUrl}
+                    alt="Logo preview"
+                    width={60}
+                    height={60}
+                    style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #d9d9d9' }}
+                    fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0zMCAzMEMyNy41MTQ3IDMwIDI1LjUgMzIuMDE0NyAyNS41IDM0LjVWNDAuNUMyNS41IDQyLjk4NTMgMjcuNTE0NyA0NSAzMCA0NUgzNC41QzM2Ljk4NTMgNDUgMzkgNDIuOTg1MyAzOSA0MC41VjM0LjVDMzkgMzIuMDE0NyAzNi45ODUzIDMwIDM0LjUgMzBIMzBaIiBmaWxsPSIjQzRDNEM0Ii8+CjxwYXRoIGQ9Ik0yNS41IDI1LjVDMjUuNSAyMy4wMTQ3IDI3LjUxNDcgMjEgMzAgMjFIMzQuNUMzNi45ODUzIDIxIDM5IDIzLjAxNDcgMzkgMjUuNVYyN0gzOS43NUMzOS43NSAyNy44Mjg0IDQwLjQyMTYgMjguNSA0MS4yNSAyOC41VjMwLjc1QzQxLjI1IDMxLjU3ODQgNDAuNTc4NCAzMi4yNSAzOS43NSAzMi4yNUgzOVYzNC41QzM5IDM2Ljk4NTMgMzYuOTg1MyAzOSAzNC41IDM5SDMwQzI3LjUxNDcgMzkgMjUuNSAzNi45ODUzIDI1LjUgMzQuNVYzMi4yNUgyMC4yNUMxOS40MjE2IDMyLjI1IDE4Ljc1IDMxLjU3ODQgMTguNzUgMzAuNzVWMjguNUMxOC43NSAyNy42NzE2IDE5LjQyMTYgMjcgMjAuMjUgMjdIMjUuNVYyNS41WiIgZmlsbD0iI0M0QzRDNCIvPgo8L3N2Zz4K"
+                  />
+                </div>
+              ) : null;
+            }}
           </Form.Item>
         </Form>
       </Modal>

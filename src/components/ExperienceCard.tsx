@@ -103,13 +103,15 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
       : convertToMultiPeriod(experience);
   }, [experience]);
 
-  const { title, titleFr, company, dateRanges, homepageMedia = [], isCurrentPosition } = multiPeriodExp;
+  const { title, titleFr, company, dateRanges, homepageMedia = [] } = multiPeriodExp;
 
   const localizedTitle = getLocalizedText(title, titleFr, language)
   const localizedCompanyName = getLocalizedText(company.name, company.nameFr, language)
 
   const firstImage = homepageMedia?.find((m: Media) => m.type === 'image')
+  const companyLogo = company.logoUrl
   const shouldShowImage = firstImage && !imageError
+  const shouldShowCompanyLogo = companyLogo && !imageError && !shouldShowImage
 
   const isMultiPeriod = dateRanges.length > 1;
 
@@ -131,6 +133,13 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
             src={firstImage.url}
             alt={localizedTitle}
             className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : shouldShowCompanyLogo ? (
+          <img 
+            src={companyLogo}
+            alt={`${localizedCompanyName} logo`}
+            className="w-full h-full object-contain p-4 bg-white"
             onError={() => setImageError(true)}
           />
         ) : (
