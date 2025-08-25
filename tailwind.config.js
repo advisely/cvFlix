@@ -51,6 +51,15 @@ module.exports = {
         'xl': '1280px',
         '2xl': '1536px',
       },
+      aspectRatio: {
+        'card': '16 / 12', // Custom aspect ratio for experience cards
+        'logo': '1 / 1',   // Square aspect ratio for logos
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
+      },
     },
   },
   plugins: [],

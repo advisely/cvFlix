@@ -213,6 +213,50 @@ video, img {
   backface-visibility: hidden;
 }
 
+/* Experience Card specific optimizations */
+.experience-card img {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 192px; /* h-48 = 192px */
+}
+
+.experience-card .company-logo {
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+}
+
+/* Smooth placeholder to content transition */
+.company-logo-container {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.company-logo-container:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  transform: scale(1.02);
+}
+
+/* Loading skeleton specific to logos */
+.logo-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: logoSkeleton 1.5s infinite;
+}
+
+@keyframes logoSkeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Optimized intersection observer targets */
 [data-card-id] {
   will-change: opacity, transform;
@@ -264,6 +308,65 @@ video, img {
   .ant-layout-sider {
     position: fixed !important;
     z-index: 1000 !important;
+  }
+  
+  /* Mobile-optimized logo display */
+  .floating-card-optimized {
+    transform: none;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  
+  .floating-card-optimized:active {
+    transform: scale(0.98);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(229, 9, 20, 0.2);
+  }
+  
+  /* Better company logo sizing on mobile */
+  .experience-card .company-logo {
+    padding: 1rem !important;
+  }
+  
+  /* Enhanced letter fallback for mobile */
+  .company-letter-fallback {
+    width: 4rem !important;
+    height: 4rem !important;
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Tablet responsive optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .experience-card {
+    max-width: 280px;
+  }
+  
+  .company-logo-container {
+    padding: 0.75rem;
+  }
+  
+  .company-letter-fallback {
+    width: 5rem;
+    height: 5rem;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1024px) {
+  .experience-card:hover .company-logo-container {
+    transform: scale(1.05);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .floating-card-optimized:hover {
+    transform: translateY(-12px) translateZ(0) scale(1.03);
+  }
+}
+
+/* High DPI screen optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .company-logo {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 }
 

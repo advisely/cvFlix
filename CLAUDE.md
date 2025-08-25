@@ -318,6 +318,7 @@ This enhancement serves as foundation for:
 | **Requirements Analysis & Business Logic** | @agent-functional-analyst | User requirements validation, business logic mapping, and feature specification |
 | **Code Quality Assurance** | @agent-code-reviewer | Security review, maintainability, and TypeScript coverage |
 | **Technical Coordination** | @agent-tech-lead-orchestrator | Overall task delegation and architectural decisions |
+| **Requirements Analysis & Debugging** | @agent-functional-analyst | Business logic analysis, debugging support, and requirement clarification |
 
 ### Specialist Justifications
 - **react-expert**: Essential for complex React 19 component architecture with hooks and state management

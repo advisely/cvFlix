@@ -71,6 +71,7 @@ const formatStartYearsOnly = (ranges: ExperienceDateRange[]): string => {
   }).join(' - ');
 };
 
+
 const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   dateRanges,
   format = 'detailed',
@@ -112,12 +113,14 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     return (
       <div className={`timeline-visual ${className}`}>
         <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#404040]">
-          <Text 
-            className="font-medium"
-            style={{ color: contrastSafeColor }}
-          >
-            {formatStartYearsOnly(displayRanges)}
-          </Text>
+          <div className="flex items-center gap-2">
+            <Text 
+              className="font-medium"
+              style={{ color: contrastSafeColor }}
+            >
+              {formatStartYearsOnly(displayRanges)}
+            </Text>
+          </div>
         </div>
       </div>
     );
@@ -127,12 +130,14 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   return (
     <div className={`timeline-detailed ${className}`}>
       <div className="timeline-section">
-        <Text 
-          className="font-medium"
-          style={{ color: contrastSafeColor }}
-        >
-          {formatStartYearsOnly(displayRanges)}
-        </Text>
+        <div className="flex items-center gap-2">
+          <Text 
+            className="font-medium"
+            style={{ color: contrastSafeColor }}
+          >
+            {formatStartYearsOnly(displayRanges)}
+          </Text>
+        </div>
       </div>
     </div>
   );

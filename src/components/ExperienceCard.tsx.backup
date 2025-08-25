@@ -1,0 +1,204 @@
+'use client'
+
+import { Company, Media } from '@prisma/client'
+import { useState, useMemo } from 'react'
+import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext'
+import ProfessionalTimeline, { ExperienceDateRange } from './ProfessionalTimeline'
+import { HistoryOutlined } from '@ant-design/icons'
+
+// Extended interface to support multi-period experiences
+interface SerializedExperience {
+  id: string;
+  title: string;
+  titleFr: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+  descriptionFr?: string | null;
+  companyId: string;
+  company: Company & { nameFr: string; logoUrl?: string | null };
+  media?: Media[];
+  homepageMedia?: Media[];
+}
+
+// Enhanced interface for multi-period experiences
+interface MultiPeriodExperience {
+  id: string;
+  title: string;
+  titleFr: string;
+  description?: string | null;
+  descriptionFr?: string | null;
+  companyId: string;
+  company: Company & { nameFr: string; logoUrl?: string | null };
+
+  // Multi-period support
+  dateRanges: ExperienceDateRange[];
+
+  // Computed properties for display and sorting
+  earliestStartDate: string;
+  latestEndDate: string | null;
+  isCurrentPosition: boolean;
+  totalDurationMonths: number;
+  formattedPeriods: string;
+
+  // Media and relations
+  media?: Media[];
+  homepageMedia?: Media[];
+  cardMedia?: Media[];
+}
+
+interface ExperienceCardProps {
+  experience: SerializedExperience | MultiPeriodExperience;
+  onClick: () => void;
+  variant?: 'compact' | 'detailed' | 'timeline';
+  showTimeline?: boolean;
+  maxTimelineRanges?: number;
+}
+
+// Type guard to check if experience has multi-period structure
+const isMultiPeriodExperience = (experience: unknown): experience is MultiPeriodExperience => {
+  return (
+    typeof experience === "object" &&
+    experience !== null &&
+    "dateRanges" in experience &&
+    Array.isArray((experience as { dateRanges?: unknown[] }).dateRanges)
+  );
+};
+
+// Convert single-period experience to multi-period format
+const convertToMultiPeriod = (experience: SerializedExperience): MultiPeriodExperience => {
+  const dateRange: ExperienceDateRange = {
+    id: `range-${experience.id}`,
+    startDate: experience.startDate,
+    endDate: experience.endDate || null,
+    isCurrent: !experience.endDate
+  };
+
+  return {
+    ...experience,
+    dateRanges: [dateRange],
+    earliestStartDate: experience.startDate,
+    latestEndDate: experience.endDate || null,
+    isCurrentPosition: !experience.endDate,
+    totalDurationMonths: 0, // Removed duration calculation
+    formattedPeriods: '', // Removed formatted periods
+    cardMedia: experience.media || []
+  };
+};
+
+const ExperienceCard: React.FC<ExperienceCardProps> = ({
+  experience,
+  onClick,
+  variant = 'detailed',
+  showTimeline = true,
+  maxTimelineRanges = 5
+}) => {
+  const { language } = useLanguage()
+  const [imageError, setImageError] = useState(false)
+
+  // Convert to multi-period format if needed
+  const multiPeriodExp = useMemo(() => {
+    return isMultiPeriodExperience(experience)
+      ? experience
+      : convertToMultiPeriod(experience);
+  }, [experience]);
+
+  const { title, titleFr, company, dateRanges, homepageMedia = [] } = multiPeriodExp;
+
+  const localizedTitle = getLocalizedText(title, titleFr, language)
+  const localizedCompanyName = getLocalizedText(company.name, company.nameFr, language)
+
+  const firstImage = homepageMedia?.find((m: Media) => m.type === 'image')
+  const companyLogo = company.logoUrl
+  const shouldShowImage = firstImage && !imageError
+  const shouldShowCompanyLogo = companyLogo && !imageError && !shouldShowImage
+
+  // DEBUG: Log image display logic
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 ExperienceCard Debug:', {
+      companyName: localizedCompanyName,
+      companyLogo,
+      firstImage: firstImage?.url,
+      shouldShowImage,
+      shouldShowCompanyLogo,
+      imageError
+    });
+  }
+
+  const isMultiPeriod = dateRanges.length > 1;
+
+  // Enhanced hover effect for multi-period experiences
+  const cardClasses = [
+    "bg-[#303030] rounded-lg overflow-hidden transform hover:scale-105 transition-all duration-300",
+    "h-full flex flex-col border border-[#404040] shadow-lg cursor-pointer",
+    "hover:shadow-2xl hover:-translate-y-1",
+    isMultiPeriod ? "hover:border-[#e50914]/50" : "",
+    variant === 'compact' ? "max-w-sm" : variant === 'timeline' ? "max-w-2xl" : ""
+  ].filter(Boolean).join(" ");
+
+  return (
+    <div className={cardClasses} onClick={onClick}>
+      {/* Media Section */}
+      <div className="w-full h-48 bg-[#141414] flex items-center justify-center relative">
+        {shouldShowImage ? (
+          <img
+            src={firstImage.url}
+            alt={localizedTitle}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : shouldShowCompanyLogo ? (
+          <img 
+            src={companyLogo}
+            alt={`${localizedCompanyName} logo`}
+            className="w-full h-full object-contain p-4 bg-white"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span className="text-[#808080] text-xl font-bold">{localizedCompanyName.charAt(0)}</span>
+        )}
+
+        {/* Multi-Period Indicator */}
+        {isMultiPeriod && (
+          <div className="absolute top-3 right-3 w-8 h-8 bg-[#e50914]/90 rounded-full flex items-center justify-center border border-[#e50914]">
+            <HistoryOutlined className="text-white text-sm" />
+          </div>
+        )}
+
+      </div>
+
+      {/* Content Section */}
+      <div className="p-4 flex flex-col flex-grow">
+        {/* Primary Information */}
+        <div className="mb-3">
+          <h3 className="text-lg font-bold text-white mb-1 leading-tight">{localizedTitle}</h3>
+          <p className="text-md font-semibold text-[#e50914]">{localizedCompanyName}</p>
+        </div>
+
+        {/* Clean Timeline Section - FIXED */}
+        {showTimeline && dateRanges.length > 0 && (
+          <div className="mb-3 flex-grow">
+            <ProfessionalTimeline
+              dateRanges={dateRanges}
+              format={variant === 'compact' ? 'compact' : 'detailed'}
+              maxRanges={maxTimelineRanges}
+              backgroundColor="#303030"
+            />
+          </div>
+        )}
+
+        {/* Removed Experience Summary Section - No more duration calculations */}
+
+        {/* Legacy single date display for compact variant */}
+        {!showTimeline && variant === 'compact' && (
+          <p className="text-sm text-[#808080] mt-auto">
+            {dateRanges[0]?.startDate ? new Date(dateRanges[0].startDate).getFullYear() : ''}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default ExperienceCard
+export type { MultiPeriodExperience, ExperienceDateRange }

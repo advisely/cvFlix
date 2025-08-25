@@ -74,6 +74,14 @@ export async function GET() {
       })
     }
 
+    // DEBUG: Log company data before filtering
+    console.log('🔍 DEBUG: Raw companies from Prisma:', companies.map(c => ({
+      id: c.id,
+      name: c.name,
+      logoUrl: c.logoUrl,
+      experienceCount: c.experiences?.length || 0
+    })));
+
     // Combine all companies and sort by their most recent experience start date
     const portfolioExperiences = companies
       .filter(company => company.experiences && company.experiences.length > 0)
@@ -82,6 +90,14 @@ export async function GET() {
         const bStartDate = new Date(b.experiences[0]!.startDate);
         return bStartDate.getTime() - aStartDate.getTime(); // DESC order (most recent first)
       });
+
+    // DEBUG: Log filtered portfolio experiences
+    console.log('🎯 DEBUG: Filtered portfolio experiences:', portfolioExperiences.map(c => ({
+      id: c.id,
+      name: c.name,
+      logoUrl: c.logoUrl,
+      experienceCount: c.experiences?.length || 0
+    })));
 
     return NextResponse.json({
       portfolioExperiences,

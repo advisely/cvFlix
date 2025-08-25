@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Test - Company Logos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #141414;
+            color: white;
+        }
+        .instructions {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .button:hover {
+            background: #cc0812;
+        }
+        .console-output {
+            background: #222;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Company Logo Debug Test</h1>
+    
+    <div class="instructions">
+        <h2>Instructions:</h2>
+        <ol>
+            <li><strong>Open Developer Tools</strong> (F12 or right-click → Inspect)</li>
+            <li><strong>Go to the Console tab</strong></li>
+            <li><strong>Click the button below</strong> to open the main homepage</li>
+            <li><strong>Watch the console</strong> for debug messages from ExperienceCard</li>
+            <li><strong>Look for "🔍 ExperienceCard Debug:" messages</strong></li>
+        </ol>
+        <p>The debug messages will show:
+            <ul>
+                <li>Company name</li>
+                <li>Company logo URL</li>
+                <li>Whether images should be shown</li>
+                <li>Any error states</li>
+            </ul>
+        </p>
+    </div>
+    
+    <button class="button" onclick="openHomepage()">🏠 Open Homepage in New Tab</button>
+    <button class="button" onclick="testAPI()">🔧 Test API Direct</button>
+    <button class="button" onclick="testImageLoading()">🖼️ Test Image Loading</button>
+    
+    <div id="results">
+        <h3>Test Results:</h3>
+        <div class="console-output" id="console-output">Click buttons above to run tests...</div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function openHomepage() {
+            log('Opening homepage in new tab...');
+            window.open('http://localhost:4001', '_blank');
+            log('✅ Homepage opened. Check the console in the new tab for debug messages!');
+        }
+
+        async function testAPI() {
+            log('🔧 Testing API endpoint...');
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                log(`📊 API Response Status: ${response.status}`);
+                log(`📊 Portfolio Experiences Count: ${data.portfolioExperiences?.length || 0}`);
+                
+                if (data.portfolioExperiences && data.portfolioExperiences.length > 0) {
+                    data.portfolioExperiences.forEach((company, index) => {
+                        log(`  Company ${index + 1}:`);
+                        log(`    Name: ${company.name}`);
+                        log(`    Logo URL: ${company.logoUrl}`);
+                        log(`    Experiences: ${company.experiences?.length || 0}`);
+                    });
+                }
+                
+                log('✅ API test completed successfully');
+            } catch (error) {
+                log(`❌ API test failed: ${error.message}`);
+            }
+        }
+
+        async function testImageLoading() {
+            log('🖼️ Testing image loading...');
+            
+            const testUrls = [
+                '/uploads/companies/a0e2d9e5-5ff1-4e15-b6e8-ec017b705b3a.jpg',
+                '/uploads/companies/e891bc4d-c910-4988-b678-832819b3a960.jpg',
+                '/uploads/companies/129b6f65-aff8-4287-9d1d-ffad9e15f64b.jpg'
+            ];
+            
+            for (let i = 0; i < testUrls.length; i++) {
+                const url = testUrls[i];
+                log(`Testing image ${i + 1}: ${url}`);
+                
+                try {
+                    const response = await fetch(url, { method: 'HEAD' });
+                    if (response.ok) {
+                        log(`  ✅ Image accessible (${response.status})`);
+                        log(`  Content-Type: ${response.headers.get('content-type')}`);
+                        log(`  Content-Length: ${response.headers.get('content-length')} bytes`);
+                    } else {
+                        log(`  ❌ Image not accessible (${response.status})`);
+                    }
+                } catch (error) {
+                    log(`  ❌ Image test failed: ${error.message}`);
+                }
+            }
+            
+            log('✅ Image loading tests completed');
+        }
+
+        // Auto-run API test on load
+        setTimeout(testAPI, 1000);
+    </script>
+</body>
+</html>

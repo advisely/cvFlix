@@ -94,7 +94,11 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
   maxTimelineRanges = 5
 }) => {
   const { language } = useLanguage()
-  const [imageError, setImageError] = useState(false)
+  
+  // Enhanced state management with separate error states and loading
+  const [homepageImageError, setHomepageImageError] = useState(false)
+  const [companyLogoError, setCompanyLogoError] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
 
   // Convert to multi-period format if needed
   const multiPeriodExp = useMemo(() => {
@@ -110,60 +114,134 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
 
   const firstImage = homepageMedia?.find((m: Media) => m.type === 'image')
   const companyLogo = company.logoUrl
-  const shouldShowImage = firstImage && !imageError
-  const shouldShowCompanyLogo = companyLogo && !imageError && !shouldShowImage
+
+  // CORRECTED display logic - Homepage images take priority, company logos are separate brand identifiers
+  const shouldShowHomepageImage = firstImage && !homepageImageError
+  const shouldShowCompanyLogo = companyLogo && !companyLogoError && !shouldShowHomepageImage
+  const shouldShowLetterFallback = !shouldShowHomepageImage && !shouldShowCompanyLogo
+
+  // Separate error handlers for different image types
+  const handleHomepageImageError = () => {
+    console.log('Homepage image failed to load:', firstImage?.url)
+    setHomepageImageError(true)
+    setImageLoading(false)
+  }
+
+  const handleCompanyLogoError = () => {
+    console.log('Company logo failed to load:', companyLogo)
+    setCompanyLogoError(true)
+    setImageLoading(false)
+  }
+
+  const handleImageLoad = () => {
+    setImageLoading(false)
+  }
+
+  // Enhanced DEBUG logging - Company logos next to company name
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 ExperienceCard Debug (Company logos next to company name):', {
+      companyName: localizedCompanyName,
+      companyLogo: companyLogo ? 'Available for company name display' : 'Not available',
+      firstImage: firstImage?.url,
+      shouldShowHomepageImage,
+      shouldShowCompanyLogo: 'Separate from main image - used next to company name',
+      shouldShowLetterFallback,
+      homepageImageError,
+      companyLogoError,
+      imageLoading,
+      note: 'Company logos now display next to company name, removed from timeline'
+    });
+  }
 
   const isMultiPeriod = dateRanges.length > 1;
 
-  // Enhanced hover effect for multi-period experiences
+  // Enhanced hover effect with hardware acceleration for 60fps performance
   const cardClasses = [
-    "bg-[#303030] rounded-lg overflow-hidden transform hover:scale-105 transition-all duration-300",
-    "h-full flex flex-col border border-[#404040] shadow-lg cursor-pointer",
-    "hover:shadow-2xl hover:-translate-y-1",
+    "bg-[#303030] rounded-lg overflow-hidden floating-card-optimized",
+    "h-full flex flex-col border border-[#404040] shadow-netflix cursor-pointer",
+    "hover:shadow-netflix-hover",
     isMultiPeriod ? "hover:border-[#e50914]/50" : "",
     variant === 'compact' ? "max-w-sm" : variant === 'timeline' ? "max-w-2xl" : ""
   ].filter(Boolean).join(" ");
 
   return (
-    <div className={cardClasses} onClick={onClick}>
-      {/* Media Section */}
-      <div className="w-full h-48 bg-[#141414] flex items-center justify-center relative">
-        {shouldShowImage ? (
+    <div className={`experience-card ${cardClasses}`} onClick={onClick} data-card-id={experience.id}>
+      {/* Enhanced Media Section with optimized loading states and aspect ratio */}
+      <div className="w-full h-48 bg-gradient-to-br from-[#141414] to-[#0a0a0a] flex items-center justify-center relative overflow-hidden">
+        {/* Hardware-accelerated loading state with smooth transition */}
+        {imageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#141414]/95 backdrop-blur-sm z-10 animate-in fade-in duration-200">
+            {shouldShowCompanyLogo ? (
+              <div className="logo-skeleton w-16 h-16 rounded-lg"></div>
+            ) : (
+              <div className="w-8 h-8 border-2 border-[#e50914] border-t-transparent rounded-full animate-spin will-change-transform"></div>
+            )}
+          </div>
+        )}
+
+        {/* Cascading fallback display logic */}
+        {shouldShowHomepageImage ? (
           <img
             src={firstImage.url}
             alt={localizedTitle}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
+            className="w-full h-full object-cover transition-all duration-300 ease-out will-change-auto"
+            onLoad={handleImageLoad}
+            onLoadStart={() => setImageLoading(true)}
+            onError={handleHomepageImageError}
+            loading="lazy"
+            decoding="async"
           />
         ) : shouldShowCompanyLogo ? (
-          <img 
-            src={companyLogo}
-            alt={`${localizedCompanyName} logo`}
-            className="w-full h-full object-contain p-4 bg-white"
-            onError={() => setImageError(true)}
-          />
+          <div className="company-logo-container w-full h-full p-2 rounded-lg shadow-inner">
+            <img 
+              src={companyLogo}
+              alt={`${localizedCompanyName} logo`}
+              className="company-logo w-full h-full object-contain p-4 transition-all duration-300 ease-out will-change-auto"
+              onLoad={handleImageLoad}
+              onLoadStart={() => setImageLoading(true)}
+              onError={handleCompanyLogoError}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
         ) : (
-          <span className="text-[#808080] text-xl font-bold">{localizedCompanyName.charAt(0)}</span>
+          <div className="company-letter-fallback w-20 h-20 bg-gradient-to-br from-[#e50914]/20 to-[#e50914]/40 rounded-full flex items-center justify-center border-2 border-[#e50914]/30 shadow-lg backdrop-blur-sm">
+            <span className="text-white text-2xl font-bold tracking-wide drop-shadow-lg">{localizedCompanyName.charAt(0)}</span>
+          </div>
         )}
 
-        {/* Multi-Period Indicator */}
+        {/* Multi-Period Indicator with enhanced visibility */}
         {isMultiPeriod && (
-          <div className="absolute top-3 right-3 w-8 h-8 bg-[#e50914]/90 rounded-full flex items-center justify-center border border-[#e50914]">
-            <HistoryOutlined className="text-white text-sm" />
+          <div className="absolute top-3 right-3 w-8 h-8 bg-[#e50914] rounded-full flex items-center justify-center border-2 border-white/20 shadow-lg backdrop-blur-sm z-20">
+            <HistoryOutlined className="text-white text-sm drop-shadow-sm" />
           </div>
         )}
 
       </div>
 
-      {/* Content Section */}
+      {/* Content Section with enhanced typography */}
       <div className="p-4 flex flex-col flex-grow">
-        {/* Primary Information */}
+        {/* Primary Information with improved contrast */}
         <div className="mb-3">
-          <h3 className="text-lg font-bold text-white mb-1 leading-tight">{localizedTitle}</h3>
-          <p className="text-md font-semibold text-[#e50914]">{localizedCompanyName}</p>
+          <h3 className="text-lg font-bold text-white mb-1 leading-tight line-clamp-2 drop-shadow-sm">{localizedTitle}</h3>
+          <div className="flex items-center gap-2">
+            {/* Company logo positioned next to company name */}
+            {companyLogo && !companyLogoError && (
+              <img
+                src={companyLogo}
+                alt={`${localizedCompanyName} logo`}
+                className="company-logo-icon object-contain rounded-sm shadow-sm"
+                style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                onError={() => setCompanyLogoError(true)}
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            <p className="text-md font-semibold text-[#e50914] tracking-wide">{localizedCompanyName}</p>
+          </div>
         </div>
 
-        {/* Clean Timeline Section - FIXED */}
+        {/* Clean Timeline Section without Company Logo */}
         {showTimeline && dateRanges.length > 0 && (
           <div className="mb-3 flex-grow">
             <ProfessionalTimeline
@@ -179,9 +257,11 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
 
         {/* Legacy single date display for compact variant */}
         {!showTimeline && variant === 'compact' && (
-          <p className="text-sm text-[#808080] mt-auto">
-            {dateRanges[0]?.startDate ? new Date(dateRanges[0].startDate).getFullYear() : ''}
-          </p>
+          <div className="mt-auto">
+            <p className="text-sm text-[#808080]">
+              {dateRanges[0]?.startDate ? new Date(dateRanges[0].startDate).getFullYear() : ''}
+            </p>
+          </div>
         )}
       </div>
     </div>
