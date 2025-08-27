@@ -333,9 +333,7 @@ export default function Home() {
                       {getLocalizedText(highlights[0].company.name, highlights[0].company.nameFr, language)}
                     </p>
                   </div>
-                  <p className="text-sm md:text-base text-white/70">
-                    {new Date(highlights[0].startDate).getFullYear()}
-                  </p>
+                  {/* Removed year display from hero section - keeping clean presentation */}
                 </div>
               </div>
 
@@ -365,7 +363,7 @@ export default function Home() {
                 <ExperienceCard
                   experience={experience}
                   variant="detailed"
-                  showTimeline={true}
+                  showTimeline={false}
                   maxTimelineRanges={3}
                   onClick={() => {
                     // For modal display, use the first media from the experience

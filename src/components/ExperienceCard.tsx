@@ -244,14 +244,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({
 
         {/* Removed Experience Summary Section - No more duration calculations */}
 
-        {/* Legacy single date display for compact variant */}
-        {!showTimeline && variant === 'compact' && (
-          <div className="mt-auto">
-            <p className="text-sm text-[#808080]">
-              {dateRanges[0]?.startDate ? new Date(dateRanges[0].startDate).getFullYear() : ''}
-            </p>
-          </div>
-        )}
+        {/* Removed year display from compact variant - keeping clean presentation */}
       </div>
     </div>
   )

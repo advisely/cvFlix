@@ -601,10 +601,7 @@ const AppearancePage = () => {
                 <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
               </Option>
               <Option value="var(--font-qwitcher-grypen)">
-                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen (Regular)</span>
-              </Option>
-              <Option value="var(--font-qwitcher-grypen)">
-                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '700' }}>Qwitcher Grypen (Bold)</span>
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen</span>
               </Option>
               <Option value="var(--font-dancing-script)">
                 <span style={{ fontFamily: 'var(--font-dancing-script), cursive', fontSize: '18px', fontWeight: '400' }}>Dancing Script</span>
@@ -902,10 +899,7 @@ const AppearancePage = () => {
                 <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
               </Option>
               <Option value="var(--font-qwitcher-grypen)">
-                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen (Regular)</span>
-              </Option>
-              <Option value="var(--font-qwitcher-grypen)">
-                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '700' }}>Qwitcher Grypen (Bold)</span>
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen</span>
               </Option>
               <Option value="var(--font-dancing-script)">
                 <span style={{ fontFamily: 'var(--font-dancing-script), cursive', fontSize: '18px', fontWeight: '400' }}>Dancing Script</span>
@@ -1136,9 +1130,16 @@ const AppearancePage = () => {
                 <Form.Item
                   name="linkedinUrl"
                   label="LinkedIn Profile URL"
+                  dependencies={['showLinkedin']}
                   rules={[
-                    { required: true, message: 'Please enter your LinkedIn URL' },
-                    { type: 'url', message: 'Please enter a valid URL' }
+                    ({ getFieldValue }) => ({
+                      required: getFieldValue('showLinkedin'),
+                      message: 'Please enter your LinkedIn URL',
+                    }),
+                    {
+                      type: 'url',
+                      message: 'Please enter a valid URL',
+                    },
                   ]}
                 >
                   <Input placeholder="https://linkedin.com/in/your-profile" />

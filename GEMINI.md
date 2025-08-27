@@ -39,10 +39,20 @@ To evolve the highlights management system from basic text/image editing into a 
 ### Mission Statement
 To upgrade the "Experiences" section to match the sophisticated functionality of "Highlights," creating a consistent and professional user experience across the portfolio. This involves implementing a floating card interface, detailed descriptions, and advanced media handling for each work experience.
 
+### Phase 1: Frontend Experience Card Refinement
+
+#### Objective
+To align the public-facing "Experience" cards with the design of the "Highlight" cards by modifying what information is displayed on the homepage.
+
+#### Key Tasks
+-   **Remove Redundant Date Display**: The start and end years will be removed from the main experience cards shown on the homepage carousels.
+-   **Retain Date in Details**: The date information will be preserved and remain visible within the `FloatingExperienceCard` popup that appears upon clicking an experience.
+-   **Consistency**: This change ensures that the "Experiences" section behaves identically to the "Highlights" section, where dates are only shown in the detailed view.
+
 ### Audit Findings
 - The `Experience` model in the database already includes a `description` field.
 - The admin panel for Experiences allows for editing this `description`.
-- However, the public-facing frontend currently displays Experiences using a simple `MovieCard` component that is not clickable and does not show the description or any advanced media.
+- The public-facing frontend currently displays Experiences using a simple `MovieCard` component that is not clickable and does not show the description or any advanced media.
 
 ### Proposed Enhancements
 -   **Floating Card for Experiences**: Create a new `FloatingExperienceCard.tsx` component that displays the full details of an experience, including its description and associated media.
@@ -51,7 +61,7 @@ To upgrade the "Experiences" section to match the sophisticated functionality of
 -   **Upgrade Admin UI**: Revise the Experiences admin page to allow separate media uploads for the homepage and the floating card.
 -   **Update API**: Modify the backend API endpoints for Experiences to handle the new media associations.
 
-### Project Status: 🟡 NOT STARTED
+### Project Status: 🟡 IN PROGRESS
 
 ---
 

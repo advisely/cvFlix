@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Card, Typography, Button, Popconfirm } from 'antd';
-import { PlayCircleOutlined, CalendarOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, HomeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext';
 import type { Media, Company } from '@prisma/client';
 import MediaModal from './MediaModal';
@@ -343,15 +343,7 @@ const FloatingHighlightCard = memo(({
             </div>
 
 
-            {/* Date and metadata - Show year only */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <CalendarOutlined className="text-white/60 text-xs" />
-                <Text className="!text-white/60 text-xs">
-                  {new Date(highlight.startDate).getFullYear()}
-                </Text>
-              </div>
-            </div>
+            {/* Removed date display from card - keeping clean presentation */}
 
             {/* Actions */}
             {showActions && (
