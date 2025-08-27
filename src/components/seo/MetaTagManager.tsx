@@ -405,9 +405,17 @@ const MetaTagManager: React.FC = () => {
                     { required: true, message: 'Title is required' },
                     { max: SEO_CHARACTER_LIMITS.title, message: `Title should be under ${SEO_CHARACTER_LIMITS.title} characters` }
                   ]}
-                  extra={<CharacterCounter value={form.getFieldValue('title')} limit={SEO_CHARACTER_LIMITS.title} label="Title" />}
                 >
                   <Input placeholder="Unique, descriptive page title" />
+                </Form.Item>
+                <Form.Item dependencies={['title']} noStyle>
+                  {({ getFieldValue }) => (
+                    <CharacterCounter 
+                      value={getFieldValue('title')} 
+                      limit={SEO_CHARACTER_LIMITS.title} 
+                      label="Title" 
+                    />
+                  )}
                 </Form.Item>
 
                 <Form.Item
@@ -417,12 +425,20 @@ const MetaTagManager: React.FC = () => {
                     { required: true, message: 'Description is required' },
                     { max: SEO_CHARACTER_LIMITS.description, message: `Description should be under ${SEO_CHARACTER_LIMITS.description} characters` }
                   ]}
-                  extra={<CharacterCounter value={form.getFieldValue('description')} limit={SEO_CHARACTER_LIMITS.description} label="Description" />}
                 >
                   <TextArea 
                     rows={3}
                     placeholder="Compelling description that summarizes the page content"
                   />
+                </Form.Item>
+                <Form.Item dependencies={['description']} noStyle>
+                  {({ getFieldValue }) => (
+                    <CharacterCounter 
+                      value={getFieldValue('description')} 
+                      limit={SEO_CHARACTER_LIMITS.description} 
+                      label="Description" 
+                    />
+                  )}
                 </Form.Item>
 
                 <Form.Item
@@ -459,9 +475,17 @@ const MetaTagManager: React.FC = () => {
                     { required: true, message: 'French title is required' },
                     { max: SEO_CHARACTER_LIMITS.title, message: `Title should be under ${SEO_CHARACTER_LIMITS.title} characters` }
                   ]}
-                  extra={<CharacterCounter value={form.getFieldValue('titleFr')} limit={SEO_CHARACTER_LIMITS.title} label="Titre" />}
                 >
                   <Input placeholder="Titre de page unique et descriptif" />
+                </Form.Item>
+                <Form.Item dependencies={['titleFr']} noStyle>
+                  {({ getFieldValue }) => (
+                    <CharacterCounter 
+                      value={getFieldValue('titleFr')} 
+                      limit={SEO_CHARACTER_LIMITS.title} 
+                      label="Titre" 
+                    />
+                  )}
                 </Form.Item>
 
                 <Form.Item
@@ -471,12 +495,20 @@ const MetaTagManager: React.FC = () => {
                     { required: true, message: 'French description is required' },
                     { max: SEO_CHARACTER_LIMITS.description, message: `Description should be under ${SEO_CHARACTER_LIMITS.description} characters` }
                   ]}
-                  extra={<CharacterCounter value={form.getFieldValue('descriptionFr')} limit={SEO_CHARACTER_LIMITS.description} label="Description" />}
                 >
                   <TextArea 
                     rows={3}
                     placeholder="Description attrayante qui résume le contenu de la page"
                   />
+                </Form.Item>
+                <Form.Item dependencies={['descriptionFr']} noStyle>
+                  {({ getFieldValue }) => (
+                    <CharacterCounter 
+                      value={getFieldValue('descriptionFr')} 
+                      limit={SEO_CHARACTER_LIMITS.description} 
+                      label="Description" 
+                    />
+                  )}
                 </Form.Item>
 
                 <Form.Item

@@ -410,12 +410,16 @@ const AppearancePage = () => {
               filterOption={(input, option) =>
                 (option?.children as any)?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              dropdownStyle={{ 
-                fontSize: '16px',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                paddingTop: '8px',
-                paddingBottom: '8px'
+              styles={{
+                popup: {
+                  root: {
+                    fontSize: '16px',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    paddingTop: '8px',
+                    paddingBottom: '8px'
+                  }
+                }
               }}
               style={{ fontSize: '14px' }}
             >
@@ -627,12 +631,16 @@ const AppearancePage = () => {
               filterOption={(input, option) =>
                 (option?.children as any)?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              dropdownStyle={{ 
-                fontSize: '16px',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                paddingTop: '8px',
-                paddingBottom: '8px'
+              styles={{
+                popup: {
+                  root: {
+                    fontSize: '16px',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    paddingTop: '8px',
+                    paddingBottom: '8px'
+                  }
+                }
               }}
               style={{ fontSize: '14px' }}
             >

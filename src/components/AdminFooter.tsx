@@ -42,7 +42,16 @@ export default function AdminFooter() {
 
   if (loading) {
     return (
-      <Footer style={{ textAlign: 'center', backgroundColor: '#f0f2f5', borderTop: '1px solid #d9d9d9' }}>
+      <Footer style={{ 
+        textAlign: 'center', 
+        backgroundColor: '#f0f2f5', 
+        borderTop: '1px solid #d9d9d9',
+        padding: '16px 24px',
+        flexShrink: 0,
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10
+      }}>
         <div className="flex justify-between items-center">
           <div className="animate-pulse bg-gray-300 h-4 w-16 rounded"></div>
           <div className="animate-pulse bg-gray-300 h-4 w-32 rounded"></div>
@@ -54,7 +63,16 @@ export default function AdminFooter() {
 
   if (!config) {
     return (
-      <Footer style={{ textAlign: 'center', backgroundColor: '#f0f2f5', borderTop: '1px solid #d9d9d9' }}>
+      <Footer style={{ 
+        textAlign: 'center', 
+        backgroundColor: '#f0f2f5', 
+        borderTop: '1px solid #d9d9d9',
+        padding: '16px 24px',
+        flexShrink: 0,
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10
+      }}>
         <div className="flex justify-between items-center">
           <span className="font-semibold text-gray-700">resumeflex</span>
           <span className="text-gray-500 text-sm">© 2025 resumeflex. All rights reserved.</span>
@@ -80,7 +98,11 @@ export default function AdminFooter() {
         textAlign: 'center',
         backgroundColor: '#f0f2f5',
         borderTop: '1px solid #d9d9d9',
-        padding: '16px 24px'
+        padding: '16px 24px',
+        flexShrink: 0,
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10
       }}
     >
       <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">

@@ -71,7 +71,13 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
           }))}
         />
       </Sider>
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
+      <Layout style={{ 
+        marginLeft: collapsed ? 80 : 200, 
+        transition: 'margin-left 0.2s',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh'
+      }}>
         <Header style={{ 
           padding: '0 16px', 
           background: '#fff', 
@@ -80,7 +86,8 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
           alignItems: 'center',
           position: 'sticky',
           top: 0,
-          zIndex: 100
+          zIndex: 100,
+          flexShrink: 0
         }}>
           <div></div>
           <div>
@@ -101,25 +108,26 @@ const BossLayout = ({ children }: { children: React.ReactNode }) => {
             </Button>
           </div>
         </Header>
-        <div style={{ 
-          flex: 1, 
-          overflow: 'auto', 
-          height: 'calc(100vh - 64px)', // 64px is header height
+        
+        <Content style={{ 
+          margin: '16px', 
+          flex: 1,
+          overflow: 'auto',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <Content style={{ margin: '16px', flex: 1 }}>
-            <div style={{ 
-              padding: 24, 
-              background: '#fff', 
-              borderRadius: '8px',
-              minHeight: '100%'
-            }}>
-              {children}
-            </div>
-          </Content>
-          <AdminFooter />
-        </div>
+          <div style={{ 
+            padding: 24, 
+            background: '#fff', 
+            borderRadius: '8px',
+            flex: 1,
+            overflow: 'auto'
+          }}>
+            {children}
+          </div>
+        </Content>
+        
+        <AdminFooter />
       </Layout>
     </Layout>
   );
