@@ -2,71 +2,113 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  validateFile,
+  validateRequiredParams,
+  validatePathParameter,
+  handleFileSystemError,
+  createErrorNextResponse,
+  getFileConfig,
+  logUploadError,
+  UploadErrorCode
+} from '@/utils/uploadErrorHandler';
 
 export async function POST(request: NextRequest) {
+  const endpoint = '/api/upload/education';
+  
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const educationId = formData.get('educationId') as string;
 
-    if (!file || !educationId) {
-      return NextResponse.json({ error: 'File and educationId are required' }, { status: 400 });
+    // Validate required parameters
+    const paramValidation = validateRequiredParams({ file, educationId });
+    if (!paramValidation.valid && paramValidation.error) {
+      logUploadError(endpoint, paramValidation.error, { educationId });
+      return createErrorNextResponse(
+        UploadErrorCode.MISSING_FILE,
+        paramValidation.error.error,
+        paramValidation.error.message
+      );
     }
 
-    // Validate file type - support both images and videos
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
-      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+    // Validate path parameter to prevent traversal attacks
+    const pathValidation = validatePathParameter(educationId, 'educationId');
+    if (!pathValidation.valid && pathValidation.error) {
+      logUploadError(endpoint, pathValidation.error, { educationId });
+      return NextResponse.json(pathValidation.error, { status: 400 });
     }
 
-    // Validate file size - larger limit for videos (50MB for videos, 10MB for images)
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB for videos, 10MB for images
-
-    console.log('Education file upload validation:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      isVideo,
-      maxSize,
-      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2)
-    });
-
-    if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Max size: ${isVideo ? '50MB' : '10MB'}. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-      }, { status: 400 });
+    // Get configuration for experience uploads (education uses same config)
+    const config = getFileConfig('experience');
+    
+    // Validate file
+    const fileValidation = validateFile(file, config);
+    if (!fileValidation.valid && fileValidation.error) {
+      logUploadError(endpoint, fileValidation.error, { 
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        educationId
+      });
+      return NextResponse.json(fileValidation.error, {
+        status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
+               fileValidation.error.code === 'FILE_TYPE_INVALID' ? 415 : 400
+      });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Ensure the directory exists
+    // Ensure the upload directory exists
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'education', educationId);
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate unique filename with proper extension validation
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
+    
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'directory creation');
+      logUploadError(endpoint, error, { uploadDir, educationId });
+      return NextResponse.json(fsError, { status: 500 });
     }
+
+    // Generate unique filename with proper extension
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const filename = `${uuidv4()}.${fileExtension}`;
     const filepath = join(uploadDir, filename);
 
     // Write file to disk
-    await writeFile(filepath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'file write');
+      logUploadError(endpoint, error, { filepath, educationId });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
     // Return relative URL for Next.js static serving
     const url = `/uploads/education/${educationId}/${filename}`;
 
-    return NextResponse.json({ url });
+    // Log successful upload for monitoring
+    console.log('Education upload successful:', {
+      endpoint,
+      fileName: file.name,
+      fileSize: file.size,
+      educationId,
+      timestamp: new Date().toISOString()
+    });
+
+    return NextResponse.json({ 
+      url,
+      type: file.type.startsWith('video/') ? 'video' : 'image',
+      filename,
+      size: file.size
+    });
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    logUploadError(endpoint, error, { message: 'Unexpected error in education upload handler' });
+    
+    return createErrorNextResponse(
+      UploadErrorCode.STORAGE_ERROR,
+      'Upload failed',
+      'An unexpected error occurred during education upload. Please try again.'
+    );
   }
 }

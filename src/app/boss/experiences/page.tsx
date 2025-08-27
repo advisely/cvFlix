@@ -1,14 +1,15 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Select, Upload, message, Row, Col, Tag, Typography } from 'antd';
+import { Button, Table, Modal, Form, Input, Select, message, Row, Col, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { Company } from '@prisma/client';
 import { ExperienceWithCompany, MediaItem, MediaApiResponse, ExperienceDateRange } from './types';
 import dayjs from 'dayjs';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined } from '@ant-design/icons';
 import CleanupBlobUrls from './cleanup-blob-urls';
 import MultilingualFormTabs from '@/components/MultilingualFormTabs';
 import DateRangeManager from '@/components/DateRangeManager';
+import MediaUploadSection from '@/components/MediaUploadSection';
 
 const { Text } = Typography;
 
@@ -145,13 +146,14 @@ const ExperiencesPage = () => {
         setAllMedia(mappedMediaData);
 
         setIsModalVisible(false);
+        message.success('Experience saved successfully!');
       } else {
         const errorData = await response.json();
         message.error(`Failed to save experience: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Failed to save experience:', error);
-      message.error('An unexpected error occurred.');
+      message.error('An unexpected error occurred while saving the experience.');
     }
   };
 
@@ -164,56 +166,43 @@ const ExperiencesPage = () => {
       const response = await fetch(`/api/experiences/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setExperiences(experiences.filter(exp => exp.id !== id));
+        message.success('Experience deleted successfully!');
+      } else {
+        message.error('Failed to delete experience');
       }
     } catch (error) {
       console.error('Failed to delete experience:', error);
+      message.error('An unexpected error occurred while deleting the experience.');
     }
   };
 
-  const handleMediaUpload = async (file: File, experienceId: string, type: 'homepage' | 'card') => {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
+  // Enhanced media upload handler with proper error handling
+  const handleMediaUpload = async (file: File, experienceId: string, type: 'homepage' | 'card'): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('experienceId', experienceId === 'new' ? 'temp' : experienceId);
 
-    if (!isImage && !isVideo) {
-      message.error('You can only upload image or video files!');
-      return false;
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('experienceId', experienceId === 'new' ? 'temp' : experienceId);
+    const result = await response.json();
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+    const newMedia: MediaItem = {
+      id: result.id,
+      url: result.url,
+      type: result.type,
+      experienceId: experienceId === 'new' ? '' : experienceId
+    };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const result = await response.json();
-
-      const newMedia: MediaItem = {
-        id: result.id,
-        url: result.url,
-        type: result.type,
-        experienceId: experienceId === 'new' ? '' : experienceId
-      };
-
-      if (type === 'homepage') setHomepageMedia([...homepageMedia, newMedia]);
-      if (type === 'card') setCardMedia([...cardMedia, newMedia]);
-
-      message.success('File uploaded successfully!');
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload file');
-    }
-
-    return false;
+    if (type === 'homepage') setHomepageMedia([...homepageMedia, newMedia]);
+    if (type === 'card') setCardMedia([...cardMedia, newMedia]);
   };
 
   const handleGalleryOpen = (_experienceId: string, type: 'homepage' | 'card') => {
@@ -338,86 +327,6 @@ const ExperiencesPage = () => {
     },
   ];
 
-  const MediaUploadSection = ({
-    title,
-    media,
-    onUpload,
-    onRemove,
-    onGalleryOpen
-  }: {
-    title: string;
-    media: MediaItem[];
-    onUpload: (file: File) => void;
-    onRemove: (url: string) => void;
-    onGalleryOpen: () => void;
-  }) => (
-    <Form.Item label={title}>
-      <div>
-        <Upload
-          beforeUpload={(file) => onUpload(file)}
-          showUploadList={false}
-          accept="image/*,video/*"
-        >
-          <Button icon={<UploadOutlined />}>Upload</Button>
-        </Upload>
-        <Button
-          icon={<PictureOutlined />}
-          onClick={onGalleryOpen}
-          style={{ marginLeft: 8 }}
-        >
-          Gallery
-        </Button>
-        <div style={{ marginTop: 16 }}>
-          <Row gutter={[16, 16]}>
-            {media.map((item: MediaItem, index: number) => (
-              <Col key={`${title.toLowerCase().replace(/ /g, "-")}-${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
-                <div style={{ position: 'relative', marginBottom: 8 }}>
-                  {item.type === 'image' ? (
-                    <img
-                      src={item.url}
-                      alt="Media"
-                      style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
-                    />
-                  ) : (
-                    <video
-                      src={item.url}
-                      style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
-                      muted
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLVideoElement).play().catch(() => {});
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLVideoElement).pause();
-                        (e.target as HTMLVideoElement).currentTime = 0;
-                      }}
-                      onError={(e) => {
-                        // Fallback to icon if video fails to load
-                        const target = e.target as HTMLVideoElement;
-                        target.style.display = 'none';
-                        const fallback = document.createElement('div');
-                        fallback.style.cssText = 'width: 100%; height: 100px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 4px;';
-                        fallback.innerHTML = '<span style="font-size: 24px; color: #666;">▶</span>';
-                        target.parentNode?.appendChild(fallback);
-                      }}
-                    />
-                  )}
-                  <Button
-                    type="text"
-                    danger
-                    icon={<CloseOutlined />}
-                    size="small"
-                    style={{ position: 'absolute', top: 4, right: 4 }}
-                    onClick={() => onRemove(item.url)}
-                  />
-                </div>
-              </Col>
-            ))}
-          </Row>
-        </div>
-      </div>
-    </Form.Item>
-  );
-
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
@@ -497,6 +406,8 @@ const ExperiencesPage = () => {
             onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'homepage')}
             onRemove={(url: string) => handleMediaRemove(url, 'homepage')}
             onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
+            maxCount={5}
+            showProgress={true}
           />
 
           <MediaUploadSection
@@ -505,6 +416,8 @@ const ExperiencesPage = () => {
             onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'card')}
             onRemove={(url: string) => handleMediaRemove(url, 'card')}
             onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
+            maxCount={3}
+            showProgress={true}
           />
 
         </Form>

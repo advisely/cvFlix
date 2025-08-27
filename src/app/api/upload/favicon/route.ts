@@ -2,42 +2,69 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  validateFile,
+  validateRequiredParams,
+  handleFileSystemError,
+  createErrorNextResponse,
+  getFileConfig,
+  logUploadError,
+  UploadErrorCode
+} from '@/utils/uploadErrorHandler';
 
 export async function POST(request: NextRequest) {
+  const endpoint = '/api/upload/favicon';
+  
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    // Validate required parameters
+    const paramValidation = validateRequiredParams({ file });
+    if (!paramValidation.valid && paramValidation.error) {
+      logUploadError(endpoint, paramValidation.error);
+      return createErrorNextResponse(
+        UploadErrorCode.MISSING_FILE,
+        paramValidation.error.error,
+        paramValidation.error.message
+      );
     }
 
-    // Validate file type - support common image formats for favicons
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'image/x-icon'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Please upload PNG, JPG, GIF, SVG, WebP, or ICO files.' }, { status: 400 });
-    }
-
-    // Validate file size - max 5MB for favicons
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Max size: 5MB. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-      }, { status: 400 });
+    // Get configuration for favicon uploads
+    const config = getFileConfig('favicon');
+    
+    // Validate file
+    const fileValidation = validateFile(file, config);
+    if (!fileValidation.valid && fileValidation.error) {
+      logUploadError(endpoint, fileValidation.error, { 
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
+      });
+      return NextResponse.json(fileValidation.error, {
+        status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
+               fileValidation.error.code === 'FILE_TYPE_INVALID' ? 415 : 400
+      });
     }
 
     // Create favicon upload directory
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'favicons');
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate unique filename with proper extension
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'ico'];
     
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'directory creation');
+      logUploadError(endpoint, error, { uploadDir });
+      return NextResponse.json(fsError, { status: 500 });
+    }
+
+    // Generate unique filename with proper extension handling
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     let finalExtension = fileExtension;
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+    
+    // For favicon files, ensure valid extension or default to png
+    const validFaviconExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'ico'];
+    if (!fileExtension || !validFaviconExtensions.includes(fileExtension)) {
       // Default to png for unknown extensions
       finalExtension = 'png';
     }
@@ -45,22 +72,28 @@ export async function POST(request: NextRequest) {
     const filename = `favicon-${uuidv4()}.${finalExtension}`;
     const filePath = join(uploadDir, filename);
 
-    console.log('Favicon upload details:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      finalExtension,
-      filename
-    });
-
     // Save file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'file write');
+      logUploadError(endpoint, error, { filePath });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
     // Return the relative URL - Next.js will serve from public directory
     const publicUrl = `/uploads/favicons/${filename}`;
+
+    // Log successful upload for monitoring
+    console.log('Favicon upload successful:', {
+      endpoint,
+      fileName: file.name,
+      fileSize: file.size,
+      finalExtension,
+      timestamp: new Date().toISOString()
+    });
 
     return NextResponse.json({
       url: publicUrl,
@@ -70,7 +103,12 @@ export async function POST(request: NextRequest) {
       message: 'Favicon uploaded successfully'
     });
   } catch (error) {
-    console.error('Favicon upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    logUploadError(endpoint, error, { message: 'Unexpected error in favicon upload handler' });
+    
+    return createErrorNextResponse(
+      UploadErrorCode.STORAGE_ERROR,
+      'Upload failed',
+      'An unexpected error occurred during favicon upload. Please try again.'
+    );
   }
 }

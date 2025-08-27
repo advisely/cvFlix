@@ -2,100 +2,109 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  validateFile,
+  validateRequiredParams,
+  handleFileSystemError,
+  createErrorNextResponse,
+  getFileConfig,
+  logUploadError,
+  UploadErrorCode
+} from '@/utils/uploadErrorHandler';
 
 export async function POST(request: NextRequest) {
+  const endpoint = '/api/upload/companies';
+  
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    // Validate required parameters
+    const paramValidation = validateRequiredParams({ file });
+    if (!paramValidation.valid && paramValidation.error) {
+      logUploadError(endpoint, paramValidation.error);
+      return createErrorNextResponse(
+        UploadErrorCode.MISSING_FILE,
+        paramValidation.error.error,
+        paramValidation.error.message
+      );
     }
 
     // Check if file is actually a file object
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: 'Invalid file object' }, { status: 400 });
+      logUploadError(endpoint, 'Invalid file object', { fileType: typeof file });
+      return createErrorNextResponse(
+        UploadErrorCode.INVALID_REQUEST,
+        'Invalid file object',
+        'The uploaded item is not a valid file'
+      );
     }
 
-    // Validate file name
-    if (!file.name || file.name.trim().length === 0) {
-      return NextResponse.json({ error: 'Invalid file name' }, { status: 400 });
-    }
-
-    // Validate file type - images only for company logos
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ 
-        error: 'Invalid file type. Only images are allowed for company logos (JPEG, PNG, GIF, WebP, SVG).' 
-      }, { status: 400 });
-    }
-
-    // Validate file size - 10MB max for images
-    const maxSize = 10 * 1024 * 1024; // 10MB
-
-    console.log('Company logo upload validation:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2)
-    });
-
-    if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Max size: 10MB. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-      }, { status: 400 });
-    }
-
-    if (file.size === 0) {
-      return NextResponse.json({
-        error: 'File is empty. Please select a valid image file.'
-      }, { status: 400 });
+    // Get configuration for company uploads (logo images only)
+    const config = getFileConfig('company');
+    
+    // Validate file
+    const fileValidation = validateFile(file, config);
+    if (!fileValidation.valid && fileValidation.error) {
+      logUploadError(endpoint, fileValidation.error, { 
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
+      });
+      return NextResponse.json(fileValidation.error, {
+        status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
+               fileValidation.error.code === 'FILE_TYPE_INVALID' ? 415 : 400
+      });
     }
 
     // Create companies upload directory
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'companies');
-    await mkdir(uploadDir, { recursive: true });
+    
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'directory creation');
+      logUploadError(endpoint, error, { uploadDir });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
     // Generate unique filename with proper extension validation
     const fileExtension = extname(file.name).toLowerCase();
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
-    
-    if (!fileExtension) {
-      return NextResponse.json({ 
-        error: 'File must have an extension (jpg, jpeg, png, gif, webp, avif, svg)' 
-      }, { status: 400 });
-    }
-
-    if (!allowedExtensions.includes(fileExtension)) {
-      return NextResponse.json({ 
-        error: 'Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, avif, svg' 
-      }, { status: 400 });
-    }
-
     const fileName = `${uuidv4()}${fileExtension}`;
     const filePath = join(uploadDir, fileName);
 
     // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    if (bytes.byteLength === 0) {
-      return NextResponse.json({
-        error: 'File content is empty. Please select a valid image file.'
-      }, { status: 400 });
-    }
+    try {
+      const bytes = await file.arrayBuffer();
+      
+      // Additional check for empty file content after reading
+      if (bytes.byteLength === 0) {
+        logUploadError(endpoint, 'File content is empty', { fileName: file.name });
+        return createErrorNextResponse(
+          UploadErrorCode.FILE_EMPTY,
+          'File is empty',
+          'File content is empty. Please select a valid image file.'
+        );
+      }
 
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'file write');
+      logUploadError(endpoint, error, { filePath });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
     // Create public URL that can be used in company logoUrl field
     const publicUrl = `/uploads/companies/${fileName}`;
 
-    console.log('Company logo uploaded successfully:', {
+    // Log successful upload for monitoring
+    console.log('Company logo upload successful:', {
+      endpoint,
       fileName,
       publicUrl,
-      fileSize: file.size
+      fileSize: file.size,
+      timestamp: new Date().toISOString()
     });
 
     return NextResponse.json({
@@ -105,24 +114,12 @@ export async function POST(request: NextRequest) {
       size: file.size
     });
   } catch (error) {
-    console.error('Company logo upload error:', error);
+    logUploadError(endpoint, error, { message: 'Unexpected error in company logo upload handler' });
     
-    // Handle specific filesystem errors
-    if (error instanceof Error) {
-      if (error.message.includes('ENOSPC')) {
-        return NextResponse.json({ 
-          error: 'Not enough disk space to upload file' 
-        }, { status: 507 });
-      }
-      if (error.message.includes('EACCES') || error.message.includes('EPERM')) {
-        return NextResponse.json({ 
-          error: 'Permission denied when saving file' 
-        }, { status: 500 });
-      }
-    }
-
-    return NextResponse.json({ 
-      error: 'Failed to upload company logo. Please try again.' 
-    }, { status: 500 });
+    return createErrorNextResponse(
+      UploadErrorCode.STORAGE_ERROR,
+      'Upload failed',
+      'An unexpected error occurred during company logo upload. Please try again.'
+    );
   }
 }

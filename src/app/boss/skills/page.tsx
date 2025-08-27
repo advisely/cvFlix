@@ -1,9 +1,13 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, Select, Upload, message, Image, Row, Col } from 'antd';
+import { Button, Table, Modal, Form, Input, Select, Upload, message, Image, Row, Col, Alert, Progress, Typography, Space, Spin, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { Skill } from '@prisma/client';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const { Text } = Typography;
 
 interface MediaItem {
   id: string;
@@ -24,6 +28,18 @@ interface SkillWithMedia extends Skill {
 }
 
 const SkillsPage = () => {
+  const { t } = useLanguage();
+  const {
+    uploadState,
+    handleUploadError,
+    startUpload,
+    completeUpload,
+    retryUpload,
+    clearError,
+    canRetry,
+    actionLabels
+  } = useUploadErrorHandler();
+
   const [skills, setSkills] = useState<SkillWithMedia[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SkillWithMedia | null>(null);
@@ -32,6 +48,8 @@ const SkillsPage = () => {
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
   const [gallerySkillId, setGallerySkillId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,16 +174,30 @@ const SkillsPage = () => {
     }
   };
 
-  const handleMediaUpload = async (file: File, skillId: string) => {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-
-    if (!isImage && !isVideo) {
-      message.error('You can only upload image or video files!');
+  const handleMediaUpload = async (file: File, skillId: string): Promise<boolean> => {
+    // Pre-upload validation
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       // Create form data for upload
       const formData = new FormData();
       formData.append('file', file);
@@ -183,6 +215,8 @@ const SkillsPage = () => {
       }
 
       const result = await response.json();
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
 
       const newMedia: MediaItem = {
         id: '', // Will be set by backend
@@ -231,11 +265,20 @@ const SkillsPage = () => {
       }
 
       setMedia([...media, newMedia]);
-      message.success('File uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
 
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload file');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false; // Prevent default upload behavior
@@ -338,23 +381,108 @@ const SkillsPage = () => {
           {/* Media Upload Section */}
           <Form.Item label="Media">
             <div>
-              <Upload
-                beforeUpload={(file) => {
-                  handleMediaUpload(file, editingRecord?.id || 'new');
-                  return false;
-                }}
-                showUploadList={false}
-                accept="image/*,video/*"
-              >
-                <Button icon={<UploadOutlined />}>Upload Image/Video</Button>
-              </Upload>
-              <Button
-                icon={<PictureOutlined />}
-                onClick={() => handleGalleryOpen(editingRecord?.id || 'new')}
-                style={{ marginLeft: 8 }}
-              >
-                Gallery
-              </Button>
+              {/* Error Alert */}
+              {uploadState.error && (
+                <Alert
+                  type="error"
+                  showIcon
+                  icon={<ExclamationCircleOutlined />}
+                  message={uploadState.error.message}
+                  description={
+                    uploadState.error.details && (
+                      <div>
+                        {uploadState.error.details.fileName && (
+                          <Text type="secondary">File: {uploadState.error.details.fileName}</Text>
+                        )}
+                        {uploadState.error.details.currentSize && uploadState.error.details.maxSize && (
+                          <div>
+                            <Text type="secondary">
+                              Current size: {uploadState.error.details.currentSize.toFixed(2)}MB, 
+                              Max allowed: {uploadState.error.details.maxSize}MB
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+                  action={
+                    <Space>
+                      {canRetry && (
+                        <Button
+                          size="small"
+                          icon={<ReloadOutlined />}
+                          onClick={() => {
+                            if (pendingFile) {
+                              retryUpload();
+                              handleMediaUpload(pendingFile, editingRecord?.id || 'new');
+                            }
+                          }}
+                          loading={uploadState.isUploading}
+                        >
+                          {actionLabels.retry}
+                        </Button>
+                      )}
+                      <Button size="small" onClick={clearError}>
+                        {actionLabels.dismiss}
+                      </Button>
+                    </Space>
+                  }
+                  style={{ marginBottom: 16 }}
+                  closable
+                  onClose={clearError}
+                />
+              )}
+              
+              {/* Upload Progress */}
+              {uploadState.isUploading && (
+                <div style={{ marginBottom: 16 }}>
+                  <Progress
+                    percent={Math.round(uploadProgress)}
+                    status={uploadState.error ? 'exception' : 'active'}
+                    strokeColor={{
+                      '0%': '#108ee9',
+                      '100%': '#87d068',
+                    }}
+                  />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {pendingFile ? `Uploading ${pendingFile.name}...` : 'Uploading...'}
+                  </Text>
+                </div>
+              )}
+
+              <Space style={{ marginBottom: 16 }}>
+                <Upload
+                  beforeUpload={(file) => {
+                    handleMediaUpload(file, editingRecord?.id || 'new');
+                    return false;
+                  }}
+                  showUploadList={false}
+                  accept="image/*,video/*"
+                  disabled={uploadState.isUploading}
+                >
+                  <Button 
+                    icon={uploadState.isUploading ? <Spin size="small" /> : <UploadOutlined />}
+                    loading={uploadState.isUploading}
+                    disabled={uploadState.isUploading}
+                  >
+                    {uploadState.isUploading ? 'Uploading...' : 'Upload Image/Video'}
+                  </Button>
+                </Upload>
+                <Button
+                  icon={<PictureOutlined />}
+                  onClick={() => handleGalleryOpen(editingRecord?.id || 'new')}
+                  disabled={uploadState.isUploading}
+                >
+                  Gallery
+                </Button>
+              </Space>
+              
+              {/* Help text */}
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                  Supported formats: Images (JPG, PNG, GIF, WebP, AVIF) up to 10MB, Videos (MP4, WebM, OGG, AVI, MOV) up to 50MB
+                </Text>
+              </div>
 
               {/* Preview of uploaded media */}
               <div style={{ marginTop: 16 }}>

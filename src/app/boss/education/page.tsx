@@ -1,10 +1,14 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Alert, Progress, Typography, Space, Spin, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { Education } from '@prisma/client';
 import dayjs from 'dayjs';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const { Text } = Typography;
 
 interface MediaItem {
   id: string;
@@ -25,6 +29,18 @@ interface EducationWithMedia extends Education {
 }
 
 const EducationPage = () => {
+  const { t } = useLanguage();
+  const {
+    uploadState,
+    handleUploadError,
+    startUpload,
+    completeUpload,
+    retryUpload,
+    clearError,
+    canRetry,
+    actionLabels
+  } = useUploadErrorHandler();
+
   const [education, setEducation] = useState<EducationWithMedia[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<EducationWithMedia | null>(null);
@@ -33,6 +49,8 @@ const EducationPage = () => {
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
   const [galleryEducationId, setGalleryEducationId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,16 +183,29 @@ const EducationPage = () => {
     }
   };
 
-  const handleMediaUpload = async (file: File, educationId: string) => {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-
-    if (!isImage && !isVideo) {
-      message.error('You can only upload image or video files!');
+  const handleMediaUpload = async (file: File, educationId: string): Promise<boolean> => {
+    // Pre-upload validation
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
       // Create form data for upload
       const formData = new FormData();
       formData.append('file', file);
@@ -192,6 +223,8 @@ const EducationPage = () => {
       }
 
       const result = await response.json();
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
 
       const newMedia: MediaItem = {
         id: '', // Will be set by backend
@@ -240,11 +273,20 @@ const EducationPage = () => {
       }
 
       setMedia([...media, newMedia]);
-      message.success('File uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
 
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload file');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false; // Prevent default upload behavior

@@ -1,15 +1,30 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider, Select } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider, Select, Alert, Progress, Typography, Spin, Tooltip } from 'antd';
+const { Text } = Typography;
 import { useEffect, useState } from 'react';
 import { HighlightWithMedia, MediaItem, MediaApiResponse } from './types';
 import { Company } from '@prisma/client';
 import dayjs from 'dayjs';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, TableOutlined, AppstoreOutlined, HomeOutlined, CreditCardOutlined } from '@ant-design/icons';
+import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, TableOutlined, AppstoreOutlined, HomeOutlined, CreditCardOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import HighlightCardGrid from '@/components/HighlightCardGrid';
 import MultilingualFormTabs from '@/components/MultilingualFormTabs';
+import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const HighlightsPage = () => {
+  const { t } = useLanguage();
+  const {
+    uploadState,
+    handleUploadError,
+    startUpload,
+    completeUpload,
+    retryUpload,
+    clearError,
+    canRetry,
+    actionLabels
+  } = useUploadErrorHandler();
+
   const [highlights, setHighlights] = useState<HighlightWithMedia[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -25,6 +40,8 @@ const HighlightsPage = () => {
   const [galleryType, setGalleryType] = useState<'homepage' | 'card'>('homepage');
   const [galleryHighlightId, setGalleryHighlightId] = useState<string | null>(null);
   const [isCardView, setIsCardView] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -225,16 +242,30 @@ const HighlightsPage = () => {
     }
   };
 
-  const handleMediaUpload = async (file: File, highlightId: string, mediaType: 'homepage' | 'card') => {
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-
-    if (!isImage && !isVideo) {
-      message.error('You can only upload image or video files!');
+  const handleMediaUpload = async (file: File, highlightId: string, mediaType: 'homepage' | 'card'): Promise<boolean> => {
+    // Pre-upload validation
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       // Create form data for upload
       const formData = new FormData();
       formData.append('file', file);
@@ -253,6 +284,8 @@ const HighlightsPage = () => {
       }
 
       const result = await response.json();
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
 
       const newMedia: MediaItem = {
         id: '', // Will be set by backend
@@ -335,11 +368,19 @@ const HighlightsPage = () => {
         setCardMedia([...cardMedia, newMedia]);
       }
 
-      message.success('File uploaded successfully!');
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
 
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload file');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false; // Prevent default upload behavior
@@ -783,6 +824,80 @@ const HighlightsPage = () => {
             size="small"
           >
             <div>
+              {/* Error Alert */}
+              {uploadState.error && (
+                <Alert
+                  type="error"
+                  showIcon
+                  icon={<ExclamationCircleOutlined />}
+                  message={uploadState.error.message}
+                  description={
+                    uploadState.error.details && (
+                      <div>
+                        {uploadState.error.details.fileName && (
+                          <Text type="secondary">File: {uploadState.error.details.fileName}</Text>
+                        )}
+                        {uploadState.error.details.currentSize && uploadState.error.details.maxSize && (
+                          <div>
+                            <Text type="secondary">
+                              Current size: {uploadState.error.details.currentSize.toFixed(2)}MB, 
+                              Max allowed: {uploadState.error.details.maxSize}MB
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+                  action={
+                    <Space>
+                      {canRetry && (
+                        <Button
+                          size="small"
+                          icon={<ReloadOutlined />}
+                          onClick={() => {
+                            if (pendingFile) {
+                              retryUpload();
+                              handleMediaUpload(pendingFile, editingRecord?.id || 'new', 'homepage');
+                            }
+                          }}
+                          loading={uploadState.isUploading}
+                        >
+                          {actionLabels.retry}
+                        </Button>
+                      )}
+                      <Button size="small" onClick={clearError}>
+                        {actionLabels.dismiss}
+                      </Button>
+                    </Space>
+                  }
+                  style={{ marginBottom: 16 }}
+                  closable
+                  onClose={clearError}
+                />
+              )}
+              
+              {/* Upload Progress */}
+              {uploadState.isUploading && (
+                <div style={{ marginBottom: 16 }}>
+                  <Progress
+                    percent={Math.round(uploadProgress)}
+                    status={uploadState.error ? 'exception' : 'active'}
+                    strokeColor={{
+                      '0%': '#108ee9',
+                      '100%': '#87d068',
+                    }}
+                  />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {pendingFile ? `Uploading ${pendingFile.name}...` : 'Uploading...'}
+                  </Text>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: 8 }}>
+                  Supported formats: Images (JPG, PNG, GIF, WebP, AVIF) up to 10MB, Videos (MP4, WebM, OGG, AVI, MOV) up to 50MB
+                </Text>
+              </div>
               <Space style={{ marginBottom: 16 }}>
                 <Upload
                   beforeUpload={(file) => {
@@ -791,14 +906,21 @@ const HighlightsPage = () => {
                   }}
                   showUploadList={false}
                   accept="image/*,video/*"
+                  disabled={uploadState.isUploading}
                 >
-                  <Button icon={<UploadOutlined />} type="primary">
-                    Upload Homepage Media
+                  <Button 
+                    icon={<UploadOutlined />} 
+                    type="primary"
+                    loading={uploadState.isUploading}
+                    disabled={uploadState.isUploading}
+                  >
+                    {uploadState.isUploading ? 'Uploading...' : 'Upload Homepage Media'}
                   </Button>
                 </Upload>
                 <Button
                   icon={<PictureOutlined />}
                   onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
+                  disabled={uploadState.isUploading}
                 >
                   Gallery
                 </Button>
@@ -836,14 +958,21 @@ const HighlightsPage = () => {
                   }}
                   showUploadList={false}
                   accept="image/*,video/*"
+                  disabled={uploadState.isUploading}
                 >
-                  <Button icon={<UploadOutlined />} style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}>
-                    Upload Card Media
+                  <Button 
+                    icon={<UploadOutlined />} 
+                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                    loading={uploadState.isUploading}
+                    disabled={uploadState.isUploading}
+                  >
+                    {uploadState.isUploading ? 'Uploading...' : 'Upload Card Media'}
                   </Button>
                 </Upload>
                 <Button
                   icon={<PictureOutlined />}
                   onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
+                  disabled={uploadState.isUploading}
                 >
                   Gallery
                 </Button>

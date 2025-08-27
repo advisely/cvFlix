@@ -4,6 +4,7 @@ import { AntdRegistry } from '@ant-design/nextjs-registry';
 import '@ant-design/v5-patch-for-react-19';
 import ConsoleFilter from '@/components/ConsoleFilter';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import AntdStyleProvider from '@/components/AntdStyleProvider';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -76,7 +77,9 @@ export default function RootLayout({
       >
         <ConsoleFilter />
         <LanguageProvider>
-          <AntdRegistry>{children}</AntdRegistry>
+          <AntdStyleProvider>
+            <AntdRegistry>{children}</AntdRegistry>
+          </AntdStyleProvider>
         </LanguageProvider>
       </body>
     </html>

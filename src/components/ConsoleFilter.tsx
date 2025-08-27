@@ -21,6 +21,8 @@ export default function ConsoleFilter() {
         /GET.*__nextjs_font.*404 \(Not Found\)/,
         /net::ERR_ABORTED 404.*__nextjs_font/,
         /\[Fast Refresh\] rebuilding/,
+        // Suppress Ant Design CSS-in-JS cleanup warnings (development only)
+        /\[Ant Design CSS-in-JS\] You are registering a cleanup function after unmount/,
       ];
 
       // Filter function

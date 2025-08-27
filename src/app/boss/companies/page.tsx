@@ -1,16 +1,34 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, Upload, message, Image } from 'antd';
+import { Button, Table, Modal, Form, Input, Upload, message, Image, Alert, Progress, Typography, Space, Spin, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { Company } from '@prisma/client';
-import { UploadOutlined, BankOutlined } from '@ant-design/icons';
+import { UploadOutlined, BankOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import MultilingualFormTabs from '@/components/MultilingualFormTabs';
+import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const { Text } = Typography;
 
 const CompaniesPage = () => {
+  const { t } = useLanguage();
+  const {
+    uploadState,
+    handleUploadError,
+    startUpload,
+    completeUpload,
+    retryUpload,
+    clearError,
+    canRetry,
+    actionLabels
+  } = useUploadErrorHandler();
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Company | null>(null);
   const [form] = Form.useForm();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchCompanies();
@@ -137,8 +155,36 @@ const CompaniesPage = () => {
     }
   };
 
-  const handleLogoUpload = async (file: File) => {
+  const handleLogoUpload = async (file: File): Promise<boolean> => {
+    // Pre-upload validation (only images for logos)
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
+      return false;
+    }
+
+    // Additional validation for logo files (images only)
+    if (!file.type.startsWith('image/')) {
+      handleUploadError(new Error(t('upload.error.format.imageOnly', 'Only image files are allowed for company logos.')), file.name);
+      return false;
+    }
+
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -154,14 +200,31 @@ const CompaniesPage = () => {
 
       const result = await response.json();
       form.setFieldsValue({ logoUrl: result.url });
-      message.success('Logo uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
 
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload logo');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false; // Prevent default upload behavior
+  };
+
+  // Handle retry upload
+  const handleRetryUpload = async () => {
+    if (pendingFile && canRetry) {
+      retryUpload();
+      await handleLogoUpload(pendingFile);
+    }
   };
 
   const columns = [
@@ -285,6 +348,70 @@ const CompaniesPage = () => {
             )}
           </MultilingualFormTabs>
 
+          {/* Error Alert */}
+          {uploadState.error && (
+            <Alert
+              type="error"
+              showIcon
+              icon={<ExclamationCircleOutlined />}
+              message={uploadState.error.message}
+              description={
+                uploadState.error.details && (
+                  <div>
+                    {uploadState.error.details.fileName && (
+                      <Text type="secondary">File: {uploadState.error.details.fileName}</Text>
+                    )}
+                    {uploadState.error.details.currentSize && uploadState.error.details.maxSize && (
+                      <div>
+                        <Text type="secondary">
+                          Current size: {uploadState.error.details.currentSize.toFixed(2)}MB, 
+                          Max allowed: {uploadState.error.details.maxSize}MB
+                        </Text>
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+              action={
+                <Space>
+                  {canRetry && (
+                    <Button
+                      size="small"
+                      icon={<ReloadOutlined />}
+                      onClick={handleRetryUpload}
+                      loading={uploadState.isUploading}
+                    >
+                      {actionLabels.retry}
+                    </Button>
+                  )}
+                  <Button size="small" onClick={clearError}>
+                    {actionLabels.dismiss}
+                  </Button>
+                </Space>
+              }
+              style={{ marginBottom: 16 }}
+              closable
+              onClose={clearError}
+            />
+          )}
+          
+          {/* Upload Progress */}
+          {uploadState.isUploading && (
+            <div style={{ marginBottom: 16 }}>
+              <Progress
+                percent={Math.round(uploadProgress)}
+                status={uploadState.error ? 'exception' : 'active'}
+                strokeColor={{
+                  '0%': '#108ee9',
+                  '100%': '#87d068',
+                }}
+              />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                {pendingFile ? `Uploading ${pendingFile.name}...` : 'Uploading...'}
+              </Text>
+            </div>
+          )}
+
           <Form.Item name="logoUrl" label="Company Logo">
             <Input
               placeholder="Or enter logo URL directly"
@@ -293,14 +420,28 @@ const CompaniesPage = () => {
                   beforeUpload={handleLogoUpload}
                   showUploadList={false}
                   accept="image/*"
+                  disabled={uploadState.isUploading}
                 >
-                  <Button icon={<UploadOutlined />} size="small" type="text">
-                    Upload
+                  <Button 
+                    icon={uploadState.isUploading ? <Spin size="small" /> : <UploadOutlined />}
+                    size="small" 
+                    type="text"
+                    loading={uploadState.isUploading}
+                    disabled={uploadState.isUploading}
+                  >
+                    {uploadState.isUploading ? 'Uploading' : 'Upload'}
                   </Button>
                 </Upload>
               }
             />
           </Form.Item>
+          
+          {/* Help text */}
+          <div style={{ marginBottom: 16 }}>
+            <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+              Supported formats: Images (JPG, PNG, GIF, WebP, AVIF) up to 10MB
+            </Text>
+          </div>
           
           {/* Logo Preview with proper form dependency tracking */}
           <Form.Item noStyle dependencies={['logoUrl']}>
@@ -308,6 +449,7 @@ const CompaniesPage = () => {
               const currentLogoUrl = getFieldValue('logoUrl');
               return currentLogoUrl ? (
                 <div style={{ marginTop: 8, marginBottom: 16 }}>
+                  <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: 8 }}>Logo Preview:</Text>
                   <Image
                     src={currentLogoUrl}
                     alt="Logo preview"
@@ -315,7 +457,33 @@ const CompaniesPage = () => {
                     height={60}
                     style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #d9d9d9' }}
                     fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0zMCAzMEMyNy41MTQ3IDMwIDI1LjUgMzIuMDE0NyAyNS41IDM0LjVWNDAuNUMyNS41IDQyLjk4NTMgMjcuNTE0NyA0NSAzMCA0NUgzNC41QzM2Ljk4NTMgNDUgMzkgNDIuOTg1MyAzOSA0MC41VjM0LjVDMzkgMzIuMDE0NyAzNi45ODUzIDMwIDM0LjUgMzBIMzBaIiBmaWxsPSIjQzRDNEM0Ii8+CjxwYXRoIGQ9Ik0yNS41IDI1LjVDMjUuNSAyMy4wMTQ3IDI3LjUxNDcgMjEgMzAgMjFIMzQuNUMzNi45ODUzIDIxIDM5IDIzLjAxNDcgMzkgMjUuNVYyN0gzOS43NUMzOS43NSAyNy44Mjg0IDQwLjQyMTYgMjguNSA0MS4yNSAyOC41VjMwLjc1QzQxLjI1IDMxLjU3ODQgNDAuNTc4NCAzMi4yNSAzOS43NSAzMi4yNUgzOVYzNC41QzM5IDM2Ljk4NTMgMzYuOTg1MyAzOSAzNC41IDM5SDMwQzI3LjUxNDcgMzkgMjUuNSAzNi45ODUzIDI1LjUgMzQuNVYzMi4yNUgyMC4yNUMxOS40MjE2IDMyLjI1IDE4Ljc1IDMxLjU3ODQgMTguNzUgMzAuNzVWMjguNUMxOC43NSAyNy42NzE2IDE5LjQyMTYgMjcgMjAuMjUgMjdIMjUuNVYyNS41WiIgZmlsbD0iI0M0QzRDNCIvPgo8L3N2Zz4K"
+                    onError={(e) => {
+                      // Fallback for broken images
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const fallback = target.parentElement?.querySelector('.fallback') as HTMLElement;
+                      if (fallback) {
+                        fallback.style.display = 'flex';
+                      }
+                    }}
                   />
+                  {/* Fallback element for broken images */}
+                  <div 
+                    className="fallback"
+                    style={{
+                      display: 'none',
+                      width: 60,
+                      height: 60,
+                      backgroundColor: '#f5f5f5',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 4,
+                      border: '1px solid #d9d9d9',
+                      color: '#999'
+                    }}
+                  >
+                    <BankOutlined style={{ fontSize: 24 }} />
+                  </div>
                 </div>
               ) : null;
             }}

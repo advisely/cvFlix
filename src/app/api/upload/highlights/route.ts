@@ -3,65 +3,91 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
+import {
+  validateFile,
+  validateRequiredParams,
+  validatePathParameter,
+  handleFileSystemError,
+  handleDatabaseError,
+  createErrorNextResponse,
+  getFileConfig,
+  logUploadError,
+  UploadErrorCode
+} from '@/utils/uploadErrorHandler';
 
 export async function POST(request: NextRequest) {
+  const endpoint = '/api/upload/highlights';
+  
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const highlightId = formData.get('highlightId') as string;
     const mediaType = formData.get('mediaType') as string || 'legacy'; // 'homepage', 'card', or 'legacy'
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
-
-    if (!highlightId) {
-      return NextResponse.json({ error: 'Highlight ID is required' }, { status: 400 });
+    // Validate required parameters
+    const paramValidation = validateRequiredParams({ file, highlightId });
+    if (!paramValidation.valid && paramValidation.error) {
+      logUploadError(endpoint, paramValidation.error, { highlightId, mediaType });
+      return createErrorNextResponse(
+        UploadErrorCode.MISSING_FILE,
+        paramValidation.error.error,
+        paramValidation.error.message
+      );
     }
 
     // Validate mediaType
-    if (!['legacy', 'homepage', 'card'].includes(mediaType)) {
-      return NextResponse.json({
-        error: 'MediaType must be one of: legacy, homepage, card'
-      }, { status: 400 });
+    const validMediaTypes = ['legacy', 'homepage', 'card'];
+    if (!validMediaTypes.includes(mediaType)) {
+      logUploadError(endpoint, 'Invalid mediaType', { mediaType, highlightId });
+      return createErrorNextResponse(
+        UploadErrorCode.INVALID_PARAMETER,
+        'Invalid mediaType parameter',
+        `MediaType must be one of: ${validMediaTypes.join(', ')}`,
+        { supportedFormats: validMediaTypes }
+      );
     }
 
     // Check if this is for a new highlight (temp ID)
     const isNewHighlight = highlightId === 'temp' || highlightId === 'new';
-
-    // Validate file type - support both images and videos
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
-      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+    
+    // Validate path parameter for existing highlights
+    if (!isNewHighlight) {
+      const pathValidation = validatePathParameter(highlightId, 'highlightId');
+      if (!pathValidation.valid && pathValidation.error) {
+        logUploadError(endpoint, pathValidation.error, { highlightId, mediaType });
+        return NextResponse.json(pathValidation.error, { status: 400 });
+      }
     }
 
-    // Validate file size - larger limit for videos (50MB for videos, 10MB for images)
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB for videos, 10MB for images
-
-    console.log('Highlights file upload validation:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      isVideo,
-      maxSize,
-      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2),
-      mediaType
-    });
-
-    if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Max size: ${isVideo ? '50MB' : '10MB'}. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-      }, { status: 400 });
+    // Get configuration for experience uploads (highlights use same config)
+    const config = getFileConfig('experience');
+    
+    // Validate file
+    const fileValidation = validateFile(file, config);
+    if (!fileValidation.valid && fileValidation.error) {
+      logUploadError(endpoint, fileValidation.error, { 
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        highlightId,
+        mediaType
+      });
+      return NextResponse.json(fileValidation.error, {
+        status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
+               fileValidation.error.code === 'FILE_TYPE_INVALID' ? 415 : 400
+      });
     }
 
     // Create directory for this highlight with media type subdirectory
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'highlights', highlightId, mediaType);
-    await mkdir(uploadDir, { recursive: true });
+    
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'directory creation');
+      logUploadError(endpoint, error, { uploadDir, highlightId, mediaType });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
     // Generate unique filename
     const fileExtension = path.extname(file.name);
@@ -69,11 +95,18 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(uploadDir, fileName);
 
     // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'file write');
+      logUploadError(endpoint, error, { filePath, highlightId, mediaType });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
-    // Determine file type (reuse the isVideo variable from validation)
+    // Determine file type
+    const isVideo = file.type.startsWith('video/');
     const fileType = isVideo ? 'video' : 'image';
 
     // Create public URL
@@ -82,6 +115,14 @@ export async function POST(request: NextRequest) {
     // For new highlights, we only save the file and return the URL
     // The media record will be created when the highlight is saved
     if (isNewHighlight) {
+      console.log('Temporary highlight upload successful:', {
+        endpoint,
+        fileName: file.name,
+        fileSize: file.size,
+        mediaType,
+        timestamp: new Date().toISOString()
+      });
+
       return NextResponse.json({
         url: publicUrl,
         type: fileType,
@@ -113,18 +154,40 @@ export async function POST(request: NextRequest) {
         mediaData.highlightId = highlightId;
     }
 
-    const media = await prisma.media.create({
-      data: mediaData,
-    });
+    try {
+      const media = await prisma.media.create({
+        data: mediaData,
+      });
 
-    return NextResponse.json({
-      url: publicUrl,
-      media: media,
-      type: fileType,
-      mediaType: mediaType
-    });
+      // Log successful upload for monitoring
+      console.log('Highlight upload successful:', {
+        endpoint,
+        mediaId: media.id,
+        fileName: file.name,
+        fileSize: file.size,
+        highlightId,
+        mediaType,
+        timestamp: new Date().toISOString()
+      });
+
+      return NextResponse.json({
+        url: publicUrl,
+        media: media,
+        type: fileType,
+        mediaType: mediaType
+      });
+    } catch (error) {
+      const dbError = handleDatabaseError(error, 'media record creation');
+      logUploadError(endpoint, error, { publicUrl, highlightId, mediaType });
+      return NextResponse.json(dbError, { status: 500 });
+    }
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    logUploadError(endpoint, error, { message: 'Unexpected error in highlights upload handler' });
+    
+    return createErrorNextResponse(
+      UploadErrorCode.STORAGE_ERROR,
+      'Upload failed',
+      'An unexpected error occurred during highlight upload. Please try again.'
+    );
   }
 }

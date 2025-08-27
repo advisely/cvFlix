@@ -3,92 +3,136 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
+import {
+  validateFile,
+  validateRequiredParams,
+  validatePathParameter,
+  handleFileSystemError,
+  handleDatabaseError,
+  createErrorNextResponse,
+  getFileConfig,
+  logUploadError,
+  UploadErrorCode
+} from '@/utils/uploadErrorHandler';
 
 export async function POST(request: NextRequest) {
+  const endpoint = '/api/upload';
+  
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const experienceId = formData.get('experienceId') as string;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    // Validate required parameters
+    const paramValidation = validateRequiredParams({ file, experienceId });
+    if (!paramValidation.valid && paramValidation.error) {
+      logUploadError(endpoint, paramValidation.error, { experienceId });
+      return createErrorNextResponse(
+        UploadErrorCode.MISSING_FILE,
+        paramValidation.error.error,
+        paramValidation.error.message
+      );
     }
 
-    // Validate file type - support both images and videos
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
-      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
+    // Validate path parameter to prevent traversal attacks
+    const pathValidation = validatePathParameter(experienceId, 'experienceId');
+    if (!pathValidation.valid && pathValidation.error) {
+      logUploadError(endpoint, pathValidation.error, { experienceId });
+      return NextResponse.json(pathValidation.error, { 
+        status: 400 
+      });
     }
 
-    // Validate file size - larger limit for videos (50MB for videos, 10MB for images)
-    const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB for videos, 10MB for images
-
-    console.log('File upload validation:', {
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      isVideo,
-      maxSize,
-      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(2)
-    });
-
-    if (file.size > maxSize) {
-      return NextResponse.json({
-        error: `File too large. Max size: ${isVideo ? '50MB' : '10MB'}. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-      }, { status: 400 });
-    }
-
-    // Validate experienceId to prevent path traversal
-    if (!experienceId || experienceId.includes('..') || experienceId.includes('/') || experienceId.includes('\\')) {
-      return NextResponse.json({ error: 'Invalid experience ID' }, { status: 400 });
+    // Get configuration for experience uploads
+    const config = getFileConfig('experience');
+    
+    // Validate file
+    const fileValidation = validateFile(file, config);
+    if (!fileValidation.valid && fileValidation.error) {
+      logUploadError(endpoint, fileValidation.error, { 
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        experienceId 
+      });
+      return NextResponse.json(fileValidation.error, {
+        status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
+               fileValidation.error.code === 'FILE_TYPE_INVALID' ? 415 : 400
+      });
     }
 
     // Create upload directory
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'experiences', experienceId);
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate unique filename with proper extension validation
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm', 'ogg', 'avi', 'mov'];
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
+    
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'directory creation');
+      logUploadError(endpoint, error, { uploadDir, experienceId });
+      return NextResponse.json(fsError, { status: 500 });
     }
 
+    // Generate unique filename with proper extension
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const filename = `${uuidv4()}.${fileExtension}`;
     const filePath = join(uploadDir, filename);
 
     // Save file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+    } catch (error) {
+      const fsError = handleFileSystemError(error, 'file write');
+      logUploadError(endpoint, error, { filePath, experienceId });
+      return NextResponse.json(fsError, { status: 500 });
+    }
 
-    // Return the relative URL - Next.js will serve from public directory
+    // Create public URL
     const publicUrl = `/uploads/experiences/${experienceId}/${filename}`;
 
     // Create Media record in database
+    const isVideo = file.type.startsWith('video/');
     const mediaType = isVideo ? 'video' : 'image';
-    const mediaRecord = await prisma.media.create({
-      data: {
+    
+    try {
+      const mediaRecord = await prisma.media.create({
+        data: {
+          url: publicUrl,
+          type: mediaType,
+          // Don't connect to experience yet - this will be done when saving the experience
+        }
+      });
+
+      // Log successful upload for monitoring
+      console.log('Upload successful:', {
+        endpoint,
+        mediaId: mediaRecord.id,
+        fileName: file.name,
+        fileSize: file.size,
+        experienceId,
+        timestamp: new Date().toISOString()
+      });
+
+      return NextResponse.json({
+        id: mediaRecord.id,
         url: publicUrl,
         type: mediaType,
-        // Don't connect to experience yet - this will be done when saving the experience
-      }
-    });
-
-    return NextResponse.json({
-      id: mediaRecord.id,
-      url: publicUrl,
-      type: mediaType,
-      filename,
-      size: file.size,
-    });
+        filename,
+        size: file.size,
+      });
+    } catch (error) {
+      const dbError = handleDatabaseError(error, 'media record creation');
+      logUploadError(endpoint, error, { publicUrl, experienceId });
+      return NextResponse.json(dbError, { status: 500 });
+    }
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    logUploadError(endpoint, error, { message: 'Unexpected error in upload handler' });
+    
+    return createErrorNextResponse(
+      UploadErrorCode.STORAGE_ERROR,
+      'Upload failed',
+      'An unexpected error occurred during upload. Please try again.'
+    );
   }
 }

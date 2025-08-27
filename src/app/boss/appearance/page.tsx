@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, Form, Input, Button, message, Switch, Upload, Image, Row, Col, Modal, Radio, Select } from 'antd';
-import { UploadOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons';
+import { Typography, Card, Form, Input, Button, message, Switch, Upload, Image, Row, Col, Modal, Radio, Select, Alert, Progress, Space, Spin, Tooltip } from 'antd';
+import { UploadOutlined, PictureOutlined, CloseOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+const { Text } = Typography;
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -45,9 +49,23 @@ interface MediaItem {
 }
 
 const AppearancePage = () => {
+  const { t } = useLanguage();
+  const {
+    uploadState,
+    handleUploadError,
+    startUpload,
+    completeUpload,
+    retryUpload,
+    clearError,
+    canRetry,
+    actionLabels
+  } = useUploadErrorHandler();
+
   const [form] = Form.useForm();
   const [logoForm] = Form.useForm();
   const [backgroundForm] = Form.useForm();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
@@ -198,14 +216,36 @@ const AppearancePage = () => {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('You can only upload image files for the logo!');
+  const handleImageUpload = async (file: File): Promise<boolean> => {
+    // Pre-upload validation (only images for logos)
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
+      return false;
+    }
+
+    // Additional validation for logo files (images only)
+    if (!file.type.startsWith('image/')) {
+      handleUploadError(new Error(t('upload.error.format.imageOnly', 'Only image files are allowed for logos.')), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('highlightId', 'logo');
@@ -216,18 +256,37 @@ const AppearancePage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
       const result = await response.json();
       logoForm.setFieldsValue({ logoImageUrl: result.url });
-      message.success('Logo uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
+
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload logo');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false;
+  };
+
+  // Handle retry upload for logo
+  const handleRetryLogoUpload = async () => {
+    if (pendingFile && canRetry) {
+      retryUpload();
+      await handleImageUpload(pendingFile);
+    }
   };
 
   const handleGallerySelect = (selectedMedia: MediaItem) => {
@@ -262,14 +321,36 @@ const AppearancePage = () => {
     }
   };
 
-  const handleBackgroundImageUpload = async (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('You can only upload image files for the background!');
+  const handleBackgroundImageUpload = async (file: File): Promise<boolean> => {
+    // Pre-upload validation (only images for backgrounds)
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
+      return false;
+    }
+
+    // Additional validation for background files (images only)
+    if (!file.type.startsWith('image/')) {
+      handleUploadError(new Error(t('upload.error.format.imageOnly', 'Only image files are allowed for backgrounds.')), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('highlightId', 'background');
@@ -280,18 +361,37 @@ const AppearancePage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
       const result = await response.json();
       backgroundForm.setFieldsValue({ backgroundImageUrl: result.url });
-      message.success('Background image uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
+
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload background image');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false;
+  };
+
+  // Handle retry upload for background
+  const handleRetryBackgroundUpload = async () => {
+    if (pendingFile && canRetry) {
+      retryUpload();
+      await handleBackgroundImageUpload(pendingFile);
+    }
   };
 
   const handleBackgroundGallerySelect = (selectedMedia: MediaItem) => {
@@ -326,14 +426,36 @@ const AppearancePage = () => {
     }
   };
 
-  const handleFooterImageUpload = async (file: File) => {
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('You can only upload image files for the footer logo!');
+  const handleFooterImageUpload = async (file: File): Promise<boolean> => {
+    // Pre-upload validation (only images for footer logos)
+    const validation = validateUploadFile(file, t);
+    if (!validation.isValid && validation.error) {
+      handleUploadError(new Error(validation.error.message), file.name);
+      return false;
+    }
+
+    // Additional validation for footer logo files (images only)
+    if (!file.type.startsWith('image/')) {
+      handleUploadError(new Error(t('upload.error.format.imageOnly', 'Only image files are allowed for footer logos.')), file.name);
       return false;
     }
 
     try {
+      startUpload();
+      setPendingFile(file);
+      setUploadProgress(0);
+
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 100);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('highlightId', 'footer-logo');
@@ -344,18 +466,37 @@ const AppearancePage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
       const result = await response.json();
       footerForm.setFieldsValue({ logoImageUrl: result.url });
-      message.success('Footer logo uploaded successfully!');
+
+      // Complete progress
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        completeUpload();
+        setPendingFile(null);
+        setUploadProgress(0);
+      }, 500);
+
     } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Failed to upload footer logo');
+      setUploadProgress(0);
+      handleUploadError(error, file.name);
     }
 
     return false;
+  };
+
+  // Handle retry upload for footer logo
+  const handleRetryFooterUpload = async () => {
+    if (pendingFile && canRetry) {
+      retryUpload();
+      await handleFooterImageUpload(pendingFile);
+    }
   };
 
   const handleFooterGallerySelect = (selectedMedia: MediaItem) => {
@@ -489,20 +630,100 @@ const AppearancePage = () => {
               getFieldValue('useImageLogo') ? (
                 <Form.Item name="logoImageUrl" label="Logo Image">
                   <div>
-                    <Upload
-                      beforeUpload={handleImageUpload}
-                      showUploadList={false}
-                      accept="image/*"
-                    >
-                      <Button icon={<UploadOutlined />}>Upload Logo</Button>
-                    </Upload>
-                    <Button
-                      icon={<PictureOutlined />}
-                      onClick={() => setIsGalleryVisible(true)}
-                      style={{ marginLeft: 8 }}
-                    >
-                      Gallery
-                    </Button>
+                    {/* Error Alert */}
+                    {uploadState.error && (
+                      <Alert
+                        type="error"
+                        showIcon
+                        icon={<ExclamationCircleOutlined />}
+                        message={uploadState.error.message}
+                        description={
+                          uploadState.error.details && (
+                            <div>
+                              {uploadState.error.details.fileName && (
+                                <Text type="secondary">File: {uploadState.error.details.fileName}</Text>
+                              )}
+                              {uploadState.error.details.currentSize && uploadState.error.details.maxSize && (
+                                <div>
+                                  <Text type="secondary">
+                                    Current size: {uploadState.error.details.currentSize.toFixed(2)}MB, 
+                                    Max allowed: {uploadState.error.details.maxSize}MB
+                                  </Text>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+                        action={
+                          <Space>
+                            {canRetry && (
+                              <Button
+                                size="small"
+                                icon={<ReloadOutlined />}
+                                onClick={handleRetryLogoUpload}
+                                loading={uploadState.isUploading}
+                              >
+                                {actionLabels.retry}
+                              </Button>
+                            )}
+                            <Button size="small" onClick={clearError}>
+                              {actionLabels.dismiss}
+                            </Button>
+                          </Space>
+                        }
+                        style={{ marginBottom: 16 }}
+                        closable
+                        onClose={clearError}
+                      />
+                    )}
+                    
+                    {/* Upload Progress */}
+                    {uploadState.isUploading && (
+                      <div style={{ marginBottom: 16 }}>
+                        <Progress
+                          percent={Math.round(uploadProgress)}
+                          status={uploadState.error ? 'exception' : 'active'}
+                          strokeColor={{
+                            '0%': '#108ee9',
+                            '100%': '#87d068',
+                          }}
+                        />
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {pendingFile ? `Uploading ${pendingFile.name}...` : 'Uploading...'}
+                        </Text>
+                      </div>
+                    )}
+
+                    <Space style={{ marginBottom: 16 }}>
+                      <Upload
+                        beforeUpload={handleImageUpload}
+                        showUploadList={false}
+                        accept="image/*"
+                        disabled={uploadState.isUploading}
+                      >
+                        <Button 
+                          icon={uploadState.isUploading ? <Spin size="small" /> : <UploadOutlined />}
+                          loading={uploadState.isUploading}
+                          disabled={uploadState.isUploading}
+                        >
+                          {uploadState.isUploading ? 'Uploading...' : 'Upload Logo'}
+                        </Button>
+                      </Upload>
+                      <Button
+                        icon={<PictureOutlined />}
+                        onClick={() => setIsGalleryVisible(true)}
+                        disabled={uploadState.isUploading}
+                      >
+                        Gallery
+                      </Button>
+                    </Space>
+                    
+                    {/* Help text */}
+                    <div style={{ marginBottom: 16 }}>
+                      <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+                        Supported formats: Images (JPG, PNG, GIF, WebP, AVIF) up to 10MB
+                      </Text>
+                    </div>
 
                     {/* Preview current logo */}
                     {logoForm.getFieldValue('logoImageUrl') && (
