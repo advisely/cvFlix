@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type - support common image formats for favicons
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon'
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'image/x-icon'
     ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type. Please upload PNG, JPG, GIF, SVG, WebP, or ICO files.' }, { status: 400 });
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename with proper extension
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'ico'];
     
     let finalExtension = fileExtension;
     if (!fileExtension || !allowedExtensions.includes(fileExtension)) {

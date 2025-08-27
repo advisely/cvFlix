@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type - support both images and videos
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
       'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
     ];
     if (!allowedTypes.includes(file.type)) {

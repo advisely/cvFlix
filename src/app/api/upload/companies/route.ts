@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type - images only for company logos
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'
     ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
@@ -61,17 +61,17 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename with proper extension validation
     const fileExtension = extname(file.name).toLowerCase();
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
     
     if (!fileExtension) {
       return NextResponse.json({ 
-        error: 'File must have an extension (jpg, jpeg, png, gif, webp, svg)' 
+        error: 'File must have an extension (jpg, jpeg, png, gif, webp, avif, svg)' 
       }, { status: 400 });
     }
 
     if (!allowedExtensions.includes(fileExtension)) {
       return NextResponse.json({ 
-        error: 'Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, svg' 
+        error: 'Invalid file extension. Allowed: jpg, jpeg, png, gif, webp, avif, svg' 
       }, { status: 400 });
     }
 

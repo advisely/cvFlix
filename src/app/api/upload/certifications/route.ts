@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type - support both images and videos
     const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
       'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
     ];
     if (!allowedTypes.includes(file.type)) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename with proper extension validation
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (!fileExtension || !['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'ogg'].includes(fileExtension)) {
+    if (!fileExtension || !['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm', 'ogg'].includes(fileExtension)) {
       return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
     }
 
