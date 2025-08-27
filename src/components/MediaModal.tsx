@@ -198,8 +198,6 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, d
               {formattedPeriods ? formattedPeriods : (
                 <>
                   {startDate && new Date(startDate).getFullYear()}
-                  {endDate && ` - ${new Date(endDate).getFullYear()}`}
-                  {startDate && !endDate && ' - Present'}
                 </>
               )}
             </p>
@@ -243,8 +241,6 @@ const MediaModal = memo(({ isVisible, onClose, media, highlightTitle, company, d
               {formattedPeriods ? formattedPeriods : (
                 <>
                   {startDate && new Date(startDate).getFullYear()}
-                  {endDate && ` - ${new Date(endDate).getFullYear()}`}
-                  {startDate && !endDate && ' - Present'}
                 </>
               )}
             </p>

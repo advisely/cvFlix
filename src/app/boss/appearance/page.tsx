@@ -455,6 +455,15 @@ const AppearancePage = () => {
               <Option value="var(--font-pacifico)">
                 <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
               </Option>
+              <Option value="var(--font-qwitcher-grypen)">
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen (Regular)</span>
+              </Option>
+              <Option value="var(--font-qwitcher-grypen)">
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '700' }}>Qwitcher Grypen (Bold)</span>
+              </Option>
+              <Option value="var(--font-dancing-script)">
+                <span style={{ fontFamily: 'var(--font-dancing-script), cursive', fontSize: '18px', fontWeight: '400' }}>Dancing Script</span>
+              </Option>
             </Select>
           </Form.Item>
 
@@ -662,6 +671,15 @@ const AppearancePage = () => {
               </Option>
               <Option value="var(--font-pacifico)">
                 <span style={{ fontFamily: 'var(--font-pacifico), cursive', fontSize: '18px', fontWeight: '500' }}>Pacifico (Google Font)</span>
+              </Option>
+              <Option value="var(--font-qwitcher-grypen)">
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '400' }}>Qwitcher Grypen (Regular)</span>
+              </Option>
+              <Option value="var(--font-qwitcher-grypen)">
+                <span style={{ fontFamily: 'var(--font-qwitcher-grypen), cursive', fontSize: '18px', fontWeight: '700' }}>Qwitcher Grypen (Bold)</span>
+              </Option>
+              <Option value="var(--font-dancing-script)">
+                <span style={{ fontFamily: 'var(--font-dancing-script), cursive', fontSize: '18px', fontWeight: '400' }}>Dancing Script</span>
               </Option>
             </Select>
           </Form.Item>

@@ -187,3 +187,107 @@ model Media {
   highlightHomepage         Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
   highlightCard             Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
 }
+
+// SEO Management Models
+model SEOConfig {
+  id                   String   @id @default(cuid())
+  siteName             String   @default("resumeflex")
+  siteNameFr           String   @default("resumeflex")
+  defaultTitle         String   @default("Professional Portfolio - resumeflex")
+  defaultTitleFr       String   @default("Portfolio Professionnel - resumeflex")
+  defaultDescription   String   @default("Professional portfolio showcasing experience, skills, and achievements.")
+  defaultDescriptionFr String   @default("Portfolio professionnel présentant l'expérience, les compétences et les réalisations.")
+  defaultKeywords      String   @default("portfolio, professional, experience, skills, career")
+  defaultKeywordsFr    String   @default("portfolio, professionnel, expérience, compétences, carrière")
+  canonicalUrl         String   @default("https://resumeflex.com")
+  robotsContent        String   @default("User-agent: *\nAllow: /\nDisallow: /boss/\nSitemap: https://resumeflex.com/sitemap.xml")
+  faviconUrl           String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model SEOMetaTag {
+  id                            String   @id @default(cuid())
+  page                          String   @unique // '/boss', '/experiences', '/', etc.
+  title                         String
+  titleFr                       String
+  description                   String
+  descriptionFr                 String
+  keywords                      String?
+  keywordsFr                    String?
+  
+  // OpenGraph Basic Properties
+  ogTitle                       String?
+  ogTitleFr                     String?
+  ogDescription                 String?
+  ogDescriptionFr               String?
+  ogImage                       String?
+  ogType                        String?  // 'website', 'article', 'profile', etc.
+  ogUrl                         String?
+  ogSiteName                    String?
+  ogLocale                      String?
+  ogImageAlt                    String?
+  ogImageWidth                  String?
+  ogImageHeight                 String?
+  ogUpdatedTime                 String?
+  
+  // Article-specific OpenGraph
+  articleAuthor                 String?
+  articlePublishedTime          String?
+  articleModifiedTime           String?
+  articleSection                String?
+  articleTag                    String?  // JSON array as string
+  
+  // Profile-specific OpenGraph
+  profileFirstName              String?
+  profileLastName               String?
+  profileUsername               String?
+  profileGender                 String?
+  
+  // Twitter Card Properties
+  twitterCard                   String?  // 'summary', 'summary_large_image', 'app', 'player'
+  twitterSite                   String?  // @username
+  twitterCreator                String?  // @username
+  twitterTitle                  String?
+  twitterTitleFr                String?
+  twitterDescription            String?
+  twitterDescriptionFr          String?
+  twitterImage                  String?
+  twitterImageAlt               String?
+  
+  // Twitter App Card Properties
+  twitterAppNameIphone          String?
+  twitterAppIdIphone            String?
+  twitterAppUrlIphone           String?
+  twitterAppNameGoogleplay      String?
+  twitterAppIdGoogleplay        String?
+  twitterAppUrlGoogleplay       String?
+  
+  // Twitter Player Card Properties
+  twitterPlayer                 String?
+  twitterPlayerWidth            String?
+  twitterPlayerHeight           String?
+  twitterPlayerStream           String?
+  twitterPlayerStreamContentType String?
+  
+  canonicalUrl                  String?
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+  
+  @@index([page])
+}
+
+
+model StructuredData {
+  id        String   @id @default(cuid())
+  type      String   // 'Person', 'Organization', 'WebSite', 'BreadcrumbList'
+  page      String   // Which page this applies to: '/', '/experiences', etc.
+  jsonData  String   // JSON-LD structured data as string
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([type])
+  @@index([page])
+  @@index([isActive])
+}

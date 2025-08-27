@@ -15,6 +15,7 @@ import {
   ToolOutlined,
   SafetyCertificateOutlined,
   FileImageOutlined,
+  SearchOutlined,
   RobotOutlined,
   LogoutOutlined,
   BankOutlined
@@ -32,6 +33,7 @@ const menuItems = [
   { key: '/boss/skills', icon: <ToolOutlined />, label: 'Skills' },
   { key: '/boss/certifications', icon: <SafetyCertificateOutlined />, label: 'Certifications' },
   { key: '/boss/media', icon: <FileImageOutlined />, label: 'Media' },
+  { key: '/boss/seo', icon: <SearchOutlined />, label: 'SEO' },
   { key: '/boss/aio', icon: <RobotOutlined />, label: 'AIO' },
 ];
 
