@@ -26,73 +26,73 @@ model Experience {
   id              String                @id @default(cuid())
   title           String
   titleFr         String
-  startDate       DateTime              // Kept for backward compatibility
-  endDate         DateTime?             // Kept for backward compatibility
+  startDate       DateTime
+  endDate         DateTime?
   description     String
   descriptionFr   String
   companyId       String
-  dateRanges      ExperienceDateRange[] // NEW: Multi-period support
   accomplishments Accomplishment[]
   company         Company               @relation(fields: [companyId], references: [id])
-  media           Media[]               @relation("ExperienceMedia")
-  homepageMedia   Media[]               @relation("ExperienceHomepageMedia")
+  dateRanges      ExperienceDateRange[]
   cardMedia       Media[]               @relation("ExperienceCardMedia")
+  homepageMedia   Media[]               @relation("ExperienceHomepageMedia")
+  media           Media[]               @relation("ExperienceMedia")
   projects        Project[]
 }
 
 model ExperienceDateRange {
   id           String     @id @default(cuid())
   startDate    DateTime
-  endDate      DateTime?  // null indicates current/ongoing position
+  endDate      DateTime?
   experienceId String
-  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
   @@index([experienceId])
   @@index([startDate])
   @@index([endDate])
 }
 
 model Accomplishment {
-  id           String     @id @default(cuid())
-  description  String
+  id            String     @id @default(cuid())
+  description   String
   descriptionFr String
-  experienceId String
-  experience   Experience @relation(fields: [experienceId], references: [id])
+  experienceId  String
+  experience    Experience @relation(fields: [experienceId], references: [id])
 }
 
 model Skill {
-  id       String @id @default(cuid())
-  name     String
-  nameFr   String
-  category String
+  id         String  @id @default(cuid())
+  name       String
+  nameFr     String
+  category   String
   categoryFr String
-  media    Media[]
+  media      Media[]
 }
 
 model Project {
-  id           String     @id @default(cuid())
-  name         String
-  nameFr       String
-  description  String
+  id            String     @id @default(cuid())
+  name          String
+  nameFr        String
+  description   String
   descriptionFr String
-  url          String?
-  experienceId String
-  experience   Experience @relation(fields: [experienceId], references: [id])
+  url           String?
+  experienceId  String
+  experience    Experience @relation(fields: [experienceId], references: [id])
 }
 
 model Education {
-  id          String    @id @default(cuid())
-  institution String
+  id            String    @id @default(cuid())
+  institution   String
   institutionFr String
-  degree      String
-  degreeFr    String
-  field       String
-  fieldFr     String
-  startDate   DateTime
-  endDate     DateTime?
-  media       Media[]
+  degree        String
+  degreeFr      String
+  field         String
+  fieldFr       String
+  startDate     DateTime
+  endDate       DateTime?
+  media         Media[]
 }
 
 model Certification {
@@ -106,45 +106,45 @@ model Certification {
 }
 
 model Highlight {
-  id              String    @id @default(cuid())
-  title           String
-  titleFr         String
-  companyId       String
-  company         Company   @relation(fields: [companyId], references: [id])
-  description     String?
-  descriptionFr   String?
-  startDate       DateTime
-  media           Media[]   @relation("HighlightMedia")
-  homepageMedia   Media[]   @relation("HighlightHomepageMedia")
-  cardMedia       Media[]   @relation("HighlightCardMedia")
-  createdAt       DateTime  @default(now())
+  id            String   @id @default(cuid())
+  title         String
+  titleFr       String
+  companyId     String
+  description   String?
+  descriptionFr String?
+  startDate     DateTime
+  createdAt     DateTime @default(now())
+  company       Company  @relation(fields: [companyId], references: [id])
+  cardMedia     Media[]  @relation("HighlightCardMedia")
+  homepageMedia Media[]  @relation("HighlightHomepageMedia")
+  media         Media[]  @relation("HighlightMedia")
 }
 
 model NavbarConfig {
-  id                String   @id @default(cuid())
-  logoText          String   @default("resumeflex")
-  logoTextFr        String   @default("resumeflex")
-  logoImageUrl      String?
-  useImageLogo      Boolean  @default(false)
-  workExperienceLabel String @default("Work Experience")
-  workExperienceLabelFr String @default("Expérience de travail")
-  careerSeriesLabel   String @default("Career Series")
-  careerSeriesLabelFr String @default("Série de carrière")
-  educationLabel      String @default("Education")
-  educationLabelFr    String @default("Éducation")
-  certificationsLabel String @default("Certifications")
-  certificationsLabelFr String @default("Certifications")
-  skillsLabel         String @default("Skills")
-  skillsLabelFr       String @default("Compétences")
-  backgroundColor   String   @default("#141414")
-  backgroundType    String   @default("color") // "color", "gradient", "image"
-  backgroundImageUrl String?
-  gradientFrom      String   @default("#141414")
-  gradientTo        String   @default("#1a1a1a")
-  fontFamily        String   @default("Inter")
-  logoFontFamily    String   @default("Inter")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  logoText              String   @default("resumeflex")
+  logoTextFr            String   @default("resumeflex")
+  logoImageUrl          String?
+  useImageLogo          Boolean  @default(false)
+  workExperienceLabel   String   @default("Work Experience")
+  workExperienceLabelFr String   @default("Expérience de travail")
+  careerSeriesLabel     String   @default("Career Series")
+  careerSeriesLabelFr   String   @default("Série de carrière")
+  educationLabel        String   @default("Education")
+  educationLabelFr      String   @default("Éducation")
+  certificationsLabel   String   @default("Certifications")
+  certificationsLabelFr String   @default("Certifications")
+  skillsLabel           String   @default("Skills")
+  skillsLabelFr         String   @default("Compétences")
+  backgroundColor       String   @default("#141414")
+  backgroundType        String   @default("color")
+  backgroundImageUrl    String?
+  gradientFrom          String   @default("#141414")
+  gradientTo            String   @default("#1a1a1a")
+  fontFamily            String   @default("Inter")
+  logoFontFamily        String   @default("Inter")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model FooterConfig {
@@ -164,31 +164,30 @@ model FooterConfig {
 }
 
 model Media {
-  id                        String         @id @default(cuid())
-  url                       String
-  type                      String
-  experienceId              String?
-  experienceHomepageId      String?
-  experienceCardId          String?
-  educationId               String?
-  skillId                   String?
-  certificationId           String?
-  highlightId               String?
-  highlightHomepageId       String?
-  highlightCardId           String?
-  createdAt                 DateTime       @default(now())
-  experience                Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])
-  experienceHomepage        Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
-  experienceCard            Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
-  education                 Education?     @relation(fields: [educationId], references: [id])
-  skill                     Skill?         @relation(fields: [skillId], references: [id])
-  certification             Certification? @relation(fields: [certificationId], references: [id])
-  highlight                 Highlight?     @relation("HighlightMedia", fields: [highlightId], references: [id])
-  highlightHomepage         Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
-  highlightCard             Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
+  id                   String         @id @default(cuid())
+  url                  String
+  type                 String
+  experienceId         String?
+  experienceHomepageId String?
+  experienceCardId     String?
+  educationId          String?
+  skillId              String?
+  certificationId      String?
+  highlightId          String?
+  highlightHomepageId  String?
+  highlightCardId      String?
+  createdAt            DateTime       @default(now())
+  highlightCard        Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
+  highlightHomepage    Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
+  highlight            Highlight?     @relation("HighlightMedia", fields: [highlightId], references: [id])
+  certification        Certification? @relation(fields: [certificationId], references: [id])
+  skill                Skill?         @relation(fields: [skillId], references: [id])
+  education            Education?     @relation(fields: [educationId], references: [id])
+  experienceCard       Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
+  experienceHomepage   Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
+  experience           Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])
 }
 
-// SEO Management Models
 model SEOConfig {
   id                   String   @id @default(cuid())
   siteName             String   @default("resumeflex")
@@ -207,86 +206,72 @@ model SEOConfig {
 }
 
 model SEOMetaTag {
-  id                            String   @id @default(cuid())
-  page                          String   @unique // '/boss', '/experiences', '/', etc.
-  title                         String
-  titleFr                       String
-  description                   String
-  descriptionFr                 String
-  keywords                      String?
-  keywordsFr                    String?
-  
-  // OpenGraph Basic Properties
-  ogTitle                       String?
-  ogTitleFr                     String?
-  ogDescription                 String?
-  ogDescriptionFr               String?
-  ogImage                       String?
-  ogType                        String?  // 'website', 'article', 'profile', etc.
-  ogUrl                         String?
-  ogSiteName                    String?
-  ogLocale                      String?
-  ogImageAlt                    String?
-  ogImageWidth                  String?
-  ogImageHeight                 String?
-  ogUpdatedTime                 String?
-  
-  // Article-specific OpenGraph
-  articleAuthor                 String?
-  articlePublishedTime          String?
-  articleModifiedTime           String?
-  articleSection                String?
-  articleTag                    String?  // JSON array as string
-  
-  // Profile-specific OpenGraph
-  profileFirstName              String?
-  profileLastName               String?
-  profileUsername               String?
-  profileGender                 String?
-  
-  // Twitter Card Properties
-  twitterCard                   String?  // 'summary', 'summary_large_image', 'app', 'player'
-  twitterSite                   String?  // @username
-  twitterCreator                String?  // @username
-  twitterTitle                  String?
-  twitterTitleFr                String?
-  twitterDescription            String?
-  twitterDescriptionFr          String?
-  twitterImage                  String?
-  twitterImageAlt               String?
-  
-  // Twitter App Card Properties
-  twitterAppNameIphone          String?
-  twitterAppIdIphone            String?
-  twitterAppUrlIphone           String?
-  twitterAppNameGoogleplay      String?
-  twitterAppIdGoogleplay        String?
-  twitterAppUrlGoogleplay       String?
-  
-  // Twitter Player Card Properties
-  twitterPlayer                 String?
-  twitterPlayerWidth            String?
-  twitterPlayerHeight           String?
-  twitterPlayerStream           String?
+  id                             String   @id @default(cuid())
+  page                           String   @unique
+  title                          String
+  titleFr                        String
+  description                    String
+  descriptionFr                  String
+  keywords                       String?
+  keywordsFr                     String?
+  ogTitle                        String?
+  ogTitleFr                      String?
+  ogDescription                  String?
+  ogDescriptionFr                String?
+  ogImage                        String?
+  canonicalUrl                   String?
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+  articleAuthor                  String?
+  articleModifiedTime            String?
+  articlePublishedTime           String?
+  articleSection                 String?
+  articleTag                     String?
+  ogImageAlt                     String?
+  ogImageHeight                  String?
+  ogImageWidth                   String?
+  ogLocale                       String?
+  ogSiteName                     String?
+  ogType                         String?
+  ogUpdatedTime                  String?
+  ogUrl                          String?
+  profileFirstName               String?
+  profileGender                  String?
+  profileLastName                String?
+  profileUsername                String?
+  twitterAppIdGoogleplay         String?
+  twitterAppIdIphone             String?
+  twitterAppNameGoogleplay       String?
+  twitterAppNameIphone           String?
+  twitterAppUrlGoogleplay        String?
+  twitterAppUrlIphone            String?
+  twitterCard                    String?
+  twitterCreator                 String?
+  twitterDescription             String?
+  twitterDescriptionFr           String?
+  twitterImage                   String?
+  twitterImageAlt                String?
+  twitterPlayer                  String?
+  twitterPlayerHeight            String?
+  twitterPlayerStream            String?
   twitterPlayerStreamContentType String?
-  
-  canonicalUrl                  String?
-  createdAt                     DateTime @default(now())
-  updatedAt                     DateTime @updatedAt
-  
+  twitterPlayerWidth             String?
+  twitterSite                    String?
+  twitterTitle                   String?
+  twitterTitleFr                 String?
+
   @@index([page])
 }
 
-
 model StructuredData {
   id        String   @id @default(cuid())
-  type      String   // 'Person', 'Organization', 'WebSite', 'BreadcrumbList'
-  page      String   // Which page this applies to: '/', '/experiences', etc.
-  jsonData  String   // JSON-LD structured data as string
+  type      String
+  page      String
+  jsonData  String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([type])
   @@index([page])
   @@index([isActive])

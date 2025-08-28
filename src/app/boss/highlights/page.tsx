@@ -1,29 +1,17 @@
 'use client'
 
-import { Button, Table, Modal, Form, Input, DatePicker, Upload, message, Image, Row, Col, Switch, Space, Card, Divider, Select, Alert, Progress, Typography, Spin, Tooltip } from 'antd';
+import { Button, Table, Modal, Form, Input, DatePicker, message, Row, Col, Switch, Typography, Space, Select } from 'antd';
 const { Text } = Typography;
 import { useEffect, useState } from 'react';
 import { HighlightWithMedia, MediaItem, MediaApiResponse } from './types';
 import { Company } from '@prisma/client';
 import dayjs from 'dayjs';
-import { UploadOutlined, PictureOutlined, PlayCircleOutlined, CloseOutlined, TableOutlined, AppstoreOutlined, HomeOutlined, CreditCardOutlined, ExclamationCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PictureOutlined, PlayCircleOutlined, TableOutlined, AppstoreOutlined } from '@ant-design/icons';
 import HighlightCardGrid from '@/components/HighlightCardGrid';
 import MultilingualFormTabs from '@/components/MultilingualFormTabs';
-import { useUploadErrorHandler, validateUploadFile } from '@/hooks/useUploadErrorHandler';
-import { useLanguage } from '@/contexts/LanguageContext';
+import MediaUploadSection from '@/components/MediaUploadSection';
 
 const HighlightsPage = () => {
-  const { t } = useLanguage();
-  const {
-    uploadState,
-    handleUploadError,
-    startUpload,
-    completeUpload,
-    retryUpload,
-    clearError,
-    canRetry,
-    actionLabels
-  } = useUploadErrorHandler();
 
   const [highlights, setHighlights] = useState<HighlightWithMedia[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -37,11 +25,8 @@ const HighlightsPage = () => {
   const [allMedia, setAllMedia] = useState<MediaItem[]>([]);
 
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
-  const [galleryType, setGalleryType] = useState<'homepage' | 'card'>('homepage');
-  const [galleryHighlightId, setGalleryHighlightId] = useState<string | null>(null);
   const [isCardView, setIsCardView] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [mediaType, setMediaType] = useState<'homepage' | 'card'>('homepage');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,95 +72,52 @@ const HighlightsPage = () => {
 
   const handleOk = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await form.validateFields([
+        "title", "titleFr", "companyId", "startDate", "description", "descriptionFr"
+      ]);
       const url = editingRecord ? `/api/highlights/${editingRecord.id}` : '/api/highlights';
       const method = editingRecord ? 'PUT' : 'POST';
 
+      const highlightData = {
+        ...values,
+        startDate: dayjs(values.startDate).toISOString(),
+        homepageMedia: homepageMedia.map(m => ({ id: m.id, url: m.url, type: m.type })),
+        cardMedia: cardMedia.map(m => ({ id: m.id, url: m.url, type: m.type }))
+      };
+      
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          startDate: values.startDate.toISOString(),
-        }),
+        body: JSON.stringify(highlightData),
       });
 
       if (response.ok) {
-        const result = await response.json();
-
-        // Save homepage media
-        if (homepageMedia.length > 0) {
-          await Promise.all(homepageMedia.map(async (item) => {
-            if (!item.id) { // New media
-              await fetch('/api/media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  url: item.url,
-                  type: item.type,
-                  highlightHomepageId: result.id
-                })
-              });
-            }
-          }));
-        }
-
-        // Save card media
-        if (cardMedia.length > 0) {
-          await Promise.all(cardMedia.map(async (item) => {
-            if (!item.id) { // New media
-              await fetch('/api/media', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  url: item.url,
-                  type: item.type,
-                  highlightCardId: result.id
-                })
-              });
-            }
-          }));
-        }
-
-        // Refresh data
         const [highlightsResponse, mediaResponse] = await Promise.all([
           fetch('/api/highlights'),
           fetch('/api/media')
         ]);
-        
-        if (!highlightsResponse.ok) {
-          console.error('Failed to refresh highlights:', highlightsResponse.status, await highlightsResponse.text());
-          throw new Error(`Failed to refresh highlights: ${highlightsResponse.status}`);
-        }
-        
-        if (!mediaResponse.ok) {
-          console.error('Failed to refresh media:', mediaResponse.status, await mediaResponse.text());
-          throw new Error(`Failed to refresh media: ${mediaResponse.status}`);
-        }
-        
         const highlightsData = await highlightsResponse.json();
         const mediaData = await mediaResponse.json();
 
-        // Map all media data to ensure proper typing
-        const allMediaData = mediaData.map((item: MediaApiResponse) => ({
+        const mappedMediaData = mediaData.map((item: MediaApiResponse) => ({
           id: item.id,
           url: item.url,
           type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-          highlightId: item.highlightId,
-          highlightHomepageId: item.highlightHomepageId,
-          highlightCardId: item.highlightCardId,
-          createdAt: item.createdAt
+          highlightId: item.highlightId || ''
         }));
 
         setHighlights(highlightsData);
-        setAllMedia(allMediaData);
+        setAllMedia(mappedMediaData);
 
         setIsModalVisible(false);
         message.success('Highlight saved successfully!');
+      } else {
+        const errorData = await response.json();
+        message.error(`Failed to save highlight: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Failed to save highlight:', error);
-      message.error('Failed to save highlight');
+      message.error('An unexpected error occurred while saving the highlight.');
     }
   };
 
@@ -186,37 +128,17 @@ const HighlightsPage = () => {
   const handleEdit = (record: HighlightWithMedia) => {
     setEditingRecord(record);
 
-    // Map homepage media
-    const mappedHomepageMedia = (record.homepageMedia || []).map((item: MediaApiResponse) => ({
-      id: item.id,
-      url: item.url,
-      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      experienceId: item.experienceId || null,
-      educationId: item.educationId || null,
-      skillId: item.skillId || null,
-      certificationId: item.certificationId || null,
-      highlightId: item.highlightId || null,
-      highlightHomepageId: item.highlightHomepageId || record.id,
-      highlightCardId: item.highlightCardId || null,
-      createdAt: item.createdAt
-    }));
-    setHomepageMedia(mappedHomepageMedia);
+    // Clean media mapping following experiences pattern
+    const getMediaFor = (relation?: { id: string; url: string; type: string }[]) =>
+      (relation || []).map((item) => ({
+        id: item.id,
+        url: item.url,
+        type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
+        highlightId: record.id
+      }));
 
-    // Map card media
-    const mappedCardMedia = (record.cardMedia || []).map((item: MediaApiResponse) => ({
-      id: item.id,
-      url: item.url,
-      type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-      experienceId: item.experienceId || null,
-      educationId: item.educationId || null,
-      skillId: item.skillId || null,
-      certificationId: item.certificationId || null,
-      highlightId: item.highlightId || null,
-      highlightHomepageId: item.highlightHomepageId || null,
-      highlightCardId: item.highlightCardId || record.id,
-      createdAt: item.createdAt
-    }));
-    setCardMedia(mappedCardMedia);
+    setHomepageMedia(getMediaFor(record.homepageMedia));
+    setCardMedia(getMediaFor(record.cardMedia));
 
     form.setFieldsValue({
       title: record.title,
@@ -242,171 +164,45 @@ const HighlightsPage = () => {
     }
   };
 
-  const handleMediaUpload = async (file: File, highlightId: string, mediaType: 'homepage' | 'card'): Promise<boolean> => {
-    // Pre-upload validation
-    const validation = validateUploadFile(file, t);
-    if (!validation.isValid && validation.error) {
-      handleUploadError(new Error(validation.error.message), file.name);
-      return false;
+  // Enhanced media upload handler following experiences pattern
+  const handleMediaUpload = async (file: File, highlightId: string, type: 'homepage' | 'card'): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('highlightId', highlightId === 'new' ? 'temp' : highlightId);
+    formData.append('mediaType', type);
+
+    const response = await fetch('/api/upload/highlights', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
     }
 
-    try {
-      startUpload();
-      setPendingFile(file);
-      setUploadProgress(0);
+    const result = await response.json();
 
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 10;
-        });
-      }, 100);
+    const newMedia: MediaItem = {
+      id: result.id,
+      url: result.url,
+      type: result.type,
+      highlightId: highlightId === 'new' ? '' : highlightId
+    };
 
-      // Create form data for upload
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('highlightId', highlightId === 'new' ? 'temp' : highlightId);
-      formData.append('mediaType', mediaType);
-
-      // Upload to server
-      const response = await fetch('/api/upload/highlights', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const result = await response.json();
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-
-      const newMedia: MediaItem = {
-        id: '', // Will be set by backend
-        url: result.url,
-        type: isImage ? 'image' : 'video',
-        createdAt: new Date(),
-        experienceId: null,
-        educationId: null,
-        skillId: null,
-        certificationId: null,
-        highlightId: null,
-        highlightHomepageId: mediaType === 'homepage' ? (highlightId === 'new' ? '' : highlightId) : null,
-        highlightCardId: mediaType === 'card' ? (highlightId === 'new' ? '' : highlightId) : null
-      };
-
-      // If editing existing highlight, save media immediately
-      if (highlightId !== 'new') {
-        try {
-          const mediaResponse = await fetch('/api/media', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              url: result.url,
-              type: isImage ? 'image' : 'video',
-              ...(mediaType === 'homepage'
-                ? { highlightHomepageId: highlightId }
-                : { highlightCardId: highlightId }
-              )
-            })
-          });
-
-          if (mediaResponse.ok) {
-            const savedMedia = await mediaResponse.json();
-            newMedia.id = savedMedia.id;
-
-            // Refresh all media and highlights
-            const [allMediaResponse, highlightsResponse] = await Promise.all([
-              fetch('/api/media'),
-              fetch('/api/highlights')
-            ]);
-            
-            if (!allMediaResponse.ok) {
-              console.error('Failed to fetch media:', allMediaResponse.status, await allMediaResponse.text());
-              throw new Error(`Failed to fetch media: ${allMediaResponse.status}`);
-            }
-            
-            if (!highlightsResponse.ok) {
-              console.error('Failed to fetch highlights:', highlightsResponse.status, await highlightsResponse.text());
-              throw new Error(`Failed to fetch highlights: ${highlightsResponse.status}`);
-            }
-            
-            const allMediaData = await allMediaResponse.json();
-            const highlightsData = await highlightsResponse.json();
-
-            const mappedAllMedia = allMediaData.map((item: MediaApiResponse) => ({
-              id: item.id,
-              url: item.url,
-              type: (item.type === 'image' || item.type === 'video') ? item.type : 'image' as 'image' | 'video',
-              experienceId: item.experienceId || null,
-              educationId: item.educationId || null,
-              skillId: item.skillId || null,
-              certificationId: item.certificationId || null,
-              highlightId: item.highlightId || null,
-              highlightHomepageId: item.highlightHomepageId || null,
-              highlightCardId: item.highlightCardId || null,
-              createdAt: item.createdAt
-            }));
-            setAllMedia(mappedAllMedia);
-            setHighlights(highlightsData);
-          }
-        } catch (mediaError) {
-          console.error('Failed to save media to database:', mediaError);
-        }
-      }
-
-      // Add to appropriate media state
-      if (mediaType === 'homepage') {
-        setHomepageMedia([...homepageMedia, newMedia]);
-      } else {
-        setCardMedia([...cardMedia, newMedia]);
-      }
-
-      // Complete progress
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      setTimeout(() => {
-        completeUpload();
-        setPendingFile(null);
-        setUploadProgress(0);
-      }, 500);
-
-    } catch (error) {
-      setUploadProgress(0);
-      handleUploadError(error, file.name);
-    }
-
-    return false; // Prevent default upload behavior
+    if (type === 'homepage') setHomepageMedia([...homepageMedia, newMedia]);
+    if (type === 'card') setCardMedia([...cardMedia, newMedia]);
   };
 
-  const handleGalleryOpen = (highlightId: string, mediaType: 'homepage' | 'card') => {
-    setGalleryHighlightId(highlightId);
-    setGalleryType(mediaType);
+  const handleGalleryOpen = (_highlightId: string, type: 'homepage' | 'card') => {
+    setMediaType(type);
     setIsGalleryVisible(true);
   };
 
-  const isBrokenBlobUrl = (url: string) => {
-    return url.startsWith('blob:');
-  };
-
-  const handleReupload = (item: MediaItem, mediaType: 'homepage' | 'card') => {
-    message.info('Please upload a new file to replace the broken image');
-    const highlightId = item.highlightHomepageId || item.highlightCardId;
-    if (highlightId) {
-      handleGalleryOpen(highlightId, mediaType);
-    }
-  };
 
   const handleGallerySelect = (selectedMedia: MediaItem) => {
     // Check if this media is already selected for this type
-    const currentMedia = galleryType === 'homepage' ? homepageMedia : cardMedia;
+    const currentMedia = mediaType === 'homepage' ? homepageMedia : cardMedia;
     const isAlreadySelected = currentMedia.some(m => m.id === selectedMedia.id || m.url === selectedMedia.url);
 
     if (isAlreadySelected) {
@@ -415,137 +211,16 @@ const HighlightsPage = () => {
       return;
     }
 
-    const mediaToAdd: MediaItem = {
-      ...selectedMedia,
-      ...(galleryType === 'homepage'
-        ? { highlightHomepageId: galleryHighlightId || '' }
-        : { highlightCardId: galleryHighlightId || '' }
-      )
-    };
-
-    if (galleryType === 'homepage') {
-      setHomepageMedia([...homepageMedia, mediaToAdd]);
-    } else {
-      setCardMedia([...cardMedia, mediaToAdd]);
-    }
-
+    if (mediaType === 'homepage') setHomepageMedia([...homepageMedia, selectedMedia]);
+    if (mediaType === 'card') setCardMedia([...cardMedia, selectedMedia]);
     setIsGalleryVisible(false);
-    message.success(`Media added to ${galleryType} section`);
   };
 
-  const handleMediaRemove = async (mediaUrl: string, mediaType: 'homepage' | 'card') => {
-    try {
-      // Find the media item to get its ID
-      const allMedia = mediaType === 'homepage' ? homepageMedia : cardMedia;
-      const mediaItem = allMedia.find(m => m.url === mediaUrl);
-
-      if (mediaItem?.id) {
-        // Delete from database
-        const response = await fetch(`/api/media/${mediaItem.id}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete media from server');
-        }
-      }
-
-      // Remove from local state
-      if (mediaType === 'homepage') {
-        setHomepageMedia(homepageMedia.filter(m => m.url !== mediaUrl));
-      } else {
-        setCardMedia(cardMedia.filter(m => m.url !== mediaUrl));
-      }
-
-      message.success('Media removed successfully!');
-    } catch (error) {
-      console.error('Error removing media:', error);
-      message.error('Failed to remove media');
-    }
+  const handleMediaRemove = (mediaUrl: string, type: 'homepage' | 'card') => {
+    if (type === 'homepage') setHomepageMedia(homepageMedia.filter(m => m.url !== mediaUrl));
+    if (type === 'card') setCardMedia(cardMedia.filter(m => m.url !== mediaUrl));
   };
 
-  const renderMediaGrid = (media: MediaItem[], mediaType: 'homepage' | 'card') => (
-    <Row gutter={[16, 16]}>
-      {media.map((item, index) => (
-        <Col key={`${mediaType}-${item.id || item.url}-${index}`} xs={12} sm={8} md={6} lg={4}>
-          <div style={{ position: 'relative', marginBottom: 8 }}>
-            {item.type === 'image' ? (
-              isBrokenBlobUrl(item.url) ? (
-                <div style={{
-                  width: '100%',
-                  height: 100,
-                  backgroundColor: '#ffe6e6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 4,
-                  flexDirection: 'column',
-                  gap: 4
-                }}>
-                  <PictureOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
-                  <span style={{ fontSize: 12, color: '#ff4d4f' }}>Broken Image</span>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => handleReupload(item, mediaType)}
-                  >
-                    Re-upload
-                  </Button>
-                </div>
-              ) : (
-                <img
-                  src={item.url}
-                  alt={`${mediaType} media`}
-                  style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4 }}
-                />
-              )
-            ) : (
-              <div style={{
-                position: 'relative',
-                width: '100%',
-                height: 100,
-                backgroundColor: '#000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 4,
-                overflow: 'hidden'
-              }}>
-                <video
-                  src={item.url}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                  muted
-                />
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(0,0,0,0.3)',
-                  pointerEvents: 'none'
-                }}>
-                  <PlayCircleOutlined style={{ fontSize: 24, color: 'white' }} />
-                </div>
-              </div>
-            )}
-            <Button
-              type="text"
-              danger
-              icon={<CloseOutlined />}
-              size="small"
-              style={{ position: 'absolute', top: 4, right: 4 }}
-              onClick={() => handleMediaRemove(item.url, mediaType)}
-            />
-          </div>
-        </Col>
-      ))}
-    </Row>
-  );
 
   const columns = [
     {
@@ -807,186 +482,25 @@ const HighlightsPage = () => {
             )}
           </MultilingualFormTabs>
 
-          <Divider />
+          <MediaUploadSection
+            title="Homepage Media"
+            media={homepageMedia}
+            onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'homepage')}
+            onRemove={(url: string) => handleMediaRemove(url, 'homepage')}
+            onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
+            maxCount={5}
+            showProgress={true}
+          />
 
-          {/* Homepage Media Section */}
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <HomeOutlined style={{ color: '#1890ff' }} />
-                <span>Homepage Media</span>
-                <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
-                  (For hero display on homepage)
-                </span>
-              </div>
-            }
-            style={{ marginBottom: 24 }}
-            size="small"
-          >
-            <div>
-              {/* Error Alert */}
-              {uploadState.error && (
-                <Alert
-                  type="error"
-                  showIcon
-                  icon={<ExclamationCircleOutlined />}
-                  message={uploadState.error.message}
-                  description={
-                    uploadState.error.details && (
-                      <div>
-                        {uploadState.error.details.fileName && (
-                          <Text type="secondary">File: {uploadState.error.details.fileName}</Text>
-                        )}
-                        {uploadState.error.details.currentSize && uploadState.error.details.maxSize && (
-                          <div>
-                            <Text type="secondary">
-                              Current size: {uploadState.error.details.currentSize.toFixed(2)}MB, 
-                              Max allowed: {uploadState.error.details.maxSize}MB
-                            </Text>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  }
-                  action={
-                    <Space>
-                      {canRetry && (
-                        <Button
-                          size="small"
-                          icon={<ReloadOutlined />}
-                          onClick={() => {
-                            if (pendingFile) {
-                              retryUpload();
-                              handleMediaUpload(pendingFile, editingRecord?.id || 'new', 'homepage');
-                            }
-                          }}
-                          loading={uploadState.isUploading}
-                        >
-                          {actionLabels.retry}
-                        </Button>
-                      )}
-                      <Button size="small" onClick={clearError}>
-                        {actionLabels.dismiss}
-                      </Button>
-                    </Space>
-                  }
-                  style={{ marginBottom: 16 }}
-                  closable
-                  onClose={clearError}
-                />
-              )}
-              
-              {/* Upload Progress */}
-              {uploadState.isUploading && (
-                <div style={{ marginBottom: 16 }}>
-                  <Progress
-                    percent={Math.round(uploadProgress)}
-                    status={uploadState.error ? 'exception' : 'active'}
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': '#87d068',
-                    }}
-                  />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {pendingFile ? `Uploading ${pendingFile.name}...` : 'Uploading...'}
-                  </Text>
-                </div>
-              )}
-
-              <div style={{ marginBottom: 16 }}>
-                <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: 8 }}>
-                  Supported formats: Images (JPG, PNG, GIF, WebP, AVIF) up to 10MB, Videos (MP4, WebM, OGG, AVI, MOV) up to 50MB
-                </Text>
-              </div>
-              <Space style={{ marginBottom: 16 }}>
-                <Upload
-                  beforeUpload={(file) => {
-                    handleMediaUpload(file, editingRecord?.id || 'new', 'homepage');
-                    return false;
-                  }}
-                  showUploadList={false}
-                  accept="image/*,video/*"
-                  disabled={uploadState.isUploading}
-                >
-                  <Button 
-                    icon={<UploadOutlined />} 
-                    type="primary"
-                    loading={uploadState.isUploading}
-                    disabled={uploadState.isUploading}
-                  >
-                    {uploadState.isUploading ? 'Uploading...' : 'Upload Homepage Media'}
-                  </Button>
-                </Upload>
-                <Button
-                  icon={<PictureOutlined />}
-                  onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'homepage')}
-                  disabled={uploadState.isUploading}
-                >
-                  Gallery
-                </Button>
-              </Space>
-
-              {/* Preview of homepage media */}
-              {homepageMedia.length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <h4 style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>Homepage Media Preview:</h4>
-                  {renderMediaGrid(homepageMedia, 'homepage')}
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Card Media Section */}
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CreditCardOutlined style={{ color: '#52c41a' }} />
-                <span>Card Media</span>
-                <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>
-                  (For detailed popup card)
-                </span>
-              </div>
-            }
-            size="small"
-          >
-            <div>
-              <Space style={{ marginBottom: 16 }}>
-                <Upload
-                  beforeUpload={(file) => {
-                    handleMediaUpload(file, editingRecord?.id || 'new', 'card');
-                    return false;
-                  }}
-                  showUploadList={false}
-                  accept="image/*,video/*"
-                  disabled={uploadState.isUploading}
-                >
-                  <Button 
-                    icon={<UploadOutlined />} 
-                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-                    loading={uploadState.isUploading}
-                    disabled={uploadState.isUploading}
-                  >
-                    {uploadState.isUploading ? 'Uploading...' : 'Upload Card Media'}
-                  </Button>
-                </Upload>
-                <Button
-                  icon={<PictureOutlined />}
-                  onClick={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
-                  disabled={uploadState.isUploading}
-                >
-                  Gallery
-                </Button>
-              </Space>
-
-              {/* Preview of card media */}
-              {cardMedia.length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <h4 style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>Card Media Preview:</h4>
-                  {renderMediaGrid(cardMedia, 'card')}
-                </div>
-              )}
-            </div>
-          </Card>
+          <MediaUploadSection
+            title="Card Media"
+            media={cardMedia}
+            onUpload={(file: File) => handleMediaUpload(file, editingRecord?.id || 'new', 'card')}
+            onRemove={(url: string) => handleMediaRemove(url, 'card')}
+            onGalleryOpen={() => handleGalleryOpen(editingRecord?.id || 'new', 'card')}
+            maxCount={3}
+            showProgress={true}
+          />
         </Form>
       </Modal>
 
@@ -994,8 +508,8 @@ const HighlightsPage = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <PictureOutlined style={{ color: galleryType === 'homepage' ? '#1890ff' : '#52c41a' }} />
-            <span>Select {galleryType === 'homepage' ? 'Homepage' : 'Card'} Media from Gallery</span>
+            <PictureOutlined style={{ color: mediaType === 'homepage' ? '#1890ff' : '#52c41a' }} />
+            <span>Select {mediaType === 'homepage' ? 'Homepage' : 'Card'} Media from Gallery</span>
           </div>
         }
         open={isGalleryVisible}
@@ -1027,8 +541,8 @@ const HighlightsPage = () => {
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = galleryType === 'homepage' ? '#1890ff' : '#52c41a';
-                    e.currentTarget.style.boxShadow = `0 4px 16px rgba(${galleryType === 'homepage' ? '24, 144, 255' : '82, 196, 26'}, 0.2)`;
+                    e.currentTarget.style.borderColor = mediaType === 'homepage' ? '#1890ff' : '#52c41a';
+                    e.currentTarget.style.boxShadow = `0 4px 16px rgba(${mediaType === 'homepage' ? '24, 144, 255' : '82, 196, 26'}, 0.2)`;
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
@@ -1122,15 +636,14 @@ const HighlightsPage = () => {
                       block
                       onClick={() => handleGallerySelect(item)}
                       style={{
-                        backgroundColor: galleryType === 'homepage' ? '#1890ff' : '#52c41a',
-                        borderColor: galleryType === 'homepage' ? '#1890ff' : '#52c41a',
+                        backgroundColor: mediaType === 'homepage' ? '#1890ff' : '#52c41a',
+                        borderColor: mediaType === 'homepage' ? '#1890ff' : '#52c41a',
                         fontWeight: 500,
                         height: '32px',
                         borderRadius: '6px'
                       }}
-                      icon={galleryType === 'homepage' ? <HomeOutlined /> : <CreditCardOutlined />}
                     >
-                      Select for {galleryType === 'homepage' ? 'Homepage' : 'Card'}
+                      Select for {mediaType === 'homepage' ? 'Homepage' : 'Card'}
                     </Button>
                   </div>
                 </div>
