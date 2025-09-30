@@ -41,34 +41,48 @@ model Experience {
 }
 
 model ExperienceDateRange {
-  id           String     @id @default(cuid())
-  startDate    DateTime
-  endDate      DateTime?
-  experienceId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-
-  @@index([experienceId])
-  @@index([startDate])
-  @@index([endDate])
 }
 
-model Accomplishment {
-  id            String     @id @default(cuid())
-  description   String
-  descriptionFr String
-  experienceId  String
-  experience    Experience @relation(fields: [experienceId], references: [id])
+model Knowledge {
+  id              String          @id @default(cuid())
+  kind            KnowledgeKind
+  title           String
+  titleFr         String?
+  issuer          String?
+  issuerFr        String?
+  category        String?
+  categoryFr      String?
+  description     String?
+  descriptionFr   String?
+  competencyLevel KnowledgeLevel?
+  startDate       DateTime?
+  endDate         DateTime?
+  validUntil      DateTime?
+  isCurrent       Boolean         @default(false)
+  url             String?
+  location        String?
+  media           Media[]         @relation("KnowledgeMedia")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([kind])
+  @@index([category])
 }
 
-model Skill {
-  id         String  @id @default(cuid())
-  name       String
-  nameFr     String
-  category   String
-  categoryFr String
-  media      Media[]
+enum KnowledgeKind {
+  EDUCATION
+  CERTIFICATION
+  SKILL
+  COURSE
+  AWARD
+}
+
+enum KnowledgeLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+  MASTER
 }
 
 model Project {
@@ -80,29 +94,6 @@ model Project {
   url           String?
   experienceId  String
   experience    Experience @relation(fields: [experienceId], references: [id])
-}
-
-model Education {
-  id            String    @id @default(cuid())
-  institution   String
-  institutionFr String
-  degree        String
-  degreeFr      String
-  field         String
-  fieldFr       String
-  startDate     DateTime
-  endDate       DateTime?
-  media         Media[]
-}
-
-model Certification {
-  id        String   @id @default(cuid())
-  name      String
-  nameFr    String
-  issuer    String
-  issuerFr  String
-  issueDate DateTime
-  media     Media[]
 }
 
 model Highlight {
@@ -117,7 +108,6 @@ model Highlight {
   company       Company  @relation(fields: [companyId], references: [id])
   cardMedia     Media[]  @relation("HighlightCardMedia")
   homepageMedia Media[]  @relation("HighlightHomepageMedia")
-  media         Media[]  @relation("HighlightMedia")
 }
 
 model NavbarConfig {
@@ -170,9 +160,7 @@ model Media {
   experienceId         String?
   experienceHomepageId String?
   experienceCardId     String?
-  educationId          String?
-  skillId              String?
-  certificationId      String?
+  knowledgeId          String?
   highlightId          String?
   highlightHomepageId  String?
   highlightCardId      String?
@@ -180,9 +168,7 @@ model Media {
   highlightCard        Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
   highlightHomepage    Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
   highlight            Highlight?     @relation("HighlightMedia", fields: [highlightId], references: [id])
-  certification        Certification? @relation(fields: [certificationId], references: [id])
-  skill                Skill?         @relation(fields: [skillId], references: [id])
-  education            Education?     @relation(fields: [educationId], references: [id])
+  knowledge            Knowledge?     @relation("KnowledgeMedia", fields: [knowledgeId], references: [id])
   experienceCard       Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
   experienceHomepage   Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
   experience           Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])
