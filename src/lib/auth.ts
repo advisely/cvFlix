@@ -13,18 +13,46 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          const error = new Error('Missing email or password.');
+          error.name = 'CredentialsSignin';
+          throw error;
         }
 
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
           where: { email: credentials.email }
         })
 
-        if (user && await bcrypt.compare(credentials.password, user.passwordHash)) {
-          return { id: user.id, email: user.email }
+        if (!user) {
+          const userCount = await prisma.user.count();
+          const fallbackEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com';
+          const fallbackPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+
+          const canBootstrap = userCount === 0 && fallbackPassword && credentials.email === fallbackEmail;
+
+          if (canBootstrap) {
+            const hashedPassword = await bcrypt.hash(fallbackPassword, 10);
+            user = await prisma.user.create({
+              data: {
+                email: fallbackEmail,
+                passwordHash: hashedPassword
+              }
+            });
+          } else {
+            const error = new Error('Account not found.');
+            error.name = 'CredentialsSignin';
+            throw error;
+          }
         }
 
-        return null
+        const passwordMatches = await bcrypt.compare(credentials.password, user.passwordHash)
+
+        if (!passwordMatches) {
+          const error = new Error('Incorrect password.');
+          error.name = 'CredentialsSignin';
+          throw error;
+        }
+
+        return { id: user.id, email: user.email }
       }
     })
   ],

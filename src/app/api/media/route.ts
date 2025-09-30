@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
-import { type NextRequest } from 'next/server'
-import { prisma } from '../../../lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -25,7 +25,32 @@ export async function GET() {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  const token = await getToken({ req: request as never });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json()
+    const media = await prisma.media.delete({
+      where: { id: body.id }
+    })
+    return NextResponse.json(media)
+  } catch (error) {
+    console.error('Failed to delete media:', error)
+    return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const token = await getToken({ req: request as never });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json()
     const media = await prisma.media.create({

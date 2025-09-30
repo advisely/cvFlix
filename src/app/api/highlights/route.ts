@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -29,6 +30,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const token = await getToken({ req: request as never });
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { title, titleFr, companyId, description, descriptionFr, startDate } = body;
