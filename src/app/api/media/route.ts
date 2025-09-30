@@ -10,13 +10,11 @@ export async function GET() {
         experience: true,
         experienceHomepage: true,
         experienceCard: true,
-        education: true,
-        skill: true,
-        certification: true,
+        knowledge: true,
         highlight: true,
         highlightHomepage: true,
-        highlightCard: true
-      }
+        highlightCard: true,
+      },
     })
     return NextResponse.json(media)
   } catch (error) {

@@ -1,95 +1,65 @@
-# Implementation Plan: Knowledge Consolidation & Platform Stabilization
+# Implementation Plan: Knowledge Model Rollout (Post-Consolidation)
 
 ## Current State
-- `prisma/schema.prisma` is partially modified; legacy models (`Education`, `Skill`, `Certification`) were removed without completing the new `Knowledge` model integration, leaving compilation errors.
-- Frontend (`src/app/page.tsx`, `src/components/*Card.tsx`) and API routes (`src/app/api/education/*`, `.../skills/*`, `.../certifications/*`) still depend on the old models.
-- Seed script `prisma/seed.ts` and media relations are inconsistent with the desired unified structure.
+- Prisma schema, migrations, and seed data now persist the unified `Knowledge` model with `KnowledgeKind` and `KnowledgeLevel` enums.
+- Legacy `/api/education`, `/api/skills`, and `/api/certifications` routes have been removed in favour of `/api/knowledge` and `/api/upload/knowledge`.
+- Admin sidebar points to the new `/boss/knowledge` page, delivering CRUD and media management across all knowledge types.
+- Homepage cards (`EducationCard`, `CertificationCard`, `SkillCard`) consume the consolidated API response without `any` casts.
 
 ## Objectives
-1. Restore a working baseline to unblock development.
-2. Introduce a unified `Knowledge` data model replacing Education/Skills/Certifications.
-3. Update backend API routes, seed data, and uploads to match the new schema.
-4. Refactor admin and public UI to consume the consolidated data source.
-5. Verify functionality through automated checks and manual QA.
+1. Harden the new Knowledge workflows through QA, data migration checks, and analytics.
+2. Polish the UX (responsiveness, localization, and theming) to match the refreshed taxonomy.
+3. Finalize documentation, operational runbooks, and deployment guidance for the Knowledge-centric release.
 
 ## Execution Roadmap
 
-### Phase 0 – Baseline Recovery
+### Phase 1 – QA & Data Validation
 - **Tasks**
-  - Revert unintended edits in `prisma/schema.prisma`, `prisma/seed.ts`, and any other partially modified files (`git status` to confirm scope).
-  - Ensure Next.js app builds and seeds succeed with the legacy schema.
-- **Commands**
-  - `git status`
-  - `git restore prisma/schema.prisma prisma/seed.ts` *(or reset specific files via version control)*
-  - `npm install` *(if dependencies changed)*
-  - `npx prisma generate`
-  - `npm run dev`
-- **Risks & Mitigations**
-  - *Risk*: Local changes outside Git may be lost. *Mitigation*: Backup files before restoring if manual edits must be inspected.
-  - *Risk*: Database drift. *Mitigation*: Run `npx prisma migrate reset` after reverting schema to realign the SQLite database.
-
-### Phase 1 – Schema & Seed Design
-- **Tasks**
-  - Define `Knowledge`, `KnowledgeKind`, and `KnowledgeLevel` in `prisma/schema.prisma`.
-  - Update `Media` relations and remove `Education`, `Skill`, `Certification` models cleanly.
-  - Draft Prisma migration (`npx prisma migrate dev --name knowledge-consolidation`).
-  - Adapt `prisma/seed.ts` to populate the new model with education/skill/certification entries mapped to `kind` values.
-- **Commands**
-  - `npx prisma format`
-  - `npx prisma migrate dev --name knowledge-consolidation`
-  - `npx prisma db seed`
-- **Risks & Mitigations**
-  - *Risk*: Historical data loss. *Mitigation*: Export existing tables before dropping (`sqlite3 prisma/dev.db ".dump"`).
-  - *Risk*: Migration conflicts. *Mitigation*: Ensure working tree clean before running migration; review generated SQL.
-
-### Phase 2 – Backend Adaptation
-- **Tasks**
-  - Replace `/api/education`, `/api/skills`, `/api/certifications` with a unified `/api/knowledge` route supporting filtering by `kind`.
-  - Update upload endpoints (`src/app/api/upload/*`) to store media under `knowledgeId`.
-  - Refactor shared data fetcher `src/app/api/data/route.ts` and `src/app/api/aio-config/route.ts` to use the consolidated model.
-  - Adjust TypeScript types (`src/types/*`, per-route DTOs) accordingly.
-- **Commands**
+  - Exercise CRUD flows on `/boss/knowledge`, including media uploads and filtering by `KnowledgeKind`.
+  - Validate SEO and sitemap utilities (`src/app/api/seo/structured-data/generate/route.ts`, `src/components/seo/utils/sitemap-utils.ts`) now that they source `Knowledge` entries.
+  - Audit production/staging databases to confirm historical Education/Skill/Certification rows were migrated into `Knowledge`.
+- **Commands / Checks**
   - `npm run lint`
-  - `npm run test` *(if test suite exists)*
+  - `npm run build`
+  - Manual QA checklist (admin CRUD, homepage render, structured data generator).
 - **Risks & Mitigations**
-  - *Risk*: Client code still calling removed endpoints. *Mitigation*: Provide temporary redirects or refactor all consumers in Phase 3.
-  - *Risk*: Type mismatches. *Mitigation*: Introduce shared TS interfaces that mirror Prisma types via `@prisma/client`.
+  - *Risk*: orphaned media references. *Mitigation*: run reports against `Media` where `knowledgeId` is null and re-associate as needed.
+  - *Risk*: cached clients still calling removed endpoints. *Mitigation*: add HTTP 410 responses or redirects if required.
 
-### Phase 3 – Frontend & Admin UI
+### Phase 2 – UX & Localization Polish
 - **Tasks**
-  - Update admin pages (`src/app/boss/education/page.tsx`, `/boss/skills`, `/boss/certifications`) to a combined `src/app/boss/knowledge/page.tsx` with filtering tabs.
-  - Replace cards (`EducationCard`, `SkillCard`, `CertificationCard`) with a generic `KnowledgeCard`; adjust carousels in `src/app/page.tsx`.
-  - Update navigation labels from `NavbarConfig` to reference "Knowledge" and localized variants.
-  - Ensure media modals and uploads support the new data structure.
-- **Commands**
-  - `npm run lint`
-  - `npm run dev` *(manual QA)*
+  - Review responsive layouts for the Knowledge table and modal; adjust columns and segmented filters for mobile.
+  - Ensure translations exist for new labels (`Knowledge`, enum variants) in `LanguageContext` and UI copy.
+  - Align theming (colors, icons) so Knowledge entries feel consistent with other sections.
+- **Commands / Checks**
+  - `npm run dev` + device toolbar inspection.
+  - Localization diff audit.
 - **Risks & Mitigations**
-  - *Risk*: UX regression. *Mitigation*: Snapshot existing layout before changes; validate after refactor.
-  - *Risk*: Localization gaps. *Mitigation*: Maintain `titleFr`, `descriptionFr`, etc., and adjust `LanguageContext` selectors.
+  - *Risk*: segmented control overflow on small screens. *Mitigation*: collapse into dropdown when viewport < 768px.
 
-### Phase 4 – QA & Documentation
+### Phase 3 – Deployment Readiness & Docs
 - **Tasks**
-  - Run lint/tests and manual smoke tests (login, admin CRUD, homepage sections).
-  - Capture screenshots or notes for regression evidence.
-  - Update `CHANGELOG.md`, README (if necessary), and communicate credential bootstrap logic.
-- **Commands**
-  - `npm run lint`
-  - `npm run test`
-  - `npm run dev` *(manual verification)*
+  - Prepare release notes capturing Knowledge rollout, media handling changes, and admin UI updates.
+  - Update customer-facing documentation/screenshots in `/docs` as needed (API docs, admin guide).
+  - Coordinate rollout timeline and communicate migration expectations to stakeholders.
+- **Commands / Checks**
+  - `npm run build`
+  - `npx prisma migrate deploy`
+  - Proofread docs (`README.md`, `CHANGELOG.md`, `docs/*`).
 - **Risks & Mitigations**
-  - *Risk*: Missed regression. *Mitigation*: Use a checklist covering all affected routes and flows.
+  - *Risk*: overlooked documentation references to removed endpoints. *Mitigation*: global search for `/api/education`, `/boss/education`, etc., prior to release.
 
 ## Dependencies & Coordination
-- Ensure `.env` includes `DEFAULT_ADMIN_EMAIL` / `DEFAULT_ADMIN_PASSWORD` for bootstrap.
-- Confirm no other branches depend on legacy endpoints before removing them.
-- Coordinate database migration timing if deployed environments exist.
+- Confirm environments have applied the latest Prisma migrations (`npx prisma migrate deploy`).
+- Coordinate with design/content teams for updated copy around certifications/awards inside Knowledge.
+- Ensure support/QA teams receive the new admin workflow guide.
 
 ## Rollback Strategy
-- Keep migration reversible by exporting DB before running changes.
-- Retain old route files temporarily under `legacy/` directory in case staged rollback is needed.
-- If frontend refactor fails, redeploy legacy pages using feature flags in `NavbarConfig` to toggle visibility.
+- Preserve the last deployment snapshot prior to Knowledge rollout.
+- Maintain migration SQL backups; a rollback would involve restoring the database snapshot and redeploying the pre-Knowledge build.
+- Feature-flag approach: consider gating the Knowledge UI via configuration to revert to read-only mode if issues arise.
 
 ## Communication Notes
-- Document new knowledge taxonomy for stakeholders (e.g., allowed `KnowledgeKind` values).
-- Provide admin instructions for managing unified entries once UI is updated.
+- Share the Knowledge taxonomy (Education, Certification, Skill, Course, Award) with stakeholders.
+- Provide admin training on filtering, media management, and the new segmented control.
+- Highlight API contract changes for any external consumers.

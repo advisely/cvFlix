@@ -16,7 +16,7 @@ import MediaModal from '@/components/MediaModal';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { convertCompaniesToMultiPeriodExperiences } from '@/utils/experienceUtils'
 import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext';
-import type { Company, Education, Certification, Skill, Media } from '@prisma/client'
+import type { Company, Knowledge, Media } from '@prisma/client'
 
 interface Highlight {
   id: string;
@@ -46,6 +46,8 @@ interface Experience {
     media: Media[];
     homepageMedia?: Media[];
     cardMedia?: Media[];
+    dateRanges?: { startDate: string; endDate: string | null }[];
+    formattedPeriods?: string[];
 }
 
 interface NavbarConfig {
@@ -58,12 +60,8 @@ interface NavbarConfig {
   workExperienceLabelFr: string;
   careerSeriesLabel: string;
   careerSeriesLabelFr: string;
-  educationLabel: string;
-  educationLabelFr: string;
-  certificationsLabel: string;
-  certificationsLabelFr: string;
-  skillsLabel: string;
-  skillsLabelFr: string;
+  knowledgeLabel: string;
+  knowledgeLabelFr: string;
   backgroundColor: string;
   backgroundType: string;
   backgroundImageUrl: string | null;
@@ -73,13 +71,15 @@ interface NavbarConfig {
   logoFontFamily: string;
 }
 
+type KnowledgeWithMedia = Knowledge & { media: Media[] }
+
 export default function Home() {
   const { language } = useLanguage();
   const [data, setData] = useState<{
     portfolioExperiences: (Company & { experiences: Experience[] })[];
-    educations: (Education & { media: Media[] })[];
-    certifications: (Certification & { media: Media[] })[];
-    skills: (Skill & { media: Media[] })[];
+    educations: KnowledgeWithMedia[];
+    certifications: KnowledgeWithMedia[];
+    skills: KnowledgeWithMedia[];
     highlights: Highlight[];
     navbarConfig: NavbarConfig;
   } | null>(null);
@@ -115,12 +115,8 @@ export default function Home() {
             workExperienceLabelFr: 'Portfolio',
             careerSeriesLabel: 'Career Series',
             careerSeriesLabelFr: 'Série de carrière',
-            educationLabel: 'Education',
-            educationLabelFr: 'Éducation',
-            certificationsLabel: 'Certifications',
-            certificationsLabelFr: 'Certifications',
-            skillsLabel: 'Skills',
-            skillsLabelFr: 'Compétences',
+            knowledgeLabel: 'Knowledge',
+            knowledgeLabelFr: 'Connaissances',
             backgroundColor: '#141414',
             backgroundType: 'color',
             backgroundImageUrl: null,
@@ -247,26 +243,10 @@ export default function Home() {
                   </li>
                   <li>
                     <button
-                      onClick={() => scrollToSection('education')}
+                      onClick={() => scrollToSection('knowledge')}
                       className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
                     >
-                      {getLocalizedText(navbarConfig.educationLabel, navbarConfig.educationLabelFr, language)}
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => scrollToSection('certifications')}
-                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                    >
-                      {getLocalizedText(navbarConfig.certificationsLabel, navbarConfig.certificationsLabelFr, language)}
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => scrollToSection('skills')}
-                      className="text-white hover:text-[#e50914] transition-colors duration-200 font-medium"
-                    >
-                      {getLocalizedText(navbarConfig.skillsLabel, navbarConfig.skillsLabelFr, language)}
+                      {getLocalizedText(navbarConfig.knowledgeLabel, navbarConfig.knowledgeLabelFr, language)}
                     </button>
                   </li>
                 </ul>
@@ -390,37 +370,49 @@ export default function Home() {
           </div>
         </div>
 
-        <div id="education" className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.educationLabel}</h2>
-          <Carousel>
-            {educations.map((education: Education) => (
-              <div key={education.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                <EducationCard education={education} />
-              </div>
-            ))}
-          </Carousel>
-        </div>
+        <div id="knowledge" className="mb-8">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">
+            {getLocalizedText(navbarConfig.knowledgeLabel, navbarConfig.knowledgeLabelFr, language)}
+          </h2>
 
-        <div id="certifications" className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.certificationsLabel}</h2>
-          <Carousel>
-            {certifications.map((certification: Certification) => (
-              <div key={certification.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                <CertificationCard certification={certification} />
-              </div>
-            ))}
-          </Carousel>
-        </div>
+          {educations.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg md:text-xl font-semibold mb-3">{language === 'fr' ? 'Éducation' : 'Education'}</h3>
+              <Carousel>
+                {educations.map((education) => (
+                  <div key={education.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
+                    <EducationCard education={education} />
+                  </div>
+                ))}
+              </Carousel>
+            </div>
+          )}
 
-        <div id="skills" className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">{navbarConfig.skillsLabel}</h2>
-          <Carousel>
-            {skills.map((skill: Skill) => (
-              <div key={skill.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                <SkillCard skill={skill} />
-              </div>
-            ))}
-          </Carousel>
+          {certifications.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg md:text-xl font-semibold mb-3">{language === 'fr' ? 'Certifications' : 'Certifications'}</h3>
+              <Carousel>
+                {certifications.map((certification) => (
+                  <div key={certification.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
+                    <CertificationCard certification={certification} />
+                  </div>
+                ))}
+              </Carousel>
+            </div>
+          )}
+
+          {skills.length > 0 && (
+            <div>
+              <h3 className="text-lg md:text-xl font-semibold mb-3">{language === 'fr' ? 'Compétences' : 'Skills'}</h3>
+              <Carousel>
+                {skills.map((skill) => (
+                  <div key={skill.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
+                    <SkillCard skill={skill} />
+                  </div>
+                ))}
+              </Carousel>
+            </div>
+          )}
         </div>
       </div>
 

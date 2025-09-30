@@ -23,21 +23,19 @@ export async function GET() {
       },
     })
 
-    const educations = await prisma.education.findMany({
+    const knowledgeEntries = await prisma.knowledge.findMany({
       include: {
         media: true,
       },
+      orderBy: [
+        { startDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
     })
-    const certifications = await prisma.certification.findMany({
-      include: {
-        media: true,
-      },
-    })
-    const skills = await prisma.skill.findMany({
-      include: {
-        media: true,
-      },
-    })
+
+    const educations = knowledgeEntries.filter((entry) => entry.kind === 'EDUCATION')
+    const certifications = knowledgeEntries.filter((entry) => entry.kind === 'CERTIFICATION')
+    const skills = knowledgeEntries.filter((entry) => entry.kind === 'SKILL')
 
     const highlights = await prisma.highlight.findMany({
       include: {
@@ -61,9 +59,8 @@ export async function GET() {
           useImageLogo: false,
           workExperienceLabel: "Portfolio",
           careerSeriesLabel: "Career Series",
-          educationLabel: "Education",
-          certificationsLabel: "Certifications",
-          skillsLabel: "Skills",
+          knowledgeLabel: "Knowledge",
+          knowledgeLabelFr: "Connaissances",
           backgroundColor: "#141414",
           backgroundType: "color",
           backgroundImageUrl: null,

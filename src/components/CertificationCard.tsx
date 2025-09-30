@@ -1,17 +1,28 @@
 
-import { Certification, Media } from '@prisma/client'
+import { Knowledge, Media } from '@prisma/client'
 import { useState } from 'react'
 
 interface CertificationCardProps {
-  certification: Certification & { media?: Media[] }
+  certification: Knowledge & { media?: Media[] }
 }
 
 const CertificationCard: React.FC<CertificationCardProps> = ({ certification }) => {
-  const { name, issuer, issueDate, media = [] } = certification
+  const {
+    title,
+    issuer,
+    startDate,
+    validUntil,
+    media = [],
+  } = certification
   const [imageError, setImageError] = useState(false)
 
-  const formatDate = (date: Date) => {
-    return new Date(date).getFullYear().toString()
+  const formatYear = (date: Date | string | null | undefined) => {
+    if (!date) return ''
+    const parsedDate = typeof date === 'string' ? new Date(date) : date
+    if (Number.isNaN(parsedDate.getTime())) {
+      return ''
+    }
+    return parsedDate.getFullYear().toString()
   }
 
   const firstImage = media?.find((m: Media) => m.type === 'image')
@@ -24,18 +35,20 @@ const CertificationCard: React.FC<CertificationCardProps> = ({ certification }) 
         {shouldShowImage ? (
           <img
             src={firstImage.url}
-            alt={name}
+            alt={title}
             className="w-full h-full object-cover"
             onError={() => setImageError(true)}
           />
         ) : (
-          <span className="text-[#808080] text-xl font-bold">{issuer.charAt(0)}</span>
+          <span className="text-[#808080] text-xl font-bold">{(issuer || title || 'C').charAt(0)}</span>
         )}
       </div>
       <div className="p-4 flex flex-col">
-        <h3 className="text-lg font-bold text-white">{name}</h3>
-        <p className="text-md font-semibold text-[#e50914]">{issuer}</p>
-        <p className="text-sm text-[#808080] mt-1">{formatDate(issueDate)}</p>
+        <h3 className="text-lg font-bold text-white">{title}</h3>
+        {issuer && <p className="text-md font-semibold text-[#e50914]">{issuer}</p>}
+        <p className="text-sm text-[#808080] mt-1">
+          {[formatYear(startDate), formatYear(validUntil)].filter(Boolean).join(' - ')}
+        </p>
       </div>
     </div>
   )

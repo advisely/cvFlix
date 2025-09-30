@@ -17,11 +17,9 @@ A modern, interactive web application that presents a professional resume in the
 - **Secure authentication** with NextAuth.js and bcrypt password hashing
 - **Full CRUD operations** for all resume sections:
   - Work experiences with accomplishments and projects
-  - Education with media support
-  - Professional certifications with media
-  - Skills organized by categories with media
+  - Knowledge entries (education, certifications, skills, courses, awards) managed from a unified view with filtering
   - Career highlights and achievements
-- **Media upload system** supporting images across all content types
+- **Media upload system** supporting images and videos across all content types, including the Knowledge hub
 - **Appearance customization**:
   - Logo configuration (text or image)
   - Navigation label customization
@@ -120,9 +118,7 @@ The application uses SQLite with Prisma ORM. Key models include:
 - **User** - Admin authentication
 - **Company** - Company information with logos
 - **Experience** - Work experiences with accomplishments and projects
-- **Education** - Educational background
-- **Certification** - Professional certifications
-- **Skill** - Technical and soft skills
+- **Knowledge** - Unified record for education, certifications, skills, courses, awards
 - **Highlight** - Career achievements
 - **NavbarConfig** - Appearance customization settings
 - **Media** - File uploads linked to all content types
@@ -140,11 +136,9 @@ Access the admin panel to customize:
 ### Content Management
 All content can be managed through the admin panel:
 - Add/edit/delete work experiences
-- Upload and manage media files
-- Organize skills by categories
+- Upload and manage media files for experiences, highlights, and knowledge entries
+- Maintain knowledge records across education, certifications, skills, courses, and awards
 - Showcase career highlights
-- Update educational background
-- Manage certifications
 
 ## 🔒 Security Features
 
@@ -186,7 +180,8 @@ Key endpoints:
 - `GET /api/data` - Public resume data
 - `POST /api/auth/login` - Admin authentication
 - `GET /api/experiences` - Work experiences
-- `POST /api/upload` - Media uploads
+- `GET /api/knowledge` - Unified knowledge entries (filterable by `kind`)
+- `POST /api/upload/knowledge` - Media uploads for knowledge entries
 - `GET /api/navbar-config` - Appearance settings
 
 ## 🤝 Contributing

@@ -4,13 +4,13 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 async function main() {
   // Delete all existing data
+  await prisma.media.deleteMany({})
   await prisma.accomplishment.deleteMany({})
   await prisma.project.deleteMany({})
   await prisma.experience.deleteMany({})
+  await prisma.highlight.deleteMany({})
   await prisma.company.deleteMany({})
-  await prisma.skill.deleteMany({})
-  await prisma.education.deleteMany({})
-  await prisma.certification.deleteMany({})
+  await prisma.knowledge.deleteMany({})
   await prisma.user.deleteMany({})
 
   // Admin User
@@ -118,75 +118,154 @@ async function main() {
     ],
   });
 
-  // Education
-  await prisma.education.createMany({
+  // Knowledge entries (Education, Certifications, Skills)
+  await prisma.knowledge.createMany({
     data: [
+      // Education
       {
-        institution: 'École de Commerce de Harvard, Boston, USA',
-        institutionFr: 'École de Commerce de Harvard, Boston, USA',
-        degree: 'Stratégie Innovante',
-        degreeFr: 'Stratégie Innovante',
-        field: 'Commerce',
-        fieldFr: 'Commerce',
+        kind: 'EDUCATION',
+        title: 'Stratégie Innovante',
+        titleFr: 'Stratégie Innovante',
+        issuer: 'École de Commerce de Harvard, Boston, USA',
+        issuerFr: 'École de Commerce de Harvard, Boston, USA',
+        category: 'Commerce',
+        categoryFr: 'Commerce',
         startDate: new Date('2018-01-01'),
+        isCurrent: false,
+        location: 'Boston, USA'
       },
       {
-        institution: 'Université de Moncton, Moncton',
-        institutionFr: 'Université de Moncton, Moncton',
-        degree: 'Maîtrise en gestion des affaires (MBA)',
-        degreeFr: 'Maîtrise en gestion des affaires (MBA)',
-        field: 'Gestion',
-        fieldFr: 'Gestion',
+        kind: 'EDUCATION',
+        title: 'Maîtrise en gestion des affaires (MBA)',
+        titleFr: 'Maîtrise en gestion des affaires (MBA)',
+        issuer: 'Université de Moncton, Moncton',
+        issuerFr: 'Université de Moncton, Moncton',
+        category: 'Gestion',
+        categoryFr: 'Gestion',
         startDate: new Date('2009-01-01'),
+        isCurrent: false,
+        location: 'Moncton, Canada'
       },
       {
-        institution: 'Université de Moncton, Moncton',
-        institutionFr: 'Université de Moncton, Moncton',
-        degree: 'Diplôme en technologie de l\'information (TI)',
-        degreeFr: 'Diplôme en technologie de l\'information (TI)',
-        field: 'Informatique',
-        fieldFr: 'Informatique',
+        kind: 'EDUCATION',
+        title: 'Diplôme en technologie de l\'information (TI)',
+        titleFr: 'Diplôme en technologie de l\'information (TI)',
+        issuer: 'Université de Moncton, Moncton',
+        issuerFr: 'Université de Moncton, Moncton',
+        category: 'Informatique',
+        categoryFr: 'Informatique',
         startDate: new Date('2007-01-01'),
+        isCurrent: false,
+        location: 'Moncton, Canada'
       },
-    ],
-  });
 
-  // Certifications
-  await prisma.certification.createMany({
-    data: [
-      { name: 'Agile Scrum Master', nameFr: 'Agile Scrum Master', issuer: 'CSM', issuerFr: 'CSM', issueDate: new Date('2018-01-01') },
-      { name: 'Information Technology Infrastructure Library', nameFr: 'Information Technology Infrastructure Library', issuer: 'ITIL Foundation', issuerFr: 'ITIL Foundation', issueDate: new Date('2018-01-01') },
-      { name: 'Robotic Process Automation', nameFr: 'Robotic Process Automation', issuer: 'RPA Developer Foundation', issuerFr: 'RPA Developer Foundation', issueDate: new Date('2018-01-01') },
-      { name: 'IBM Blockchain Essentials', nameFr: 'IBM Blockchain Essentials', issuer: 'IBM', issuerFr: 'IBM', issueDate: new Date('2018-01-01') },
-      { name: 'Six Sigma Professionnel – Ceinture noire', nameFr: 'Six Sigma Professionnel – Ceinture noire', issuer: 'SSBBP', issuerFr: 'SSBBP', issueDate: new Date('2017-01-01') },
-      { name: 'Qualifié en gestion des projets', nameFr: 'Qualifié en gestion des projets', issuer: 'PMQ', issuerFr: 'PMQ', issueDate: new Date('2017-01-01') },
-      { name: 'Certifié en gestion exécutive', nameFr: 'Certifié en gestion exécutive', issuer: 'EMC', issuerFr: 'EMC', issueDate: new Date('2016-01-01') },
-      { name: 'Expert en marketing en ligne', nameFr: 'Expert en marketing en ligne', issuer: 'CFE', issuerFr: 'CFE', issueDate: new Date('2014-01-01') },
-      { name: 'Gestion des processus d\'affaires', nameFr: 'Gestion des processus d\'affaires', issuer: 'HEC Montréal', issuerFr: 'HEC Montréal', issueDate: new Date('2015-01-01') },
-      { name: 'Analyse d\'affaires et conception de solutions TI', nameFr: 'Analyse d\'affaires et conception de solutions TI', issuer: 'HEC Montréal', issuerFr: 'HEC Montréal', issueDate: new Date('2014-01-01') },
-      { name: 'Systèmes d\'information en gestion', nameFr: 'Systèmes d\'information en gestion', issuer: 'HEC Montréal', issuerFr: 'HEC Montréal', issueDate: new Date('2014-01-01') },
-    ],
-  });
+      // Certifications
+      {
+        kind: 'CERTIFICATION',
+        title: 'Agile Scrum Master',
+        titleFr: 'Agile Scrum Master',
+        issuer: 'CSM',
+        issuerFr: 'CSM',
+        startDate: new Date('2018-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Information Technology Infrastructure Library',
+        titleFr: 'Information Technology Infrastructure Library',
+        issuer: 'ITIL Foundation',
+        issuerFr: 'ITIL Foundation',
+        startDate: new Date('2018-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Robotic Process Automation',
+        titleFr: 'Robotic Process Automation',
+        issuer: 'RPA Developer Foundation',
+        issuerFr: 'RPA Developer Foundation',
+        startDate: new Date('2018-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'IBM Blockchain Essentials',
+        titleFr: 'IBM Blockchain Essentials',
+        issuer: 'IBM',
+        issuerFr: 'IBM',
+        startDate: new Date('2018-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Six Sigma Professionnel – Ceinture noire',
+        titleFr: 'Six Sigma Professionnel – Ceinture noire',
+        issuer: 'SSBBP',
+        issuerFr: 'SSBBP',
+        startDate: new Date('2017-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Qualifié en gestion des projets',
+        titleFr: 'Qualifié en gestion des projets',
+        issuer: 'PMQ',
+        issuerFr: 'PMQ',
+        startDate: new Date('2017-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Certifié en gestion exécutive',
+        titleFr: 'Certifié en gestion exécutive',
+        issuer: 'EMC',
+        issuerFr: 'EMC',
+        startDate: new Date('2016-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Expert en marketing en ligne',
+        titleFr: 'Expert en marketing en ligne',
+        issuer: 'CFE',
+        issuerFr: 'CFE',
+        startDate: new Date('2014-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Gestion des processus d\'affaires',
+        titleFr: 'Gestion des processus d\'affaires',
+        issuer: 'HEC Montréal',
+        issuerFr: 'HEC Montréal',
+        startDate: new Date('2015-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Analyse d\'affaires et conception de solutions TI',
+        titleFr: 'Analyse d\'affaires et conception de solutions TI',
+        issuer: 'HEC Montréal',
+        issuerFr: 'HEC Montréal',
+        startDate: new Date('2014-01-01')
+      },
+      {
+        kind: 'CERTIFICATION',
+        title: 'Systèmes d\'information en gestion',
+        titleFr: 'Systèmes d\'information en gestion',
+        issuer: 'HEC Montréal',
+        issuerFr: 'HEC Montréal',
+        startDate: new Date('2014-01-01')
+      },
 
-  // Skills
-  await prisma.skill.createMany({
-    data: [
-      { name: 'Analyse d\'affaires', nameFr: 'Analyse d\'affaires', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'Jira & Confluence', nameFr: 'Jira & Confluence', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Expertise bancaire et dans le transport', nameFr: 'Expertise bancaire et dans le transport', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'MS Project & MS Visio aux normes BPMN', nameFr: 'MS Project & MS Visio aux normes BPMN', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Rédaction des requis d\'affaires', nameFr: 'Rédaction des requis d\'affaires', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'MS Office 365 (Word, Excel, PowerPoint & Outlook)', nameFr: 'MS Office 365 (Word, Excel, PowerPoint & Outlook)', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Gestion de projets agile', nameFr: 'Gestion de projets agile', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'Microsoft 365 (Teams, Planner, SharePoint, Azure)', nameFr: 'Microsoft 365 (Teams, Planner, SharePoint, Azure)', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Amélioration Continue Lean Six Sigma', nameFr: 'Amélioration Continue Lean Six Sigma', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'Google Business Suite', nameFr: 'Google Business Suite', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Gestion du changement', nameFr: 'Gestion du changement', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'SAP, SAS, AWS, Splunk, Datadog', nameFr: 'SAP, SAS, AWS, Splunk, Datadog', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Planification stratégique', nameFr: 'Planification stratégique', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'Oracle NetSuite, Kafka Topic', nameFr: 'Oracle NetSuite, Kafka Topic', category: 'Technologie', categoryFr: 'Technologie' },
-      { name: 'Communication interpersonnelle bilingue', nameFr: 'Communication interpersonnelle bilingue', category: 'Compétence', categoryFr: 'Compétence' },
-      { name: 'Dassault Systèmes 3DS', nameFr: 'Dassault Systèmes 3DS', category: 'Technologie', categoryFr: 'Technologie' },
+      // Skills
+      { kind: 'SKILL', title: 'Analyse d\'affaires', titleFr: 'Analyse d\'affaires', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'Jira & Confluence', titleFr: 'Jira & Confluence', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Expertise bancaire et dans le transport', titleFr: 'Expertise bancaire et dans le transport', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'MS Project & MS Visio aux normes BPMN', titleFr: 'MS Project & MS Visio aux normes BPMN', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Rédaction des requis d\'affaires', titleFr: 'Rédaction des requis d\'affaires', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'MS Office 365 (Word, Excel, PowerPoint & Outlook)', titleFr: 'MS Office 365 (Word, Excel, PowerPoint & Outlook)', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Gestion de projets agile', titleFr: 'Gestion de projets agile', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'Microsoft 365 (Teams, Planner, SharePoint, Azure)', titleFr: 'Microsoft 365 (Teams, Planner, SharePoint, Azure)', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Amélioration Continue Lean Six Sigma', titleFr: 'Amélioration Continue Lean Six Sigma', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'Google Business Suite', titleFr: 'Google Business Suite', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Gestion du changement', titleFr: 'Gestion du changement', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'SAP, SAS, AWS, Splunk, Datadog', titleFr: 'SAP, SAS, AWS, Splunk, Datadog', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Planification stratégique', titleFr: 'Planification stratégique', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'Oracle NetSuite, Kafka Topic', titleFr: 'Oracle NetSuite, Kafka Topic', category: 'Technologie', categoryFr: 'Technologie' },
+      { kind: 'SKILL', title: 'Communication interpersonnelle bilingue', titleFr: 'Communication interpersonnelle bilingue', category: 'Compétence', categoryFr: 'Compétence' },
+      { kind: 'SKILL', title: 'Dassault Systèmes 3DS', titleFr: 'Dassault Systèmes 3DS', category: 'Technologie', categoryFr: 'Technologie' }
     ],
   });
 }
