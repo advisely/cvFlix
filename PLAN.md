@@ -1,58 +1,65 @@
-# Implementation Plan: Knowledge Model Rollout (Post-Consolidation)
+# Implementation Plan – Post v6.0.0 Release
+
+## Release Context
+- **Current version**: `v6.0.0` (Contributions & Recommended Books release)
+- **Previous major**: `v5.x` Knowledge model consolidation and media upgrades
+- Refer to `CHANGELOG.md` for the full release timeline and verification steps.
 
 ## Current State
-- Prisma schema, migrations, and seed data now persist the unified `Knowledge` model with `KnowledgeKind` and `KnowledgeLevel` enums.
-- Legacy `/api/education`, `/api/skills`, and `/api/certifications` routes have been removed in favour of `/api/knowledge` and `/api/upload/knowledge`.
-- Admin sidebar points to the new `/boss/knowledge` page, delivering CRUD and media management across all knowledge types.
-- Homepage cards (`EducationCard`, `CertificationCard`, `SkillCard`) consume the consolidated API response without `any` casts.
+- Contributions and Recommended Books stacks are live with dedicated admin pages, APIs, Prisma models, and Vitest coverage.
+- Prisma schema, migrations, and seed data persist the unified `Knowledge` model alongside newly added `Contribution` and `RecommendedBook` models.
+- Legacy `/api/education`, `/api/skills`, and `/api/certifications` routes remain deprecated in favour of `/api/knowledge` and `/api/upload/knowledge`.
+- Admin sidebar now surfaces Knowledge, Contributions, Recommended Books, Media, and Appearance workflows.
+- Homepage renders data in the order: Highlights → Portfolio → Recommended Books → Knowledge → Contributions.
 
 ## Objectives
-1. Harden the new Knowledge workflows through QA, data migration checks, and analytics.
-2. Polish the UX (responsiveness, localization, and theming) to match the refreshed taxonomy.
-3. Finalize documentation, operational runbooks, and deployment guidance for the Knowledge-centric release.
+1. Prepare `v6.1.0` enhancements focused on localization polish and homepage personalization.
+2. Plan `v6.0.1` stability patch to address remaining bug fixes and analytics gaps.
+3. Maintain Knowledge + Media pipelines while expanding reporting for contributions/books engagement metrics.
 
 ## Execution Roadmap
 
-### Phase 1 – QA & Data Validation
+### Phase 1 – v6.0.1 Stability Patch
 - **Tasks**
-  - Exercise CRUD flows on `/boss/knowledge`, including media uploads and filtering by `KnowledgeKind`.
-  - Validate SEO and sitemap utilities (`src/app/api/seo/structured-data/generate/route.ts`, `src/components/seo/utils/sitemap-utils.ts`) now that they source `Knowledge` entries.
-  - Audit production/staging databases to confirm historical Education/Skill/Certification rows were migrated into `Knowledge`.
+  - Audit API error handling for `/api/contributions` and `/api/recommended-books`; add structured error responses.
+  - Extend Vitest coverage for multilingual fallbacks and empty-state UI snapshots.
+  - Verify migrations on staging datasets, focusing on media connect/disconnect behaviour.
 - **Commands / Checks**
+  - `npm run test`
   - `npm run lint`
-  - `npm run build`
-  - Manual QA checklist (admin CRUD, homepage render, structured data generator).
+  - Manual QA: delete/re-create contributions and books with/without media, language toggle checks.
 - **Risks & Mitigations**
-  - *Risk*: orphaned media references. *Mitigation*: run reports against `Media` where `knowledgeId` is null and re-associate as needed.
-  - *Risk*: cached clients still calling removed endpoints. *Mitigation*: add HTTP 410 responses or redirects if required.
+  - *Risk*: orphaned media links after deletions. *Mitigation*: add cleanup scripts and Prisma transactions.
+  - *Risk*: inconsistent localization strings. *Mitigation*: consolidate copy in `LanguageContext` and add tests.
 
-### Phase 2 – UX & Localization Polish
+### Phase 2 – v6.1.0 Enhancements
 - **Tasks**
-  - Review responsive layouts for the Knowledge table and modal; adjust columns and segmented filters for mobile.
-  - Ensure translations exist for new labels (`Knowledge`, enum variants) in `LanguageContext` and UI copy.
-  - Align theming (colors, icons) so Knowledge entries feel consistent with other sections.
+  - Introduce contribution tags/categories for filtering and display on the homepage.
+  - Build recommendation weighting system (priority + categories) for books carousel ordering.
+  - Add analytics dashboards to `/boss` summarizing engagement metrics (views, clicks) once telemetry is in place.
 - **Commands / Checks**
-  - `npm run dev` + device toolbar inspection.
-  - Localization diff audit.
+  - Prototype data structures in Prisma; run `npx prisma migrate dev --name v6_1_feature_prep` in a feature branch.
+  - `npm run dev` for interactive QA, verifying carousel behaviour across breakpoints.
 - **Risks & Mitigations**
-  - *Risk*: segmented control overflow on small screens. *Mitigation*: collapse into dropdown when viewport < 768px.
+  - *Risk*: carousel overload with new filters. *Mitigation*: lazy-load segments and enforce pagination.
+  - *Risk*: analytics integration complexity. *Mitigation*: start with mock data + toggle before full rollout.
 
-### Phase 3 – Deployment Readiness & Docs
+### Phase 3 – Documentation & Release Alignment
 - **Tasks**
-  - Prepare release notes capturing Knowledge rollout, media handling changes, and admin UI updates.
-  - Update customer-facing documentation/screenshots in `/docs` as needed (API docs, admin guide).
-  - Coordinate rollout timeline and communicate migration expectations to stakeholders.
+  - Keep `CHANGELOG.md` aligned with each GitHub push (ensure new entries follow `x.y.z`).
+  - Update `README.md` feature list with any new sections or metrics.
+  - Archive prior release plans under `/docs/` as each major version ships.
 - **Commands / Checks**
   - `npm run build`
   - `npx prisma migrate deploy`
   - Proofread docs (`README.md`, `CHANGELOG.md`, `docs/*`).
 - **Risks & Mitigations**
-  - *Risk*: overlooked documentation references to removed endpoints. *Mitigation*: global search for `/api/education`, `/boss/education`, etc., prior to release.
+  - *Risk*: missing documentation references. *Mitigation*: incorporate doc update checklist per release.
 
 ## Dependencies & Coordination
-- Confirm environments have applied the latest Prisma migrations (`npx prisma migrate deploy`).
-- Coordinate with design/content teams for updated copy around certifications/awards inside Knowledge.
-- Ensure support/QA teams receive the new admin workflow guide.
+- Confirm environments apply `v6.0.0` migrations and seeds (`npx prisma migrate deploy`).
+- Coordinate with design/content teams for updated assets for contributions/books showcases.
+- Ensure support/QA teams receive refreshed admin guides for Knowledge, Contributions, and Recommended Books.
 
 ## Rollback Strategy
 - Preserve the last deployment snapshot prior to Knowledge rollout.
@@ -60,6 +67,6 @@
 - Feature-flag approach: consider gating the Knowledge UI via configuration to revert to read-only mode if issues arise.
 
 ## Communication Notes
-- Share the Knowledge taxonomy (Education, Certification, Skill, Course, Award) with stakeholders.
-- Provide admin training on filtering, media management, and the new segmented control.
-- Highlight API contract changes for any external consumers.
+- Share the Knowledge taxonomy and new Contributions/Recommended Books capabilities with stakeholders.
+- Provide admin training on multilingual workflows, media management, and the updated homepage ordering.
+- Highlight API contract changes for any external consumers, especially the new `/api/contributions` and `/api/recommended-books` endpoints.

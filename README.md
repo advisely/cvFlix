@@ -2,6 +2,8 @@
 
 A modern, interactive web application that presents a professional resume in the style of the Netflix user interface. Built with Next.js 15, TypeScript, and featuring a comprehensive admin panel for content management.
 
+> **Current Version:** `v6.0.0` – Contributions & Recommended Books release. See [`CHANGELOG.md`](CHANGELOG.md) for the full release history and [`PLAN.md`](PLAN.md) for upcoming roadmap milestones.
+
 ## 🎯 Key Features
 
 ### Public Interface
