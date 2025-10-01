@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Button,
   Table,
@@ -12,15 +12,13 @@ import {
   Checkbox,
   message,
   Typography,
-  Tabs,
   Tag,
   Segmented,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import type { KnowledgeKind, KnowledgeLevel, Media } from '@prisma/client'
+import type { KnowledgeKind, KnowledgeLevel } from '@prisma/client'
 import { KnowledgeWithMedia, KnowledgeFormValues } from './types'
-import MediaUploadSection from '@/components/MediaUploadSection'
 
 const { Title, Text } = Typography
 
@@ -40,16 +38,6 @@ const LEVEL_LABELS: Partial<Record<KnowledgeLevel, string>> = {
   MASTER: 'Master',
 }
 
-interface MediaItem extends Media {}
-
-interface KnowledgeFormState {
-  media: MediaItem[]
-}
-
-const DEFAULT_FORM_STATE: KnowledgeFormState = {
-  media: [],
-}
-
 const KnowledgePage = () => {
   const [form] = Form.useForm<KnowledgeFormValues>()
   const [rawData, setRawData] = useState<KnowledgeWithMedia[]>([])
@@ -57,11 +45,10 @@ const KnowledgePage = () => {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<KnowledgeWithMedia | null>(null)
-  const [formState, setFormState] = useState(DEFAULT_FORM_STATE)
   const [activeKindFilter, setActiveKindFilter] = useState<KnowledgeKind | 'ALL'>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch('/api/knowledge')
@@ -80,11 +67,11 @@ const KnowledgePage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void fetchData()
-  }, [])
+  }, [fetchData])
 
   useEffect(() => {
     let data = [...rawData]
@@ -114,80 +101,88 @@ const KnowledgePage = () => {
     setFilteredData(data)
   }, [rawData, activeKindFilter, searchTerm])
 
-  const resetModalState = () => {
+  const resetModalState = useCallback(() => {
     form.resetFields()
-    setFormState(DEFAULT_FORM_STATE)
     setEditingRecord(null)
-  }
+  }, [form])
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     resetModalState()
     setIsModalOpen(true)
-  }
+  }, [resetModalState])
 
-  const handleEdit = (record: KnowledgeWithMedia) => {
-    setEditingRecord(record)
-    form.setFieldsValue({
-      kind: record.kind,
-      title: record.title,
-      titleFr: record.titleFr ?? '',
-      issuer: record.issuer ?? '',
-      issuerFr: record.issuerFr ?? '',
-      category: record.category ?? '',
-      categoryFr: record.categoryFr ?? '',
-      description: record.description ?? '',
-      descriptionFr: record.descriptionFr ?? '',
-      url: record.url ?? '',
-      location: record.location ?? '',
-      startDate: record.startDate ? dayjs(record.startDate) : undefined,
-      endDate: record.endDate ? dayjs(record.endDate) : undefined,
-      validUntil: record.validUntil ? dayjs(record.validUntil) : undefined,
-      isCurrent: record.isCurrent,
-      competencyLevel: record.competencyLevel ?? undefined,
-    })
-    setFormState({
-      media: record.media ?? [],
-    })
-    setIsModalOpen(true)
-  }
+  const handleEdit = useCallback(
+    (record: KnowledgeWithMedia) => {
+      setEditingRecord(record)
+      form.setFieldsValue({
+        kind: record.kind,
+        title: record.title,
+        titleFr: record.titleFr ?? '',
+        issuer: record.issuer ?? '',
+        issuerFr: record.issuerFr ?? '',
+        category: record.category ?? '',
+        categoryFr: record.categoryFr ?? '',
+        description: record.description ?? '',
+        descriptionFr: record.descriptionFr ?? '',
+        url: record.url ?? '',
+        location: record.location ?? '',
+        startDate: record.startDate ? dayjs(record.startDate) : undefined,
+        endDate: record.endDate ? dayjs(record.endDate) : undefined,
+        validUntil: record.validUntil ? dayjs(record.validUntil) : undefined,
+        isCurrent: record.isCurrent,
+        competencyLevel: record.competencyLevel ?? undefined,
+      })
+      setIsModalOpen(true)
+    },
+    [form],
+  )
 
-  const handleDelete = async (record: KnowledgeWithMedia) => {
-    Modal.confirm({
-      title: 'Delete Knowledge Entry',
-      content: `Are you sure you want to delete "${record.title}"?`,
-      okType: 'danger',
-      async onOk() {
-        try {
-          const response = await fetch(`/api/knowledge/${record.id}`, {
-            method: 'DELETE',
-          })
-          if (!response.ok) {
-            throw new Error('Failed to delete knowledge entry')
+  const handleDelete = useCallback(
+    async (record: KnowledgeWithMedia) => {
+      Modal.confirm({
+        title: 'Delete Knowledge Entry',
+        content: `Are you sure you want to delete "${record.title}"?`,
+        okType: 'danger',
+        async onOk() {
+          try {
+            const response = await fetch(`/api/knowledge/${record.id}`, {
+              method: 'DELETE',
+            })
+            if (!response.ok) {
+              throw new Error('Failed to delete knowledge entry')
+            }
+            message.success('Knowledge entry deleted')
+            void fetchData()
+          } catch (error) {
+            console.error('Failed to delete knowledge entry:', error)
+            message.error('Failed to delete knowledge entry')
           }
-          message.success('Knowledge entry deleted')
-          void fetchData()
-        } catch (error) {
-          console.error('Failed to delete knowledge entry:', error)
-          message.error('Failed to delete knowledge entry')
-        }
-      },
-    })
-  }
+        },
+      })
+    },
+    [fetchData],
+  )
 
-  const handleModalCancel = () => {
+  const handleModalCancel = useCallback(() => {
     setIsModalOpen(false)
     resetModalState()
+  }, [resetModalState])
+
+  const serializeDateField = (value: KnowledgeFormValues['startDate']): string | null => {
+    if (!value) {
+      return null
+    }
+    return dayjs.isDayjs(value) ? value.toDate().toISOString() : value
   }
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     try {
       const values = await form.validateFields()
-      const payload: KnowledgeFormValues & { media: { id: string }[] } = {
+      const payload: KnowledgeFormValues = {
         ...values,
-        startDate: values.startDate ? values.startDate.toISOString() : null,
-        endDate: values.endDate ? values.endDate.toISOString() : null,
-        validUntil: values.validUntil ? values.validUntil.toISOString() : null,
-        media: formState.media.map((item) => ({ id: item.id })),
+        startDate: serializeDateField(values.startDate),
+        endDate: serializeDateField(values.endDate),
+        validUntil: serializeDateField(values.validUntil),
       }
 
       const method = editingRecord ? 'PUT' : 'POST'
@@ -214,14 +209,7 @@ const KnowledgePage = () => {
       console.error('Failed to save knowledge entry:', error)
       message.error('Failed to save knowledge entry')
     }
-  }
-
-  const handleMediaUpdate = (media: MediaItem[]) => {
-    setFormState((prev) => ({
-      ...prev,
-      media,
-    }))
-  }
+  }, [editingRecord, fetchData, form, resetModalState])
 
   const columns: ColumnsType<KnowledgeWithMedia> = useMemo(() => {
     const renderDateRange = (record: KnowledgeWithMedia) => {
@@ -254,8 +242,8 @@ const KnowledgePage = () => {
           text: label,
           value,
         })),
-        onFilter: (value, record) => record.kind === value,
-        render: (kind) => <Tag color="geekblue">{KNOWLEDGE_KIND_LABELS[kind]}</Tag>,
+        onFilter: (value, record) => record.kind === (value as KnowledgeKind),
+        render: (kind: KnowledgeKind) => <Tag color="geekblue">{KNOWLEDGE_KIND_LABELS[kind]}</Tag>,
       },
       {
         title: 'Issuer / Category',
@@ -276,7 +264,7 @@ const KnowledgePage = () => {
         title: 'Media',
         dataIndex: 'media',
         key: 'media',
-        render: (media: Media[]) => `${media?.length || 0} asset${media?.length === 1 ? '' : 's'}`,
+        render: (media: KnowledgeWithMedia['media']) => `${media?.length || 0} asset${media?.length === 1 ? '' : 's'}`,
       },
       {
         title: 'Actions',
@@ -293,7 +281,7 @@ const KnowledgePage = () => {
         ),
       },
     ]
-  }, [])
+  }, [handleDelete, handleEdit])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -337,108 +325,84 @@ const KnowledgePage = () => {
         onCancel={handleModalCancel}
         onOk={() => void handleSave()}
         okText={editingRecord ? 'Update' : 'Create'}
-        destroyOnClose
+        destroyOnHidden
         width={800}
       >
-        <Tabs
-          defaultActiveKey="content"
-          items={[
-            {
-              key: 'content',
-              label: 'Content',
-              children: (
-                <Form form={form} layout="vertical" initialValues={{ kind: 'EDUCATION', isCurrent: false }}>
-                  <Form.Item
-                    name="kind"
-                    label="Kind"
-                    rules={[{ required: true, message: 'Kind is required' }]}
-                  >
-                    <Select options={Object.entries(KNOWLEDGE_KIND_LABELS).map(([value, label]) => ({ value, label }))} />
-                  </Form.Item>
+        <Form form={form} layout="vertical" initialValues={{ kind: 'EDUCATION', isCurrent: false }}>
+          <Form.Item
+            name="kind"
+            label="Kind"
+            rules={[{ required: true, message: 'Kind is required' }]}
+          >
+            <Select options={Object.entries(KNOWLEDGE_KIND_LABELS).map(([value, label]) => ({ value, label }))} />
+          </Form.Item>
 
-                  <Form.Item
-                    name="title"
-                    label="Title"
-                    rules={[{ required: true, message: 'Title is required' }]}
-                  >
-                    <Input />
-                  </Form.Item>
+          <Form.Item
+            name="title"
+            label="Title"
+            rules={[{ required: true, message: 'Title is required' }]}
+          >
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="titleFr" label="Title (French)">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="titleFr" label="Title (French)">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="issuer" label="Issuer / Institution">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="issuer" label="Issuer / Institution">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="issuerFr" label="Issuer / Institution (French)">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="issuerFr" label="Issuer / Institution (French)">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="category" label="Category">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="category" label="Category">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="categoryFr" label="Category (French)">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="categoryFr" label="Category (French)">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="description" label="Description">
-                    <Input.TextArea rows={4} />
-                  </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={4} />
+          </Form.Item>
 
-                  <Form.Item name="descriptionFr" label="Description (French)">
-                    <Input.TextArea rows={4} />
-                  </Form.Item>
+          <Form.Item name="descriptionFr" label="Description (French)">
+            <Input.TextArea rows={4} />
+          </Form.Item>
 
-                  <Form.Item name="url" label="URL">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="url" label="URL">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="location" label="Location">
-                    <Input />
-                  </Form.Item>
+          <Form.Item name="location" label="Location">
+            <Input />
+          </Form.Item>
 
-                  <Form.Item name="competencyLevel" label="Competency Level">
-                    <Select allowClear options={Object.entries(LEVEL_LABELS).map(([value, label]) => ({ value, label }))} />
-                  </Form.Item>
+          <Form.Item name="competencyLevel" label="Competency Level">
+            <Select allowClear options={Object.entries(LEVEL_LABELS).map(([value, label]) => ({ value, label }))} />
+          </Form.Item>
 
-                  <Form.Item label="Dates">
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <Form.Item name="startDate" style={{ flex: 1 }}>
-                        <DatePicker style={{ width: '100%' }} picker="month" />
-                      </Form.Item>
-                      <Form.Item name="endDate" style={{ flex: 1 }}>
-                        <DatePicker style={{ width: '100%' }} picker="month" />
-                      </Form.Item>
-                      <Form.Item name="isCurrent" valuePropName="checked" style={{ marginBottom: 0 }}>
-                        <Checkbox>Current</Checkbox>
-                      </Form.Item>
-                    </div>
-                  </Form.Item>
+          <Form.Item label="Dates">
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Form.Item name="startDate" style={{ flex: 1 }}>
+                <DatePicker style={{ width: '100%' }} picker="month" />
+              </Form.Item>
+              <Form.Item name="endDate" style={{ flex: 1 }}>
+                <DatePicker style={{ width: '100%' }} picker="month" />
+              </Form.Item>
+              <Form.Item name="isCurrent" valuePropName="checked" style={{ marginBottom: 0 }}>
+                <Checkbox>Current</Checkbox>
+              </Form.Item>
+            </div>
+          </Form.Item>
 
-                  <Form.Item name="validUntil" label="Valid Until">
-                    <DatePicker style={{ width: '100%' }} picker="month" />
-                  </Form.Item>
-                </Form>
-              ),
-            },
-            {
-              key: 'media',
-              label: 'Media',
-              children: (
-                <MediaUploadSection
-                  existingMedia={formState.media}
-                  onChange={handleMediaUpdate}
-                  entityId={editingRecord?.id ?? 'new'}
-                  uploadEndpoint="/api/upload/knowledge"
-                  entityLabel="knowledge entry"
-                />
-              ),
-            },
-          ]}
-        />
+          <Form.Item name="validUntil" label="Valid Until">
+            <DatePicker style={{ width: '100%' }} picker="month" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   )

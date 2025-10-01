@@ -1,3 +1,4 @@
+import type { Dayjs } from 'dayjs'
 import { Knowledge, KnowledgeKind, KnowledgeLevel, Media } from '@prisma/client'
 
 export type KnowledgeWithMedia = Knowledge & {
@@ -16,9 +17,9 @@ export interface KnowledgeFormValues {
   descriptionFr?: string | null
   url?: string | null
   location?: string | null
-  startDate?: string | null
-  endDate?: string | null
-  validUntil?: string | null
+  startDate?: Dayjs | string | null
+  endDate?: Dayjs | string | null
+  validUntil?: Dayjs | string | null
   isCurrent?: boolean
   competencyLevel?: KnowledgeLevel | null
 }

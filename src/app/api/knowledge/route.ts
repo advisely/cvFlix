@@ -34,6 +34,7 @@ type KnowledgePayload = {
   isCurrent?: boolean
   url?: string | null
   location?: string | null
+  media?: { id: string }[]
 }
 
 export async function GET(request: NextRequest) {
@@ -71,12 +72,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid knowledge kind' }, { status: 400 })
     }
 
+    const { media, startDate, endDate, validUntil, ...baseData } = data
+
     const knowledge = await prisma.knowledge.create({
       data: {
-        ...data,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
-        validUntil: data.validUntil ? new Date(data.validUntil) : null,
+        ...baseData,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        validUntil: validUntil ? new Date(validUntil) : null,
+        ...(media?.length
+          ? {
+              media: {
+                connect: media.map(({ id }) => ({ id })),
+              },
+            }
+          : {}),
       },
       include: includeMedia,
     })
