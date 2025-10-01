@@ -37,6 +37,27 @@ export async function GET() {
     const certifications = knowledgeEntries.filter((entry) => entry.kind === 'CERTIFICATION')
     const skills = knowledgeEntries.filter((entry) => entry.kind === 'SKILL')
 
+    const contributions = await prisma.contribution.findMany({
+      include: {
+        media: true,
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { startDate: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    })
+
+    const recommendedBooks = await prisma.recommendedBook.findMany({
+      include: {
+        media: true,
+      },
+      orderBy: [
+        { priority: 'asc' },
+        { title: 'asc' },
+      ],
+    })
+
     const highlights = await prisma.highlight.findMany({
       include: {
         company: true,
@@ -92,6 +113,8 @@ export async function GET() {
       skills,
       highlights,
       navbarConfig,
+      contributions,
+      recommendedBooks,
     })
   } catch (error) {
     console.error('Failed to fetch data:', error)

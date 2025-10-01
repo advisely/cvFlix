@@ -3,7 +3,7 @@
 import React from 'react';
 
 interface SkeletonCardProps {
-  type?: 'movie' | 'series' | 'education' | 'certification' | 'skill';
+  type?: 'movie' | 'series' | 'education' | 'certification' | 'skill' | 'contribution' | 'book';
 }
 
 const SkeletonCard: React.FC<SkeletonCardProps> = ({ type = 'movie' }) => {
@@ -15,6 +15,8 @@ const SkeletonCard: React.FC<SkeletonCardProps> = ({ type = 'movie' }) => {
       case 'education':
       case 'certification':
       case 'skill':
+      case 'contribution':
+      case 'book':
         return 'h-40';
       case 'movie':
       default:

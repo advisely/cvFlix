@@ -5,7 +5,7 @@ import SkeletonCard from './SkeletonCard';
 
 interface SkeletonCarouselProps {
   title: string;
-  cardType?: 'movie' | 'series' | 'education' | 'certification' | 'skill';
+  cardType?: 'movie' | 'series' | 'education' | 'certification' | 'skill' | 'contribution' | 'book';
   count?: number;
 }
 
@@ -14,8 +14,9 @@ const SkeletonCarousel: React.FC<SkeletonCarouselProps> = ({
   cardType = 'movie',
   count = 3 
 }) => {
+  const testId = `skeleton-${title.replace(/\s+/g, '-')}`;
   return (
-    <div className="mb-8">
+    <div className="mb-8" data-testid={testId}>
       <div className="h-6 bg-[#404040] rounded mb-4 w-1/3 animate-pulse"></div>
       <div className="relative">
         <div className="overflow-hidden">

@@ -9,8 +9,12 @@ A modern, interactive web application that presents a professional resume in the
 - **Responsive carousels** for browsing different content sections
 - **Movie cards** for single work experiences
 - **Series cards** for companies with multiple roles (with compound date display)
+- **Contribution showcase** highlighting open-source, corporate, and community work with media modals
+- **Recommended reading banner** presenting curated books with priority ordering
 - **Multi-period experience support** showing compound dates (e.g., "2016 - 2018 - 2022")
 - **Skeleton loading states** for smooth user experience
+- **Automatic homepage refresh** that periodically pulls new data from the API
+- Optional integration with libraries such as SWR or React Query if you prefer focus-triggered revalidation instead of polling
 - **Mobile-first responsive design** that works on all devices
 
 ### Admin Panel (`/boss`)
@@ -19,6 +23,8 @@ A modern, interactive web application that presents a professional resume in the
   - Work experiences with accomplishments and projects
   - Knowledge entries (education, certifications, skills, courses, awards) managed from a unified view with filtering
   - Career highlights and achievements
+  - Contributions with multilingual support and media gallery integration
+  - Recommended books with priority ordering and media attachments
 - **Media upload system** supporting images and videos across all content types, including the Knowledge hub
 - **Appearance customization**:
   - Logo configuration (text or image)

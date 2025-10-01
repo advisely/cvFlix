@@ -88,6 +88,55 @@ model Knowledge {
   @@index([category])
 }
 
+model Contribution {
+  id              String            @id @default(cuid())
+  title           String
+  titleFr         String?
+  organization    String?
+  organizationFr  String?
+  role            String?
+  roleFr          String?
+  description     String?
+  descriptionFr   String?
+  type            ContributionType @default(OPEN_SOURCE)
+  impact          String?
+  impactFr        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  isCurrent       Boolean          @default(false)
+  url             String?
+  downloadUrl     String?
+  thumbnailUrl    String?
+  displayOrder    Int              @default(0)
+  media           Media[]          @relation("ContributionMedia")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([type])
+  @@index([startDate])
+}
+
+model RecommendedBook {
+  id                   String    @id @default(cuid())
+  title                String
+  titleFr              String?
+  author               String
+  authorFr             String?
+  recommendedReason    String?
+  recommendedReasonFr  String?
+  summary              String?
+  summaryFr            String?
+  purchaseUrl          String?
+  priority             Int       @default(0)
+  coverImageUrl        String?
+  media                Media[]   @relation("BookMedia")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([priority])
+  @@index([title])
+}
+
 enum KnowledgeKind {
   EDUCATION
   CERTIFICATION
@@ -102,6 +151,14 @@ enum KnowledgeLevel {
   ADVANCED
   EXPERT
   MASTER
+}
+
+enum ContributionType {
+  OPEN_SOURCE
+  CORPORATE
+  COMMUNITY
+  RESEARCH
+  THOUGHT_LEADERSHIP
 }
 
 model Project {
@@ -180,11 +237,15 @@ model Media {
   highlightId          String?
   highlightHomepageId  String?
   highlightCardId      String?
+  contributionId       String?
+  bookId               String?
   createdAt            DateTime       @default(now())
   highlightCard        Highlight?     @relation("HighlightCardMedia", fields: [highlightCardId], references: [id])
   highlightHomepage    Highlight?     @relation("HighlightHomepageMedia", fields: [highlightHomepageId], references: [id])
   highlight            Highlight?     @relation("HighlightMedia", fields: [highlightId], references: [id])
   knowledge            Knowledge?     @relation("KnowledgeMedia", fields: [knowledgeId], references: [id])
+  contribution         Contribution?  @relation("ContributionMedia", fields: [contributionId], references: [id])
+  recommendedBook      RecommendedBook? @relation("BookMedia", fields: [bookId], references: [id])
   experienceCard       Experience?    @relation("ExperienceCardMedia", fields: [experienceCardId], references: [id])
   experienceHomepage   Experience?    @relation("ExperienceHomepageMedia", fields: [experienceHomepageId], references: [id])
   experience           Experience?    @relation("ExperienceMedia", fields: [experienceId], references: [id])

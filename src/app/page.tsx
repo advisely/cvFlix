@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { MultiPeriodExperience } from '@/components/ExperienceCard'
 import ExperienceCard from '@/components/ExperienceCard'
@@ -9,14 +9,17 @@ import { Carousel } from '@/components/Carousel'
 import EducationCard from '@/components/EducationCard'
 import CertificationCard from '@/components/CertificationCard'
 import SkillCard from '@/components/SkillCard'
+import ContributionCard from '@/components/ContributionCard'
 import HighlightCardGrid from '@/components/HighlightCardGrid'
 import SkeletonCarousel from '@/components/SkeletonCarousel'
+import { Card } from 'antd'
 import Footer from '@/components/Footer'
 import MediaModal from '@/components/MediaModal';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { convertCompaniesToMultiPeriodExperiences } from '@/utils/experienceUtils'
+import { convertCompaniesToMultiPeriodExperiences, type CompanyWithExperiences } from '@/utils/experienceUtils'
 import { useLanguage, getLocalizedText } from '@/contexts/LanguageContext';
 import type { Company, Knowledge, Media } from '@prisma/client'
+import dayjs from 'dayjs'
 
 interface Highlight {
   id: string;
@@ -46,8 +49,8 @@ interface Experience {
     media: Media[];
     homepageMedia?: Media[];
     cardMedia?: Media[];
-    dateRanges?: { startDate: string; endDate: string | null }[];
-    formattedPeriods?: string[];
+    dateRanges?: { id: string; startDate: string; endDate: string | null; isCurrent: boolean }[];
+    formattedPeriods?: string;
 }
 
 interface NavbarConfig {
@@ -73,77 +76,185 @@ interface NavbarConfig {
 
 type KnowledgeWithMedia = Knowledge & { media: Media[] }
 
+interface Contribution {
+  id: string
+  title: string
+  titleFr: string | null
+  organization: string | null
+  organizationFr: string | null
+  role: string | null
+  roleFr: string | null
+  description: string | null
+  descriptionFr: string | null
+  type: string
+  impact: string | null
+  impactFr: string | null
+  startDate: string | null
+  endDate: string | null
+  isCurrent: boolean
+  url: string | null
+  downloadUrl: string | null
+  thumbnailUrl: string | null
+  displayOrder: number | null
+  media: Media[]
+}
+
+interface RecommendedBook {
+  id: string
+  title: string
+  titleFr: string | null
+  author: string
+  authorFr: string | null
+  summary: string | null
+  summaryFr: string | null
+  recommendedReason: string | null
+  recommendedReasonFr: string | null
+  purchaseUrl: string | null
+  priority: number
+  coverImageUrl: string | null
+  media: Media[]
+}
+
+type HomeResponse = {
+  portfolioExperiences: CompanyWithExperiences[]
+  educations: KnowledgeWithMedia[]
+  certifications: KnowledgeWithMedia[]
+  skills: KnowledgeWithMedia[]
+  highlights: Highlight[]
+  contributions: Contribution[]
+  recommendedBooks: RecommendedBook[]
+  navbarConfig: NavbarConfig
+}
+
+const DEFAULT_HOME_DATA: HomeResponse = {
+  portfolioExperiences: [],
+  educations: [],
+  certifications: [],
+  skills: [],
+  highlights: [],
+  contributions: [],
+  recommendedBooks: [],
+  navbarConfig: {
+    id: '',
+    logoText: 'resumeflex',
+    logoTextFr: 'resumeflex',
+    logoImageUrl: null,
+    useImageLogo: false,
+    workExperienceLabel: 'Portfolio',
+    workExperienceLabelFr: 'Portfolio',
+    careerSeriesLabel: 'Career Series',
+    careerSeriesLabelFr: 'Série de carrière',
+    knowledgeLabel: 'Knowledge',
+    knowledgeLabelFr: 'Connaissances',
+    backgroundColor: '#141414',
+    backgroundType: 'color',
+    backgroundImageUrl: null,
+    gradientFrom: '#141414',
+    gradientTo: '#1a1a1a',
+    fontFamily: 'Inter',
+    logoFontFamily: 'Inter',
+  },
+}
+
+const AUTO_REFRESH_INTERVAL_MS = 60_000
+
 export default function Home() {
   const { language } = useLanguage();
-  const [data, setData] = useState<{
-    portfolioExperiences: (Company & { experiences: Experience[] })[];
-    educations: KnowledgeWithMedia[];
-    certifications: KnowledgeWithMedia[];
-    skills: KnowledgeWithMedia[];
-    highlights: Highlight[];
-    navbarConfig: NavbarConfig;
-  } | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<HomeResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
   const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [selectedExperience, setSelectedExperience] = useState<MultiPeriodExperience | null>(null);
+  const [selectedContribution, setSelectedContribution] = useState<Contribution | null>(null);
   const [isHighlightModalOpen, setIsHighlightModalOpen] = useState(false);
   const [isExperienceModalOpen, setIsExperienceModalOpen] = useState(false);
+  const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
   const [multiPeriodExperiences, setMultiPeriodExperiences] = useState<MultiPeriodExperience[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/data');
-        const result = await response.json();
-        setData(result);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setData({
-          portfolioExperiences: [],
-          educations: [],
-          certifications: [],
-          skills: [],
-          highlights: [],
-          navbarConfig: {
-            id: '',
-            logoText: 'resumeflex',
-            logoTextFr: 'resumeflex',
-            logoImageUrl: null,
-            useImageLogo: false,
-            workExperienceLabel: 'Portfolio',
-            workExperienceLabelFr: 'Portfolio',
-            careerSeriesLabel: 'Career Series',
-            careerSeriesLabelFr: 'Série de carrière',
-            knowledgeLabel: 'Knowledge',
-            knowledgeLabelFr: 'Connaissances',
-            backgroundColor: '#141414',
-            backgroundType: 'color',
-            backgroundImageUrl: null,
-            gradientFrom: '#141414',
-            gradientTo: '#1a1a1a',
-            fontFamily: 'Inter',
-            logoFontFamily: 'Inter'
-          }
-        });
-      } finally {
-        setLoading(false);
+  const fetchData = useCallback(async ({ showSpinner = false } = {}) => {
+    try {
+      if (showSpinner) {
+        setLoading(true)
       }
-    };
+      setError(null)
 
-    fetchData();
-  }, []);
+      const response = await fetch('/api/data', { cache: 'no-store' })
+      if (!response.ok) {
+        throw new Error('Failed to fetch homepage data')
+      }
+      const payload = (await response.json()) as Partial<HomeResponse>
+      setData({
+        ...DEFAULT_HOME_DATA,
+        ...payload,
+        portfolioExperiences: (payload.portfolioExperiences ?? DEFAULT_HOME_DATA.portfolioExperiences) as CompanyWithExperiences[],
+        educations: payload.educations ?? DEFAULT_HOME_DATA.educations,
+        certifications: payload.certifications ?? DEFAULT_HOME_DATA.certifications,
+        skills: payload.skills ?? DEFAULT_HOME_DATA.skills,
+        highlights: payload.highlights ?? DEFAULT_HOME_DATA.highlights,
+        contributions: payload.contributions ?? DEFAULT_HOME_DATA.contributions,
+        recommendedBooks: payload.recommendedBooks ?? DEFAULT_HOME_DATA.recommendedBooks,
+        navbarConfig: payload.navbarConfig ?? DEFAULT_HOME_DATA.navbarConfig,
+      })
+    } catch (err) {
+      console.error('Failed to fetch homepage data:', err)
+      setError(err as Error)
+      setData({ ...DEFAULT_HOME_DATA })
+    } finally {
+      if (showSpinner) {
+        setLoading(false)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    void fetchData({ showSpinner: true })
+  }, [fetchData])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchData()
+      }
+    }
+
+    const handleOnline = () => {
+      if (navigator.onLine) {
+        void fetchData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+
+    let intervalId: number | undefined
+    if (AUTO_REFRESH_INTERVAL_MS > 0) {
+      intervalId = window.setInterval(() => {
+        void fetchData()
+      }, AUTO_REFRESH_INTERVAL_MS)
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
+    }
+  }, [fetchData])
+
+  const resolvedData = data ?? DEFAULT_HOME_DATA
 
   // Process portfolio experiences into multi-period format
   useEffect(() => {
-    if (data?.portfolioExperiences) {
-      const multiPeriod = convertCompaniesToMultiPeriodExperiences(data.portfolioExperiences);
+    if (resolvedData.portfolioExperiences) {
+      const multiPeriod = convertCompaniesToMultiPeriodExperiences(resolvedData.portfolioExperiences);
       setMultiPeriodExperiences(multiPeriod);
     }
-  }, [data?.portfolioExperiences]);
+  }, [resolvedData.portfolioExperiences]);
 
-
-  if (loading) {
+  if (loading && !data) {
     return (
       <main className="bg-[#141414] text-white min-h-screen">
         <div className="p-4 md:p-8">
@@ -152,12 +263,13 @@ export default function Home() {
           <SkeletonCarousel title="Education" cardType="education" count={2} />
           <SkeletonCarousel title="Certifications" cardType="certification" count={2} />
           <SkeletonCarousel title="Skills" cardType="skill" count={3} />
+          <SkeletonCarousel title="Contributions" cardType="contribution" count={3} />
         </div>
       </main>
     );
   }
 
-  if (!data) {
+  if (error && !data) {
     return (
       <main className="bg-[#141414] text-white min-h-screen">
         <div className="p-4 md:p-8">
@@ -168,7 +280,7 @@ export default function Home() {
     );
   }
 
-  const { educations, certifications, skills, highlights, navbarConfig } = data;
+  const { educations, certifications, skills, highlights, contributions, recommendedBooks, navbarConfig } = resolvedData;
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -346,29 +458,67 @@ export default function Home() {
                   showTimeline={false}
                   maxTimelineRanges={3}
                   onClick={() => {
-                    // For modal display, use the first media from the experience
-                    const firstMedia = experience.cardMedia?.[0] || experience.media?.[0] || experience.homepageMedia?.[0];
-                    if (firstMedia) {
-                      setSelectedExperience({
-                        ...experience,
-                        company: experience.company,
-                        cardMedia: experience.cardMedia,
-                        media: experience.media,
-                        homepageMedia: experience.homepageMedia,
-                        // For compound cards, show the formatted periods in the modal
-                        startDate: experience.earliestStartDate,
-                        endDate: experience.latestEndDate,
-                        dateRanges: experience.dateRanges,
-                        formattedPeriods: experience.formattedPeriods
-                      } as any);
-                      setIsExperienceModalOpen(true);
-                    }
+                    setSelectedExperience(experience)
+                    setIsExperienceModalOpen(true)
                   }}
                 />
               </div>
             ))}
           </div>
         </div>
+
+        {recommendedBooks.length > 0 && (
+          <section id="recommended-books" className="mb-12">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <h2 className="text-xl md:text-2xl font-bold">
+                {language === 'fr' ? 'Livres recommandés' : 'Recommended Books'}
+              </h2>
+              <p className="text-sm text-white/70 max-w-2xl">
+                {language === 'fr'
+                  ? 'Une sélection de lectures qui complètent le portefeuille professionnel.'
+                  : 'A curated list of reads that complement the professional portfolio.'}
+              </p>
+            </div>
+
+            <Carousel>
+              {recommendedBooks.map((book) => (
+                <div
+                  key={book.id}
+                  className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2"
+                >
+                  <Card className="bg-[#303030] border border-[#404040] text-white shadow-lg min-h-[240px]" data-testid="recommended-book-card">
+                    <div className="flex flex-col gap-3">
+                      <header>
+                        <h3 className="text-lg font-bold leading-tight">{getLocalizedText(book.title, book.titleFr, language)}</h3>
+                        <p className="text-sm text-[#e50914] font-semibold">
+                          {getLocalizedText(book.author, book.authorFr, language)}
+                        </p>
+                      </header>
+                      {book.summary && (
+                        <p className="text-sm text-white/70 line-clamp-3">
+                          {getLocalizedText(book.summary, book.summaryFr, language)}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
+                        <span>#{book.priority}</span>
+                        {book.purchaseUrl && (
+                          <a
+                            href={book.purchaseUrl}
+                            className="text-[#e50914] hover:text-white transition-colors"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {language === 'fr' ? 'Acheter' : 'Buy'}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              ))}
+            </Carousel>
+          </section>
+        )}
 
         <div id="knowledge" className="mb-8">
           <h2 className="text-xl md:text-2xl font-bold mb-4">
@@ -391,39 +541,73 @@ export default function Home() {
           {certifications.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg md:text-xl font-semibold mb-3">{language === 'fr' ? 'Certifications' : 'Certifications'}</h3>
-              <Carousel>
-                {certifications.map((certification) => (
-                  <div key={certification.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                    <CertificationCard certification={certification} />
-                  </div>
-                ))}
-              </Carousel>
+              {certifications.length > 0 && (
+                <Carousel>
+                  {certifications.map((certification) => (
+                    <div key={certification.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
+                      <CertificationCard certification={certification} />
+                    </div>
+                  ))}
+                </Carousel>
+              )}
             </div>
           )}
 
           {skills.length > 0 && (
             <div>
               <h3 className="text-lg md:text-xl font-semibold mb-3">{language === 'fr' ? 'Compétences' : 'Skills'}</h3>
-              <Carousel>
-                {skills.map((skill) => (
-                  <div key={skill.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
-                    <SkillCard skill={skill} />
-                  </div>
-                ))}
-              </Carousel>
+              {skills.length > 0 && (
+                <Carousel>
+                  {skills.map((skill) => (
+                    <div key={skill.id} className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2">
+                      <SkillCard skill={skill} />
+                    </div>
+                  ))}
+                </Carousel>
+              )}
             </div>
           )}
         </div>
+
+        {contributions.length > 0 && (
+          <section id="contributions" className="mb-12">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <h2 className="text-xl md:text-2xl font-bold">
+                {language === 'fr' ? 'Contributions' : 'Contributions'}
+              </h2>
+              <p className="text-sm text-white/70 max-w-2xl">
+                {language === 'fr'
+                  ? 'Une sélection de contributions open source, corporatives et communautaires qui démontrent un engagement continu.'
+                  : 'A curated set of open-source, corporate, and community contributions showcasing ongoing impact.'}
+              </p>
+            </div>
+
+            <Carousel>
+              {contributions.map((contribution) => (
+                <div
+                  key={contribution.id}
+                  className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2"
+                >
+                  <ContributionCard
+                    contribution={contribution}
+                    onSelect={() => {
+                      setSelectedContribution(contribution);
+                      setIsContributionModalOpen(true);
+                    }}
+                  />
+                </div>
+              ))}
+            </Carousel>
+          </section>
+        )}
       </div>
 
       <Footer />
-
       {selectedHighlight && selectedHighlight.cardMedia?.[0] && (
         <MediaModal
           isVisible={isHighlightModalOpen}
           onClose={() => {
             setIsHighlightModalOpen(false);
-            setSelectedHighlight(null);
           }}
           media={selectedHighlight.cardMedia[0]}
           highlightTitle={getLocalizedText(selectedHighlight.title, selectedHighlight.titleFr, language)}
@@ -433,24 +617,60 @@ export default function Home() {
         />
       )}
 
-      {selectedExperience && (selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0] || selectedExperience.homepageMedia?.[0]) && (
+      {selectedExperience && (
+        (() => {
+          const mediaSource = selectedExperience.cardMedia?.[0] ?? selectedExperience.media?.[0] ?? selectedExperience.homepageMedia?.[0]
+
+          if (!mediaSource) {
+            return null
+          }
+
+          return (
+            <MediaModal
+              isVisible={isExperienceModalOpen}
+              onClose={() => {
+                setIsExperienceModalOpen(false);
+                setSelectedExperience(null);
+              }}
+              media={mediaSource}
+              highlightTitle={selectedExperience.title}
+              company={selectedExperience.company.name}
+              description={selectedExperience.description}
+              startDate={selectedExperience.earliestStartDate}
+              endDate={selectedExperience.latestEndDate}
+              dateRanges={selectedExperience.dateRanges?.map((range) => ({
+                id: range.id,
+                startDate: range.startDate,
+                endDate: range.endDate ?? null,
+                isCurrent: range.isCurrent ?? false,
+              }))}
+              formattedPeriods={selectedExperience.formattedPeriods}
+            />
+          )
+        })()
+      )}
+
+      {selectedContribution && selectedContribution.media?.[0] && (
         <MediaModal
-          isVisible={isExperienceModalOpen}
+          isVisible={isContributionModalOpen}
           onClose={() => {
-            setIsExperienceModalOpen(false);
-            setSelectedExperience(null);
+            setIsContributionModalOpen(false)
+            setSelectedContribution(null)
           }}
-          media={selectedExperience.cardMedia?.[0] || selectedExperience.media?.[0] || selectedExperience.homepageMedia?.[0]}
-          highlightTitle={selectedExperience.title}
-          company={selectedExperience.company.name}
-          description={selectedExperience.description}
-          startDate={selectedExperience.startDate}
-          endDate={selectedExperience.endDate}
-          dateRanges={selectedExperience.dateRanges}
-          formattedPeriods={selectedExperience.formattedPeriods}
+          media={selectedContribution.media[0]}
+          highlightTitle={getLocalizedText(selectedContribution.title, selectedContribution.titleFr, language)}
+          company={getLocalizedText(selectedContribution.organization, selectedContribution.organizationFr, language) ?? undefined}
+          description={getLocalizedText(selectedContribution.description, selectedContribution.descriptionFr, language) ?? undefined}
+          startDate={selectedContribution.startDate ?? undefined}
+          endDate={selectedContribution.endDate ?? undefined}
         />
       )}
 
     </main>
   );
+}
+
+const TooltipContent = ({ text }: { text: string }) => {
+  const truncated = text.length > 120 ? `${text.slice(0, 117)}...` : text
+  return <p className="text-sm text-gray-700">{truncated}</p>
 }

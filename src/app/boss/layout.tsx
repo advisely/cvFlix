@@ -29,6 +29,8 @@ const menuItems = [
   { key: '/boss/companies', icon: <BankOutlined />, label: 'Companies' },
   { key: '/boss/highlights', icon: <StarOutlined />, label: 'Highlights' },
   { key: '/boss/experiences', icon: <LaptopOutlined />, label: 'Experiences' },
+  { key: '/boss/contributions', icon: <LaptopOutlined />, label: 'Contributions' },
+  { key: '/boss/recommended-books', icon: <ReadOutlined />, label: 'Recommended Books' },
   { key: '/boss/knowledge', icon: <ReadOutlined />, label: 'Knowledge' },
   { key: '/boss/media', icon: <FileImageOutlined />, label: 'Media' },
   { key: '/boss/seo', icon: <SearchOutlined />, label: 'SEO' },
