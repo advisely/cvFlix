@@ -467,6 +467,38 @@ export default function Home() {
           </div>
         </div>
 
+        {contributions.length > 0 && (
+          <section id="contributions" className="mb-12">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <h2 className="text-xl md:text-2xl font-bold">
+                {language === 'fr' ? 'Contributions' : 'Contributions'}
+              </h2>
+              <p className="text-sm text-white/70 max-w-2xl">
+                {language === 'fr'
+                  ? 'Une sélection de contributions open source, corporatives et communautaires qui démontrent un engagement continu.'
+                  : 'A curated set of open-source, corporate, and community contributions showcasing ongoing impact.'}
+              </p>
+            </div>
+
+            <Carousel>
+              {contributions.map((contribution) => (
+                <div
+                  key={contribution.id}
+                  className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2"
+                >
+                  <ContributionCard
+                    contribution={contribution}
+                    onSelect={() => {
+                      setSelectedContribution(contribution);
+                      setIsContributionModalOpen(true);
+                    }}
+                  />
+                </div>
+              ))}
+            </Carousel>
+          </section>
+        )}
+
         {recommendedBooks.length > 0 && (
           <section id="recommended-books" className="mb-12">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -569,37 +601,6 @@ export default function Home() {
           )}
         </div>
 
-        {contributions.length > 0 && (
-          <section id="contributions" className="mb-12">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <h2 className="text-xl md:text-2xl font-bold">
-                {language === 'fr' ? 'Contributions' : 'Contributions'}
-              </h2>
-              <p className="text-sm text-white/70 max-w-2xl">
-                {language === 'fr'
-                  ? 'Une sélection de contributions open source, corporatives et communautaires qui démontrent un engagement continu.'
-                  : 'A curated set of open-source, corporate, and community contributions showcasing ongoing impact.'}
-              </p>
-            </div>
-
-            <Carousel>
-              {contributions.map((contribution) => (
-                <div
-                  key={contribution.id}
-                  className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2"
-                >
-                  <ContributionCard
-                    contribution={contribution}
-                    onSelect={() => {
-                      setSelectedContribution(contribution);
-                      setIsContributionModalOpen(true);
-                    }}
-                  />
-                </div>
-              ))}
-            </Carousel>
-          </section>
-        )}
       </div>
 
       <Footer />
