@@ -31,35 +31,6 @@ type ContributionCardProps = {
   onSelect?: () => void;
 };
 
-const formatYearRange = (startDate: string | null, endDate: string | null, isCurrent: boolean) => {
-  if (!startDate) {
-    return isCurrent ? 'Present' : '—';
-  }
-
-  const start = new Date(startDate);
-  if (Number.isNaN(start.getTime())) {
-    return isCurrent ? 'Present' : '—';
-  }
-
-  const startYear = start.getFullYear();
-
-  if (isCurrent) {
-    return `${startYear} – Present`;
-  }
-
-  if (!endDate) {
-    return `${startYear}`;
-  }
-
-  const end = new Date(endDate);
-  if (Number.isNaN(end.getTime())) {
-    return `${startYear}`;
-  }
-
-  const endYear = end.getFullYear();
-  return startYear === endYear ? `${startYear}` : `${startYear} – ${endYear}`;
-};
-
 const typeColors: Record<string, string> = {
   OPEN_SOURCE: '#e50914',
   CORPORATE: '#2563eb',
@@ -77,8 +48,6 @@ const ContributionCard = ({ contribution, onSelect }: ContributionCardProps) => 
     contribution.organizationFr,
     language,
   );
-  const localizedRole = getLocalizedText(contribution.role, contribution.roleFr, language);
-  const localizedImpact = getLocalizedText(contribution.impact, contribution.impactFr, language);
 
   const bannerMedia = useMemo(() => contribution.media?.find((item) => item.type === 'image'), [
     contribution.media,
@@ -86,8 +55,6 @@ const ContributionCard = ({ contribution, onSelect }: ContributionCardProps) => 
 
   const typeTag = contribution.type ?? 'OPEN_SOURCE';
   const tagColor = typeColors[typeTag] ?? '#e50914';
-
-  const timeframe = formatYearRange(contribution.startDate, contribution.endDate, contribution.isCurrent);
 
   return (
     <article
@@ -132,16 +99,6 @@ const ContributionCard = ({ contribution, onSelect }: ContributionCardProps) => 
             </p>
           )}
         </header>
-
-        {localizedRole && (
-          <p className="text-sm text-white/80 line-clamp-2">{localizedRole}</p>
-        )}
-
-        <p className="text-xs uppercase tracking-wide text-[#808080]">{timeframe}</p>
-
-        {localizedImpact && (
-          <p className="text-sm text-white/70 line-clamp-3">{localizedImpact}</p>
-        )}
       </div>
     </article>
   );
