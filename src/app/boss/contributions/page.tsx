@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Button,
   Table,
@@ -97,6 +97,7 @@ const ContributionsPage = () => {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([])
   const [allMedia, setAllMedia] = useState<MediaItem[]>([])
   const [isGalleryVisible, setIsGalleryVisible] = useState(false)
+  const tempUploadIdRef = useRef<string | null>(null)
 
   const isCurrentValue = Form.useWatch('isCurrent', form) ?? false
 
@@ -139,6 +140,7 @@ const ContributionsPage = () => {
     form.resetFields()
     setSelectedMedia([])
     setEditingContribution(null)
+    tempUploadIdRef.current = null
   }
 
   const handleAdd = () => {
@@ -148,6 +150,7 @@ const ContributionsPage = () => {
       isCurrent: false,
       displayOrder: contributions.length + 1,
     })
+    tempUploadIdRef.current = crypto.randomUUID()
     setIsModalVisible(true)
   }
 
@@ -174,6 +177,7 @@ const ContributionsPage = () => {
       displayOrder: record.displayOrder ?? 0,
     })
     setSelectedMedia(mapToMediaItems(record.media ?? []))
+    tempUploadIdRef.current = record.id
     setIsModalVisible(true)
   }
 
@@ -248,6 +252,7 @@ const ContributionsPage = () => {
       setIsModalVisible(false)
       resetModalState()
       void fetchContributions()
+      tempUploadIdRef.current = null
     } catch (error) {
       if ((error as Error).message.includes('validation')) {
         return
@@ -257,8 +262,56 @@ const ContributionsPage = () => {
     }
   }
 
-  const handleMediaUpload = async (_file: File) => {
-    message.warning('Direct upload is disabled. Please add media through the Media section and select from the gallery.')
+  const getUploadContextId = async () => {
+    if (editingContribution) {
+      return editingContribution.id
+    }
+
+    const values = form.getFieldsValue()
+    if (!values.title) {
+      await form.validateFields(['title'])
+    }
+
+    if (!tempUploadIdRef.current) {
+      tempUploadIdRef.current = crypto.randomUUID()
+    }
+
+    return tempUploadIdRef.current
+  }
+
+  const handleMediaUpload = async (file: File) => {
+    try {
+      const contributionContextId = await getUploadContextId()
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('contributionId', contributionContextId)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || 'Upload failed')
+      }
+
+      const result = await response.json()
+
+      const uploadedMedia: MediaItem = {
+        id: result.id ?? crypto.randomUUID(),
+        url: result.url,
+        type: result.type,
+      }
+
+      setSelectedMedia((prev) => [...prev, uploadedMedia])
+      message.success('Media uploaded successfully')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload media'
+      console.error('Contribution media upload failed:', error)
+      message.error(errorMessage)
+    }
   }
 
   const handleGallerySelect = (item: MediaItem) => {
@@ -378,7 +431,6 @@ const ContributionsPage = () => {
         }}
         onOk={() => void handleSave()}
         okText={editingContribution ? 'Update' : 'Create'}
-        destroyOnHidden
         width={900}
       >
         <Form

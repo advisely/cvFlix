@@ -107,6 +107,16 @@ export const FILE_CONFIGS: Record<string, FileTypeConfig> = {
     maxVideoSize: 50 * 1024 * 1024, // 50MB for videos
     supportedFormats: ['JPEG', 'PNG', 'GIF', 'WebP', 'AVIF', 'MP4', 'WebM', 'OGG', 'AVI', 'MOV']
   },
+  contribution: {
+    allowedTypes: [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
+      'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
+    ],
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm', 'ogg', 'avi', 'mov'],
+    maxSize: 10 * 1024 * 1024,
+    maxVideoSize: 50 * 1024 * 1024,
+    supportedFormats: ['JPEG', 'PNG', 'GIF', 'WebP', 'AVIF', 'MP4', 'WebM', 'OGG', 'AVI', 'MOV']
+  },
   knowledge: {
     allowedTypes: [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
