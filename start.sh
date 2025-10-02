@@ -20,6 +20,14 @@ ENV_FILE=".env.local"
 SUMMARY=()
 OVERALL_FAIL=0
 
+usage() {
+  cat <<'EOF'
+Usage: ./start.sh [--update]
+
+  --update    Fetch and pull the latest changes from the tracked remote
+EOF
+}
+
 log_section() {
   local icon="$1"
   local title="$2"
@@ -46,6 +54,72 @@ print_summary() {
     printf " %-28s | %-6s | %s\n" "$name" "$status" "$detail"
   done
 }
+
+perform_update() {
+  log_section "🔄" "Updating repository from remote"
+
+  if ! command -v git >/dev/null 2>&1; then
+    log_error "git is not installed."
+    exit 1
+  fi
+
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    log_error "This directory is not a Git repository."
+    exit 1
+  fi
+
+  if [ -n "$(git status --porcelain)" ]; then
+    log_warn "Working tree has uncommitted changes."
+    log_error "Commit or stash local changes before running --update."
+    exit 1
+  fi
+
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    log_error "Remote 'origin' is not configured."
+    exit 1
+  fi
+
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  if [ "$current_branch" = "HEAD" ]; then
+    log_warn "Detached HEAD detected; defaulting to 'main'."
+    current_branch="main"
+  fi
+
+  log_info "Fetching latest refs from all remotes..."
+  if git fetch --all --prune; then
+    log_success "Fetch completed."
+  else
+    log_error "git fetch failed."
+    exit 1
+  fi
+
+  log_info "Pulling latest changes for ${current_branch} from origin..."
+  if git pull --ff-only origin "$current_branch"; then
+    log_success "Repository is up to date with origin/${current_branch}."
+    git status -sb
+    exit 0
+  else
+    log_error "git pull failed (non-fast-forward or network error)."
+    exit 1
+  fi
+}
+
+if [ $# -gt 0 ]; then
+  case "$1" in
+    --update)
+      perform_update
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Unknown option: %s\n\n' "$1"
+      usage
+      exit 1
+      ;;
+  esac
+fi
 
 generate_secret() {
   if command -v openssl >/dev/null 2>&1; then
