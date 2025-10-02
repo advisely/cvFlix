@@ -1,3 +1,4 @@
+- `./start.sh` - Orchestrates health checks (Node.js version, npm, dependencies, Prisma migrations, seed data) and then starts the development server with a status summary
 # resumeflex - Netflix-inspired Resume Portfolio
 
 A modern, interactive web application that presents a professional resume in the style of the Netflix user interface. Built with Next.js 15, TypeScript, and featuring a comprehensive admin panel for content management.
@@ -47,8 +48,8 @@ A modern, interactive web application that presents a professional resume in the
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
+- Node.js 24.8.0
+- npm (bundled with the Node.js installer) or yarn
 
 ### Installation
 
@@ -59,6 +60,13 @@ A modern, interactive web application that presents a professional resume in the
    ```
 
 2. **Install dependencies**
+   Ensure you're using Node.js 24.8.0. With nvm, run:
+   ```bash
+   nvm install 24.8.0
+   nvm use 24.8.0
+   ```
+
+   Then install project dependencies:
    ```bash
    npm install
    ```
@@ -78,10 +86,11 @@ A modern, interactive web application that presents a professional resume in the
    npm run seed
    ```
 
-5. **Start the development server**
+5. **Launch with the automation script**
    ```bash
-   npm run dev
+   ./start.sh
    ```
+   This script verifies your tooling, provisions `.env.local`, applies Prisma migrations, seeds SQLite when missing, and finally boots the Next.js dev server.
 
 6. **Access the application**
    - Public site: [http://localhost:4001](http://localhost:4001)
