@@ -21,12 +21,25 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const experienceId = formData.get('experienceId') as string;
+    const experienceId = formData.get('experienceId') as string | null;
+    const bookId = formData.get('bookId') as string | null;
+
+    if (!experienceId && !bookId) {
+      return createErrorNextResponse(
+        UploadErrorCode.INVALID_PARAMETER,
+        'Missing upload context',
+        'Either experienceId or bookId must be provided'
+      );
+    }
+
+    const requiredParams = experienceId
+      ? { file, experienceId }
+      : { file, bookId };
 
     // Validate required parameters
-    const paramValidation = validateRequiredParams({ file, experienceId });
+    const paramValidation = validateRequiredParams(requiredParams);
     if (!paramValidation.valid && paramValidation.error) {
-      logUploadError(endpoint, paramValidation.error, { experienceId });
+      logUploadError(endpoint, paramValidation.error, { experienceId, bookId });
       return createErrorNextResponse(
         UploadErrorCode.MISSING_FILE,
         paramValidation.error.error,
@@ -35,16 +48,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate path parameter to prevent traversal attacks
-    const pathValidation = validatePathParameter(experienceId, 'experienceId');
+    const targetId = experienceId ?? bookId;
+    if (!targetId) {
+      return createErrorNextResponse(
+        UploadErrorCode.INVALID_PARAMETER,
+        'Invalid upload context',
+        'A valid experienceId or bookId must be provided'
+      );
+    }
+    const targetType = experienceId ? 'experienceId' : 'bookId';
+
+    const pathValidation = validatePathParameter(targetId, targetType);
     if (!pathValidation.valid && pathValidation.error) {
-      logUploadError(endpoint, pathValidation.error, { experienceId });
-      return NextResponse.json(pathValidation.error, { 
-        status: 400 
+      logUploadError(endpoint, pathValidation.error, { experienceId, bookId });
+      return NextResponse.json(pathValidation.error, {
+        status: 400
       });
     }
 
     // Get configuration for experience uploads
-    const config = getFileConfig('experience');
+    const config = getFileConfig(experienceId ? 'experience' : 'book');
     
     // Validate file
     const fileValidation = validateFile(file, config);
@@ -53,7 +76,8 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         fileType: file.type,
         fileSize: file.size,
-        experienceId 
+        experienceId,
+        bookId
       });
       return NextResponse.json(fileValidation.error, {
         status: fileValidation.error.code === 'FILE_SIZE_EXCEEDED' ? 413 :
@@ -62,13 +86,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Create upload directory
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'experiences', experienceId);
+    const uploadDir = join(
+      process.cwd(),
+      'public',
+      'uploads',
+      experienceId ? 'experiences' : 'books',
+      targetId
+    );
     
     try {
       await mkdir(uploadDir, { recursive: true });
     } catch (error) {
       const fsError = handleFileSystemError(error, 'directory creation');
-      logUploadError(endpoint, error, { uploadDir, experienceId });
+      logUploadError(endpoint, error, { uploadDir, experienceId, bookId });
       return NextResponse.json(fsError, { status: 500 });
     }
 
@@ -84,12 +114,14 @@ export async function POST(request: NextRequest) {
       await writeFile(filePath, buffer);
     } catch (error) {
       const fsError = handleFileSystemError(error, 'file write');
-      logUploadError(endpoint, error, { filePath, experienceId });
+      logUploadError(endpoint, error, { filePath, experienceId, bookId });
       return NextResponse.json(fsError, { status: 500 });
     }
 
     // Create public URL
-    const publicUrl = `/uploads/experiences/${experienceId}/${filename}`;
+    const publicUrl = experienceId
+      ? `/uploads/experiences/${targetId}/${filename}`
+      : `/uploads/books/${targetId}/${filename}`;
 
     // Create Media record in database
     const isVideo = file.type.startsWith('video/');
@@ -100,7 +132,6 @@ export async function POST(request: NextRequest) {
         data: {
           url: publicUrl,
           type: mediaType,
-          // Don't connect to experience yet - this will be done when saving the experience
         }
       });
 
@@ -111,6 +142,7 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         fileSize: file.size,
         experienceId,
+        bookId,
         timestamp: new Date().toISOString()
       });
 

@@ -513,41 +513,69 @@ export default function Home() {
             </div>
 
             <Carousel>
-              {recommendedBooks.map((book) => (
-                <div
-                  key={book.id}
-                  className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.33%] p-2"
-                >
-                  <Card className="bg-[#303030] border border-[#404040] text-white shadow-lg min-h-[240px]" data-testid="recommended-book-card">
-                    <div className="flex flex-col gap-3">
-                      <header>
-                        <h3 className="text-lg font-bold leading-tight">{getLocalizedText(book.title, book.titleFr, language)}</h3>
-                        <p className="text-sm text-[#e50914] font-semibold">
-                          {getLocalizedText(book.author, book.authorFr, language)}
-                        </p>
-                      </header>
-                      {book.summary && (
-                        <p className="text-sm text-white/70 line-clamp-3">
-                          {getLocalizedText(book.summary, book.summaryFr, language)}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-xs uppercase tracking-wide text-white/60">
-                        <span>#{book.priority}</span>
-                        {book.purchaseUrl && (
-                          <a
-                            href={book.purchaseUrl}
-                            className="text-[#e50914] hover:text-white transition-colors"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {language === 'fr' ? 'Acheter' : 'Buy'}
-                          </a>
-                        )}
-                      </div>
+              {recommendedBooks.map((book) => {
+                const coverImage = book.coverImageUrl ?? (book.media?.[0]?.url ?? null)
+
+                return (
+                  <div key={book.id} className="flex-[0_0_auto] p-3">
+                    <div className="mx-auto w-[320px] sm:w-[360px]">
+                      <Card
+                        className="bg-gradient-to-br from-[#1b1b1b] via-[#202020] to-[#242424] border border-white/10 text-white shadow-lg h-full overflow-hidden"
+                        data-testid="recommended-book-card"
+                        styles={{ body: { padding: 0 } }}
+                      >
+                        <div className="flex flex-col h-full">
+                          <div className="relative w-full aspect-[2/3] bg-[#111111]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {coverImage ? (
+                              <img
+                                src={coverImage}
+                                alt={getLocalizedText(book.title, book.titleFr, language)}
+                                className="absolute inset-0 w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm tracking-[0.22em] uppercase">
+                                {language === 'fr' ? 'Aucune image' : 'No cover available'}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-3 px-5 py-4 bg-gradient-to-b from-transparent via-[#1c1c1c] to-[#181818]">
+                            <header className="space-y-2">
+                              <h3 className="text-lg font-bold leading-tight line-clamp-2">
+                                {getLocalizedText(book.title, book.titleFr, language)}
+                              </h3>
+                              <p className="text-xs text-[#e50914] font-semibold uppercase tracking-[0.22em]">
+                                {getLocalizedText(book.author, book.authorFr, language)}
+                              </p>
+                            </header>
+
+                            {book.summary && (
+                              <p className="text-sm text-white/70 leading-relaxed line-clamp-4">
+                                {getLocalizedText(book.summary, book.summaryFr, language)}
+                              </p>
+                            )}
+
+                            <div className="mt-auto flex items-center justify-between text-[0.7rem] uppercase tracking-wide text-white/60">
+                              <span className="rounded-md bg-white/10 px-3 py-1 font-semibold">#{book.priority}</span>
+                              {book.purchaseUrl && (
+                                <a
+                                  href={book.purchaseUrl}
+                                  className="text-[#e50914] hover:text-white transition-colors font-semibold"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {language === 'fr' ? 'Acheter' : 'Buy'}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
                     </div>
-                  </Card>
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </Carousel>
           </section>
         )}

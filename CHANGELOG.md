@@ -2,6 +2,20 @@
 
 Version numbers follow `x.y.z` where **x = major features**, **y = enhancements**, and **z = bug fixes / stability**.
 
+## v6.0.1 · 2025-10-01
+### Summary
+- Polished recommended books admin workflows and homepage presentation.
+
+### Key Changes
+- Enabled direct media uploads for recommended books with temporary context handling.
+- Added `/api/recommended-books/[id]` route for GET/PUT/DELETE operations.
+- Updated homepage cards to render book media, enforce portrait layout, and refine dark theme styling.
+- Resolved Ant Design `Card` deprecation warning and adjusted carousel sizing.
+
+### Verification Checklist
+1. Upload new recommended book media and confirm it persists after save.
+2. Refresh homepage to verify cover renders and card styling matches design.
+
 ## v6.0.0 · 2025-10-01
 ### Summary
 - Added Contributions and Recommended Books modules across admin and public experiences.
